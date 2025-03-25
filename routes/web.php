@@ -15,3 +15,6 @@ Route::get('/sales/quotation', function () {
     return view('pages.sales.quotation');
 });
 */
+Route::get('/test', function() {
+    return "Laravel is working!";
+});

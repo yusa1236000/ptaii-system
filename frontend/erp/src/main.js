@@ -6,7 +6,7 @@ import axios from 'axios';
 import './assets/css/main.css';
 
 // Configure axios
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8020/api';
+axios.defaults.baseURL = process.env.VUE_APP_API_URL || 'http://127.0.0.1:8020/api';
 
 // Add token to requests if it exists
 axios.interceptors.request.use(config => {
