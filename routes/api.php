@@ -10,7 +10,16 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\Api\StockTransactionController;
 use App\Http\Controllers\Api\StockAdjustmentController;
-
+// purchase order
+use App\Http\Controllers\API\VendorController;
+use App\Http\Controllers\API\PurchaseRequisitionController;
+use App\Http\Controllers\API\RequestForQuotationController;
+use App\Http\Controllers\API\VendorQuotationController;
+use App\Http\Controllers\API\PurchaseOrderController;
+use App\Http\Controllers\API\GoodsReceiptController;
+use App\Http\Controllers\API\VendorInvoiceController;
+use App\Http\Controllers\API\VendorContractController;
+use App\Http\Controllers\API\VendorEvaluationController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -54,6 +63,46 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/movement', [ReportController::class, 'movementReport']);
     Route::get('/reports/adjustment', [ReportController::class, 'adjustmentReport']);
     Route::get('/reports/valuation', [ReportController::class, 'valuationReport']);
+
+    // Vendors
+    Route::apiResource('vendors', VendorController::class);
+    Route::get('vendors/{vendor}/evaluations', [VendorController::class, 'evaluations']);
+    Route::get('vendors/{vendor}/purchase-orders', [VendorController::class, 'purchaseOrders']);
+    
+    // Purchase Requisitions
+    Route::apiResource('purchase-requisitions', PurchaseRequisitionController::class);
+    Route::patch('purchase-requisitions/{purchaseRequisition}/status', [PurchaseRequisitionController::class, 'updateStatus']);
+    
+    // Request For Quotations
+    Route::apiResource('request-for-quotations', RequestForQuotationController::class);
+    Route::patch('request-for-quotations/{requestForQuotation}/status', [RequestForQuotationController::class, 'updateStatus']);
+    
+    // Vendor Quotations
+    Route::apiResource('vendor-quotations', VendorQuotationController::class);
+    Route::patch('vendor-quotations/{vendorQuotation}/status', [VendorQuotationController::class, 'updateStatus']);
+    
+    // Purchase Orders
+    Route::apiResource('purchase-orders', PurchaseOrderController::class);
+    Route::patch('purchase-orders/{purchaseOrder}/status', [PurchaseOrderController::class, 'updateStatus']);
+    Route::post('purchase-orders/create-from-quotation', [PurchaseOrderController::class, 'createFromQuotation']);
+    
+    // Goods Receipts
+    Route::apiResource('goods-receipts', GoodsReceiptController::class);
+    Route::post('goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm']);
+    
+    // Vendor Invoices
+    Route::apiResource('vendor-invoices', VendorInvoiceController::class);
+    Route::post('vendor-invoices/{vendorInvoice}/approve', [VendorInvoiceController::class, 'approve']);
+    Route::post('vendor-invoices/{vendorInvoice}/pay', [VendorInvoiceController::class, 'pay']);
+    
+    // Vendor Contracts
+    Route::apiResource('vendor-contracts', VendorContractController::class);
+    Route::post('vendor-contracts/{vendorContract}/activate', [VendorContractController::class, 'activate']);
+    Route::post('vendor-contracts/{vendorContract}/terminate', [VendorContractController::class, 'terminate']);
+    
+    // Vendor Evaluations
+    Route::apiResource('vendor-evaluations', VendorEvaluationController::class);
+    Route::get('vendor-performance', [VendorEvaluationController::class, 'vendorPerformance']);
 });
 
 Route::middleware('api')->group(function () {
