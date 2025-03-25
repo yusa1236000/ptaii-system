@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
+/*
 Route::get('/', function () {
     return view('welcome');
 });
@@ -13,3 +14,4 @@ Route::get('/dashboard', function () {
 Route::get('/sales/quotation', function () {
     return view('pages.sales.quotation');
 });
+*/
