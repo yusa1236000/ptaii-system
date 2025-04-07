@@ -91,7 +91,7 @@
           isLoading.value = true;
           error.value = '';
   
-          await axios.post('/api/auth/register', {
+          await axios.post('/auth/register', {
             name: name.value,
             email: email.value,
             password: password.value,

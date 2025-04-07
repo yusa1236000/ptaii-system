@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up()
     {
+        if (!Schema::hasTable('purchase_requisitions')) {
         Schema::create('purchase_requisitions', function (Blueprint $table) {
             $table->id('pr_id');
             $table->string('pr_number', 50)->unique();
@@ -17,8 +18,9 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
             
-            $table->foreign('requester_id')->references('user_id')->on('users');
+            $table->foreign('requester_id')->references('id')->on('users');
         });
+    }
     }
 
     public function down()
