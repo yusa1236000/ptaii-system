@@ -11,8 +11,10 @@ class SalesQuotation extends Model
 {
     use HasFactory;
 
+    protected $table = 'SalesQuotation';
     protected $primaryKey = 'quotation_id';
     public $timestamps = false;
+
     
     protected $fillable = [
         'quotation_number',

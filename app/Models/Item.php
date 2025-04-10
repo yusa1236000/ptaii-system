@@ -9,6 +9,7 @@ class Item extends Model
 {
     use HasFactory;
 
+    protected $table = 'items';
     protected $primaryKey = 'item_id';
     protected $fillable = [
         'item_code', 

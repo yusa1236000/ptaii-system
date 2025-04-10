@@ -53,9 +53,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/movement', [ReportController::class, 'movementReport']);
     Route::get('/reports/adjustment', [ReportController::class, 'adjustmentReport']);
     Route::get('/reports/valuation', [ReportController::class, 'valuationReport']);
-});
-
-Route::middleware('api')->group(function () {
     // Item Category Routes
     Route::prefix('item-categories')->group(function () {
         Route::get('/', [ItemCategoryController::class, 'index']);
@@ -63,7 +60,7 @@ Route::middleware('api')->group(function () {
         Route::get('/{id}', [ItemCategoryController::class, 'show']);
         Route::put('/{id}', [ItemCategoryController::class, 'update']);
         Route::delete('/{id}', [ItemCategoryController::class, 'destroy']);
-    });
+
 
     // Unit of Measure Routes
     Route::prefix('unit-of-measures')->group(function () {
@@ -110,4 +107,5 @@ Route::middleware('api')->group(function () {
         Route::patch('/{id}/approve', [StockAdjustmentController::class, 'approve']);
         Route::patch('/{id}/cancel', [StockAdjustmentController::class, 'cancel']);
     });
+});
 });

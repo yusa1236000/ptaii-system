@@ -4,10 +4,25 @@ import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 import AppLayout from '../layouts/AppLayout.vue';
 import Dashboard from '../views/Dashboard.vue';
+// Import components
 import ItemsList from '../views/inventory/ItemsList.vue';
+import ItemDetail from '../views/inventory/ItemDetail.vue';
+import UnitOfMeasureList from '../views/inventory/UnitOfMeasureList.vue';
+import UnitOfMeasureDetail from '../views/inventory/UnitOfMeasureDetail.vue';
 import WarehousesList from '../views/inventory/WarehousesList.vue';
 import StockTransactions from '../views/inventory/StockTransactions.vue';
 import StockAdjustments from '../views/inventory/StockAdjustments.vue';
+import ItemCategories from '../views/inventory/ItemCategories.vue';
+import ItemCategoriesEnhanced from '../views/inventory/ItemCategoriesEnhanced.vue';
+import CustomersList from '@/views/sales/CustomerList.vue';
+import CustomerDetails from '@/views/sales/CustomerDetails.vue';
+import CustomerCreate from '@/views/sales/CustomerCreate.vue';
+import CustomerEdit from '@/views/sales/CustomerEdit.vue';
+// Import Sales Quotation components
+import SalesQuotationList from '../views/sales/SalesQuotationList.vue';
+import SalesQuotationForm from '../views/sales/SalesQuotationForm.vue';
+import SalesQuotationDetail from '../views/sales/SalesQuotationDetail.vue';
+import SalesQuotationPrint from '../views/sales/SalesQuotationPrint.vue';
 
 // Import other components as needed
 
@@ -44,16 +59,35 @@ const routes = [
         name: 'Items',
         component: ItemsList
       },
-      // {
-        // path: 'categories',
-        // name: 'ItemCategories',
-        // component: () => import('../views/inventory/CategoriesList.vue')
-      // },
-      // {
-        // path: 'uom',
-        // name: 'UnitOfMeasures',
-        // component: () => import('../views/inventory/UnitOfMeasuresList.vue')
-      // },
+      {
+        path: '/items/:id',
+        name: 'ItemDetail',
+        component: ItemDetail,
+        props: true,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'item-categories',
+        name: 'ItemCategories',
+        component: ItemCategories
+      },
+      {
+        path: 'categories-enhanced',
+        name: 'ItemCategoriesEnhanced',
+        component: ItemCategoriesEnhanced
+      },
+      // Add Unit of Measure route
+      {
+        path: 'unit-of-measures',
+        name: 'UnitOfMeasures',
+        component: UnitOfMeasureList
+      },
+      {
+        path: 'unit-of-measures/:id',
+        name: 'UnitOfMeasureDetail',
+        component: UnitOfMeasureDetail,
+        props: true
+      },
       {
         path: 'warehouses',
         name: 'Warehouses',
@@ -72,9 +106,63 @@ const routes = [
         component: StockTransactions
       },
       {
+        path: '/sales/customers',
+        name: 'customers.index',
+        component: CustomersList,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: '/sales/customers/create',
+        name: 'customers.create',
+        component: CustomerCreate,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: '/sales/customers/:id',
+        name: 'customers.show',
+        component: CustomerDetails,
+        props: true,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: '/sales/customers/edit/:id',
+        name: 'customers.edit',
+        component: CustomerEdit,
+        props: true,
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'stock-adjustments',
         name: 'StockAdjustments',
         component: StockAdjustments
+      },
+      {
+        path: '/sales/quotations',
+        name: 'SalesQuotations',
+        component: SalesQuotationList
+      },
+      {
+        path: '/sales/quotations/create',
+        name: 'CreateSalesQuotation',
+        component: SalesQuotationForm
+      },
+      {
+        path: '/sales/quotations/:id',
+        name: 'SalesQuotationDetail',
+        component: SalesQuotationDetail,
+        props: true
+      },
+      {
+        path: '/sales/quotations/:id/edit',
+        name: 'EditSalesQuotation',
+        component: SalesQuotationForm,
+        props: true
+      },
+      {
+        path: '/sales/quotations/:id/print',
+        name: 'PrintSalesQuotation',
+        component: SalesQuotationPrint,
+        props: true
       },
       // {
         // path: 'cycle-counts',

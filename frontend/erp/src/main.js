@@ -4,6 +4,10 @@ import App from './App.vue';
 import router from './router';
 import axios from 'axios';
 import './assets/css/main.css';
+// Import global components
+import SearchFilter from '@/components/common/SearchFilter.vue';
+import Pagination from '@/components/common/Pagination.vue';
+import ConfirmationModal from '@/components/common/ConfirmationModal.vue';
 
 // Configure axios
 axios.defaults.baseURL = process.env.VUE_APP_API_URL || 'http://127.0.0.1:8020/api';
@@ -35,3 +39,7 @@ axios.interceptors.response.use(
 const app = createApp(App);
 app.use(router);
 app.mount('#app');
+// Register global components
+app.component('SearchFilter', SearchFilter);
+app.component('PaginationComponent', Pagination);
+app.component('ConfirmationModal', ConfirmationModal);

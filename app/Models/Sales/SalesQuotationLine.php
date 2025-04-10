@@ -10,6 +10,7 @@ class SalesQuotationLine extends Model
 {
     use HasFactory;
 
+    protected $table = 'SalesQuotationLine';
     protected $primaryKey = 'line_id';
     public $timestamps = false;
     

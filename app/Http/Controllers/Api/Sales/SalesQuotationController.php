@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Sales;
 
+use App\Http\Controllers\Controller;
 use App\Models\Sales\SalesQuotation;
 use App\Models\Sales\SalesQuotationLine;
 use Illuminate\Http\Request;

@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 // routes/api.php
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ItemCategoryController;
@@ -11,7 +10,6 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\Api\StockTransactionController;
 use App\Http\Controllers\Api\StockAdjustmentController;
-
 // purchase order
 use App\Http\Controllers\API\VendorController;
 use App\Http\Controllers\API\PurchaseRequisitionController;
@@ -22,7 +20,6 @@ use App\Http\Controllers\API\GoodsReceiptController;
 use App\Http\Controllers\API\VendorInvoiceController;
 use App\Http\Controllers\API\VendorContractController;
 use App\Http\Controllers\API\VendorEvaluationController;
-
 // Sales Order
 use App\Http\Controllers\Api\Sales\CustomerController;
 use App\Http\Controllers\Api\Sales\SalesQuotationController;
@@ -33,7 +30,6 @@ use App\Http\Controllers\Api\Sales\SalesReturnController;
 use App\Http\Controllers\Api\Sales\CustomerInteractionController;
 use App\Http\Controllers\Api\Sales\SalesCommissionController;
 use App\Http\Controllers\Api\Sales\SalesForecastController;
-
 // Manufacturing
 use App\Http\Controllers\Api\Manufacturing\ProductController;
 use App\Http\Controllers\Api\Manufacturing\BOMController;
@@ -48,7 +44,6 @@ use App\Http\Controllers\Api\Manufacturing\ProductionConsumptionController;
 use App\Http\Controllers\Api\Manufacturing\QualityInspectionController;
 use App\Http\Controllers\Api\Manufacturing\QualityParameterController;
 use App\Http\Controllers\Api\Manufacturing\MaintenanceScheduleController;
-
 //Accounting
 use App\Http\Controllers\Api\Accounting\ChartOfAccountController;
 use App\Http\Controllers\Api\Accounting\AccountingPeriodController;
@@ -63,7 +58,6 @@ use App\Http\Controllers\Api\Accounting\AssetDepreciationController;
 use App\Http\Controllers\Api\Accounting\BudgetController;
 use App\Http\Controllers\Api\Accounting\BankAccountController;
 use App\Http\Controllers\Api\Accounting\BankReconciliationController;
-use App\Http\Controllers\Api\Accounting\FinancialReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -88,7 +82,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('item-categories', CategoryController::class);
     
     // UOM Routes
-    //Route::apiResource('unit-of-measures', UnitOfMeasureController::class);
+    Route::apiResource('unit-of-measures', UnitOfMeasureController::class);
     
     // Warehouse Routes
     Route::apiResource('warehouses', WarehouseController::class);
@@ -250,6 +244,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/update-actuals', [SalesForecastController::class, 'updateActuals']);
         Route::get('/accuracy', [SalesForecastController::class, 'getForecastAccuracy']);
     });
+});
+
+Route::middleware('api')->group(function () {
     // Item Category Routes
     Route::prefix('item-categories')->group(function () {
         Route::get('/', [ItemCategoryController::class, 'index']);
@@ -304,99 +301,98 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/{id}/approve', [StockAdjustmentController::class, 'approve']);
         Route::patch('/{id}/cancel', [StockAdjustmentController::class, 'cancel']);
     });
+// Manufacturing Module Routes
 
-    // Manufacturing Module Routes
-    // Products
-    Route::apiResource('products', ProductController::class);
+// Products
+Route::apiResource('products', ProductController::class);
 
-    // BOM
-    Route::apiResource('boms', BOMController::class);
-    Route::apiResource('boms/{bomId}/lines', BOMLineController::class);
+// BOM
+Route::apiResource('boms', BOMController::class);
+Route::apiResource('boms/{bomId}/lines', BOMLineController::class);
 
-    // Routing
-    Route::apiResource('routings', RoutingController::class);
-    Route::apiResource('routings/{routingId}/operations', RoutingOperationController::class);
+// Routing
+Route::apiResource('routings', RoutingController::class);
+Route::apiResource('routings/{routingId}/operations', RoutingOperationController::class);
 
-    // Work Centers
-    Route::apiResource('work-centers', WorkCenterController::class);
-    Route::get('work-centers/{workCenterId}/maintenance-schedules', [MaintenanceScheduleController::class, 'byWorkCenter']);
+// Work Centers
+Route::apiResource('work-centers', WorkCenterController::class);
+Route::get('work-centers/{workCenterId}/maintenance-schedules', [MaintenanceScheduleController::class, 'byWorkCenter']);
 
-    // Work Orders
-    Route::apiResource('work-orders', WorkOrderController::class);
-    Route::apiResource('work-orders/{workOrderId}/operations', WorkOrderOperationController::class)
-        ->except(['store', 'destroy']);
+// Work Orders
+Route::apiResource('work-orders', WorkOrderController::class);
+Route::apiResource('work-orders/{workOrderId}/operations', WorkOrderOperationController::class)
+    ->except(['store', 'destroy']);
 
-    // Production Orders
-    Route::apiResource('production-orders', ProductionOrderController::class);
-    Route::apiResource('production-orders/{productionId}/consumptions', ProductionConsumptionController::class);
+// Production Orders
+Route::apiResource('production-orders', ProductionOrderController::class);
+Route::apiResource('production-orders/{productionId}/consumptions', ProductionConsumptionController::class);
 
-    // Maintenance Schedules
-    Route::apiResource('maintenance-schedules', MaintenanceScheduleController::class);
+// Maintenance Schedules
+Route::apiResource('maintenance-schedules', MaintenanceScheduleController::class);
 
-    // Quality Control
-    Route::apiResource('quality-inspections', QualityInspectionController::class);
-    Route::apiResource('quality-inspections/{inspectionId}/parameters', QualityParameterController::class);
-    Route::get('quality-inspections/by-reference/{referenceType}/{referenceId}', [QualityInspectionController::class, 'byReference']);
-
-    // Accounting Module Routes
-    Route::prefix('accounting')->group(function () {
-        // Chart of Accounts
-        Route::get('chart-of-accounts/hierarchy', [ChartOfAccountController::class, 'hierarchy']);
-        Route::apiResource('chart-of-accounts', ChartOfAccountController::class);
-        
-        // Accounting Periods
-        Route::get('accounting-periods/current', [AccountingPeriodController::class, 'current']);
-        Route::apiResource('accounting-periods', AccountingPeriodController::class);
-        
-        // Journal Entries
-        Route::post('journal-entries/{id}/post', [JournalEntryController::class, 'post']);
-        Route::apiResource('journal-entries', JournalEntryController::class);
-        
-        // Customer Receivables
-        Route::get('customer-receivables/aging', [CustomerReceivableController::class, 'aging']);
-        Route::apiResource('customer-receivables', CustomerReceivableController::class);
-        
-        // Receivable Payments
-        Route::apiResource('receivable-payments', ReceivablePaymentController::class);
-        
-        // Vendor Payables
-        Route::get('vendor-payables/aging', [VendorPayableController::class, 'aging']);
-        Route::apiResource('vendor-payables', VendorPayableController::class);
-        
-        // Payable Payments
-        Route::apiResource('payable-payments', PayablePaymentController::class);
-        
-        // Tax Transactions
-        Route::get('tax-transactions/summary', [TaxTransactionController::class, 'summary']);
-        Route::apiResource('tax-transactions', TaxTransactionController::class);
-        
-        // Fixed Assets
-        Route::apiResource('fixed-assets', FixedAssetController::class);
-        
-        // Asset Depreciations
-        Route::post('fixed-assets/{id}/calculate-depreciation', [AssetDepreciationController::class, 'calculateDepreciation']);
-        Route::apiResource('asset-depreciations', AssetDepreciationController::class);
-        
-        // Budgets
-        Route::get('budgets/variance-report', [BudgetController::class, 'varianceReport']);
-        Route::apiResource('budgets', BudgetController::class);
-        
-        // Bank Accounts
-        Route::apiResource('bank-accounts', BankAccountController::class);
-        
-        // Bank Reconciliations
-        Route::post('bank-reconciliations/{id}/finalize', [BankReconciliationController::class, 'finalize']);
-        Route::apiResource('bank-reconciliations', BankReconciliationController::class);
-        Route::apiResource('bank-reconciliations.lines', BankReconciliationController::class);
-        
-        // Financial Reports
-        Route::prefix('reports')->group(function () {
-            Route::get('trial-balance', [FinancialReportController::class, 'trialBalance']);
-            Route::get('income-statement', [FinancialReportController::class, 'incomeStatement']);
-            Route::get('balance-sheet', [FinancialReportController::class, 'balanceSheet']);
-            Route::get('cash-flow', [FinancialReportController::class, 'cashFlow']);
-            Route::get('accounts-receivable', [FinancialReportController::class, 'accountsReceivable']);
-            Route::get('accounts-payable', [FinancialReportController::class, 'accountsPayable']);
-        });
+// Quality Control
+Route::apiResource('quality-inspections', QualityInspectionController::class);
+Route::apiResource('quality-inspections/{inspectionId}/parameters', QualityParameterController::class);
+Route::get('quality-inspections/by-reference/{referenceType}/{referenceId}', [QualityInspectionController::class, 'byReference']);
+// Accounting module routes
+Route::prefix('accounting')->group(function () {
+    // Chart of Accounts
+    Route::get('chart-of-accounts/hierarchy', [ChartOfAccountController::class, 'hierarchy']);
+    Route::apiResource('chart-of-accounts', ChartOfAccountController::class);
+    
+    // Accounting Periods
+    Route::get('accounting-periods/current', [AccountingPeriodController::class, 'current']);
+    Route::apiResource('accounting-periods', AccountingPeriodController::class);
+    
+    // Journal Entries
+    Route::post('journal-entries/{id}/post', [JournalEntryController::class, 'post']);
+    Route::apiResource('journal-entries', JournalEntryController::class);
+    
+    // Customer Receivables
+    Route::get('customer-receivables/aging', [CustomerReceivableController::class, 'aging']);
+    Route::apiResource('customer-receivables', CustomerReceivableController::class);
+    
+    // Receivable Payments
+    Route::apiResource('receivable-payments', ReceivablePaymentController::class);
+    
+    // Vendor Payables
+    Route::get('vendor-payables/aging', [VendorPayableController::class, 'aging']);
+    Route::apiResource('vendor-payables', VendorPayableController::class);
+    
+    // Payable Payments
+    Route::apiResource('payable-payments', PayablePaymentController::class);
+    
+    // Tax Transactions
+    Route::get('tax-transactions/summary', [TaxTransactionController::class, 'summary']);
+    Route::apiResource('tax-transactions', TaxTransactionController::class);
+    
+    // Fixed Assets
+    Route::apiResource('fixed-assets', FixedAssetController::class);
+    
+    // Asset Depreciations
+    Route::post('fixed-assets/{id}/calculate-depreciation', [AssetDepreciationController::class, 'calculateDepreciation']);
+    Route::apiResource('asset-depreciations', AssetDepreciationController::class);
+    
+    // Budgets
+    Route::get('budgets/variance-report', [BudgetController::class, 'varianceReport']);
+    Route::apiResource('budgets', BudgetController::class);
+    
+    // Bank Accounts
+    Route::apiResource('bank-accounts', BankAccountController::class);
+    
+    // Bank Reconciliations
+    Route::post('bank-reconciliations/{id}/finalize', [BankReconciliationController::class, 'finalize']);
+    Route::apiResource('bank-reconciliations', BankReconciliationController::class);
+    Route::apiResource('bank-reconciliations.lines', BankReconciliationController::class);
+    
+    // Financial Reports
+    Route::prefix('reports')->group(function () {
+        Route::get('trial-balance', [FinancialReportController::class, 'trialBalance']);
+        Route::get('income-statement', [FinancialReportController::class, 'incomeStatement']);
+        Route::get('balance-sheet', [FinancialReportController::class, 'balanceSheet']);
+        Route::get('cash-flow', [FinancialReportController::class, 'cashFlow']);
+        Route::get('accounts-receivable', [FinancialReportController::class, 'accountsReceivable']);
+        Route::get('accounts-payable', [FinancialReportController::class, 'accountsPayable']);
     });
+});
 });
