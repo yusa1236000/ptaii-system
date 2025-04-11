@@ -10,6 +10,7 @@ class SalesForecast extends Model
 {
     use HasFactory;
 
+    protected $table = 'SalesForecast';
     protected $primaryKey = 'forecast_id';
     public $timestamps = false;
     
