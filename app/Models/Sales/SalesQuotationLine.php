@@ -5,6 +5,8 @@ namespace App\Models\Sales;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Item;
+use App\Models\UnitOfMeasure;
 
 class SalesQuotationLine extends Model
 {
@@ -13,7 +15,7 @@ class SalesQuotationLine extends Model
     protected $table = 'SalesQuotationLine';
     protected $primaryKey = 'line_id';
     public $timestamps = false;
-    
+
     protected $fillable = [
         'quotation_id',
         'item_id',

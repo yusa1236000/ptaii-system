@@ -30,7 +30,8 @@ import SalesForecastAnalytics from "../views/sales/SalesForecastAnalytics.vue";
 //SalesOrder
 import SalesOrderList from "../views/sales/SalesOrderList.vue";
 import SalesOrderDetail from "../views/sales/SalesOrderDetail.vue";
-import SalesOrderForm from "../views/sales/SalesOrderForm";
+import SalesOrderForm from "../views/sales/SalesOrderForm.vue";
+import CreateOrderFromQuotation from "../views/sales/CreateOrderFromQuotation.vue";
 //Sales Invoice
 import SalesInvoiceList from "../views/sales/SalesInvoiceList.vue";
 import SalesInvoiceDetail from "../views/sales/SalesInvoiceDetail.vue";
@@ -227,13 +228,13 @@ const routes = [
                 props: true,
                 meta: { requiresAuth: true },
             },
-            //   {
-            //     path: '/sales/orders/create-from-quotation/:id',
-            //     name: 'CreateOrderFromQuotation',
-            //     component: CreateOrderFromQuotation,
-            //     props: true,
-            //     meta: { requiresAuth: true }
-            //   },
+            {
+                path: "/sales/orders/create-from-quotation/:id",
+                name: "CreateOrderFromQuotation",
+                component: CreateOrderFromQuotation,
+                props: true,
+                meta: { requiresAuth: true },
+            },
             //SalesInvoice
             {
                 path: "/sales/invoices",

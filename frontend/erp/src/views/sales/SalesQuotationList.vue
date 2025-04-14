@@ -667,7 +667,7 @@ export default {
 
         const convertToOrder = (quotation) => {
             router.push(
-                `/orders/create-from-quotation/${quotation.quotation_id}`
+                `/sales/orders/create-from-quotation/${quotation.quotation_id}`
             );
         };
 
