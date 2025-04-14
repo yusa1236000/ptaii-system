@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Sales;
 
+use App\Http\Controllers\Controller;
 use App\Models\Sales\SalesOrder;
 use App\Models\Sales\SOLine;
 use App\Models\Sales\SalesQuotation;
@@ -108,9 +109,9 @@ class SalesOrderController extends Controller
             }
 
             DB::commit();
-            
+
             return response()->json([
-                'data' => $salesOrder->load('salesOrderLines'), 
+                'data' => $salesOrder->load('salesOrderLines'),
                 'message' => 'Sales order created successfully'
             ], 201);
         } catch (\Exception $e) {
@@ -144,7 +145,7 @@ class SalesOrderController extends Controller
 
             // Get the quotation
             $quotation = SalesQuotation::with('salesQuotationLines')->find($request->quotation_id);
-            
+
             if ($quotation->status === 'Converted') {
                 return response()->json(['message' => 'This quotation has already been converted to a sales order'], 400);
             }
@@ -194,9 +195,9 @@ class SalesOrderController extends Controller
             $quotation->update(['status' => 'Converted']);
 
             DB::commit();
-            
+
             return response()->json([
-                'data' => $salesOrder->load('salesOrderLines'), 
+                'data' => $salesOrder->load('salesOrderLines'),
                 'message' => 'Sales order created from quotation successfully'
             ], 201);
         } catch (\Exception $e) {
@@ -214,18 +215,18 @@ class SalesOrderController extends Controller
     public function show($id)
     {
         $order = SalesOrder::with([
-            'customer', 
-            'salesQuotation', 
-            'salesOrderLines.item', 
+            'customer',
+            'salesQuotation',
+            'salesOrderLines.item',
             'salesOrderLines.unitOfMeasure',
             'deliveries',
             'salesInvoices'
         ])->find($id);
-        
+
         if (!$order) {
             return response()->json(['message' => 'Sales order not found'], 404);
         }
-        
+
         return response()->json(['data' => $order], 200);
     }
 
@@ -239,7 +240,7 @@ class SalesOrderController extends Controller
     public function update(Request $request, $id)
     {
         $order = SalesOrder::find($id);
-        
+
         if (!$order) {
             return response()->json(['message' => 'Sales order not found'], 404);
         }
@@ -248,7 +249,7 @@ class SalesOrderController extends Controller
         if (in_array($order->status, ['Delivered', 'Invoiced', 'Closed'])) {
             return response()->json(['message' => 'Cannot update a ' . $order->status . ' sales order'], 400);
         }
-        
+
         $validator = Validator::make($request->all(), [
             'so_number' => 'required|unique:SalesOrder,so_number,' . $id . ',so_id',
             'so_date' => 'required|date',
@@ -276,31 +277,31 @@ class SalesOrderController extends Controller
     public function destroy($id)
     {
         $order = SalesOrder::find($id);
-        
+
         if (!$order) {
             return response()->json(['message' => 'Sales order not found'], 404);
         }
-        
+
         // Check if order can be deleted (no deliveries or invoices)
         if ($order->deliveries->count() > 0) {
             return response()->json(['message' => 'Cannot delete order with related deliveries'], 400);
         }
-        
+
         if ($order->salesInvoices->count() > 0) {
             return response()->json(['message' => 'Cannot delete order with related invoices'], 400);
         }
-        
+
         try {
             DB::beginTransaction();
-            
+
             // Delete related order lines
             $order->salesOrderLines()->delete();
-            
+
             // Delete the order
             $order->delete();
-            
+
             DB::commit();
-            
+
             return response()->json(['message' => 'Sales order deleted successfully'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -318,16 +319,16 @@ class SalesOrderController extends Controller
     public function addLine(Request $request, $id)
     {
         $order = SalesOrder::find($id);
-        
+
         if (!$order) {
             return response()->json(['message' => 'Sales order not found'], 404);
         }
-        
+
         // Check if order can be updated (not delivered or invoiced)
         if (in_array($order->status, ['Delivered', 'Invoiced', 'Closed'])) {
             return response()->json(['message' => 'Cannot update a ' . $order->status . ' sales order'], 400);
         }
-        
+
         $validator = Validator::make($request->all(), [
             'item_id' => 'required|exists:Item,item_id',
             'unit_price' => 'required|numeric|min:0',
@@ -386,22 +387,22 @@ class SalesOrderController extends Controller
     public function updateLine(Request $request, $id, $lineId)
     {
         $order = SalesOrder::find($id);
-        
+
         if (!$order) {
             return response()->json(['message' => 'Sales order not found'], 404);
         }
-        
+
         // Check if order can be updated (not delivered or invoiced)
         if (in_array($order->status, ['Delivered', 'Invoiced', 'Closed'])) {
             return response()->json(['message' => 'Cannot update a ' . $order->status . ' sales order'], 400);
         }
-        
+
         $line = SOLine::where('so_id', $id)->where('line_id', $lineId)->first();
-        
+
         if (!$line) {
             return response()->json(['message' => 'Order line not found'], 404);
         }
-        
+
         $validator = Validator::make($request->all(), [
             'item_id' => 'required|exists:Item,item_id',
             'unit_price' => 'required|numeric|min:0',
@@ -460,22 +461,22 @@ class SalesOrderController extends Controller
     public function removeLine($id, $lineId)
     {
         $order = SalesOrder::find($id);
-        
+
         if (!$order) {
             return response()->json(['message' => 'Sales order not found'], 404);
         }
-        
+
         // Check if order can be updated (not delivered or invoiced)
         if (in_array($order->status, ['Delivered', 'Invoiced', 'Closed'])) {
             return response()->json(['message' => 'Cannot update a ' . $order->status . ' sales order'], 400);
         }
-        
+
         $line = SOLine::where('so_id', $id)->where('line_id', $lineId)->first();
-        
+
         if (!$line) {
             return response()->json(['message' => 'Order line not found'], 404);
         }
-        
+
         try {
             DB::beginTransaction();
 
@@ -486,9 +487,9 @@ class SalesOrderController extends Controller
 
             // Delete the line
             $line->delete();
-            
+
             DB::commit();
-            
+
             return response()->json(['message' => 'Order line removed successfully'], 200);
         } catch (\Exception $e) {
             DB::rollBack();

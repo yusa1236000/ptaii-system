@@ -11,9 +11,10 @@ class SalesOrder extends Model
 {
     use HasFactory;
 
+    protected $table = 'SalesOrder';
     protected $primaryKey = 'so_id';
     public $timestamps = false;
-    
+
     protected $fillable = [
         'so_number',
         'so_date',

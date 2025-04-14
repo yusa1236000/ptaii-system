@@ -3,8 +3,7 @@ import axios from 'axios';
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: process.env.VUE_APP_API_URL || 'http://127.0.0.1:8020/api',
-
+  baseURL: process.env.VUE_APP_API_URL || '127.0.0.1:8020/api',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -21,6 +20,7 @@ api.interceptors.request.use(
     return config;
   },
   error => {
+    console.error('Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -35,6 +35,7 @@ api.interceptors.response.use(
     
     // Handle 401 Unauthorized
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      console.log('Unauthorized access, redirecting to login');
       // If not a login request - logout user and redirect to login page
       if (originalRequest.url !== '/auth/login') {
         localStorage.removeItem('token');

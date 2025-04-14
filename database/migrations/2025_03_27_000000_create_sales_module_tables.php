@@ -44,7 +44,7 @@ class CreateSalesModuleTables extends Migration
             $table->string('status', 50);
             $table->text('payment_terms')->nullable();
             $table->text('delivery_terms')->nullable();
-            
+
             $table->foreign('customer_id')->references('customer_id')->on('Customer');
         });
 
@@ -60,7 +60,7 @@ class CreateSalesModuleTables extends Migration
             $table->float('subtotal');
             $table->float('tax')->default(0);
             $table->float('total');
-            
+
             $table->foreign('quotation_id')->references('quotation_id')->on('SalesQuotation')->onDelete('cascade');
             $table->foreign('item_id')->references('item_id')->on('items');
             $table->foreign('uom_id')->references('uom_id')->on('unit_of_measures');
@@ -83,7 +83,7 @@ class CreateSalesModuleTables extends Migration
             $table->string('status', 50);
             $table->float('total_amount');
             $table->float('tax_amount')->default(0);
-            
+
             $table->foreign('customer_id')->references('customer_id')->on('Customer');
             $table->foreign('quotation_id')->references('quotation_id')->on('SalesQuotation');
         });
@@ -100,7 +100,7 @@ class CreateSalesModuleTables extends Migration
             $table->float('subtotal');
             $table->float('tax')->default(0);
             $table->float('total');
-            
+
             $table->foreign('so_id')->references('so_id')->on('SalesOrder')->onDelete('cascade');
             $table->foreign('item_id')->references('item_id')->on('items');
             $table->foreign('uom_id')->references('uom_id')->on('unit_of_measures');
@@ -120,7 +120,7 @@ class CreateSalesModuleTables extends Migration
             $table->string('status', 50);
             $table->string('shipping_method', 50)->nullable();
             $table->string('tracking_number', 50)->nullable();
-            
+
             $table->foreign('so_id')->references('so_id')->on('SalesOrder');
             $table->foreign('customer_id')->references('customer_id')->on('Customer');
         });
@@ -135,11 +135,11 @@ class CreateSalesModuleTables extends Migration
             $table->unsignedBigInteger('warehouse_id');
             $table->unsignedBigInteger('location_id');
             $table->string('batch_number', 50)->nullable();
-            
+
             $table->foreign('delivery_id')->references('delivery_id')->on('Delivery')->onDelete('cascade');
             $table->foreign('so_line_id')->references('line_id')->on('SOLine');
             $table->foreign('item_id')->references('item_id')->on('items');
-            $table->foreign('warehouse_id')->references('warehouse_id')->on('Warehouses');
+            $table->foreign('warehouse_id')->references('warehouse_id')->on('warehouses');
             $table->foreign('location_id')->references('location_id')->on('warehouse_locations');
         });
 
@@ -158,7 +158,7 @@ class CreateSalesModuleTables extends Migration
             $table->float('tax_amount')->default(0);
             $table->date('due_date');
             $table->string('status', 50);
-            
+
             $table->foreign('customer_id')->references('customer_id')->on('Customer');
             $table->foreign('so_id')->references('so_id')->on('SalesOrder');
         });
@@ -175,7 +175,7 @@ class CreateSalesModuleTables extends Migration
             $table->float('subtotal');
             $table->float('tax')->default(0);
             $table->float('total');
-            
+
             $table->foreign('invoice_id')->references('invoice_id')->on('SalesInvoice')->onDelete('cascade');
             $table->foreign('so_line_id')->references('line_id')->on('SOLine');
             $table->foreign('item_id')->references('item_id')->on('items');
@@ -194,7 +194,7 @@ class CreateSalesModuleTables extends Migration
             $table->unsignedBigInteger('invoice_id');
             $table->text('return_reason');
             $table->string('status', 50);
-            
+
             $table->foreign('customer_id')->references('customer_id')->on('Customer');
             $table->foreign('invoice_id')->references('invoice_id')->on('SalesInvoice');
         });
@@ -207,7 +207,7 @@ class CreateSalesModuleTables extends Migration
             $table->unsignedBigInteger('item_id');
             $table->float('returned_quantity');
             $table->string('condition', 50);
-            
+
             $table->foreign('return_id')->references('return_id')->on('SalesReturn')->onDelete('cascade');
             $table->foreign('invoice_line_id')->references('line_id')->on('SalesInvoiceLine');
             $table->foreign('item_id')->references('item_id')->on('items');
@@ -225,9 +225,9 @@ class CreateSalesModuleTables extends Migration
             $table->string('interaction_type', 50);
             $table->text('notes');
             $table->unsignedBigInteger('user_id');
-            
+
             $table->foreign('customer_id')->references('customer_id')->on('Customer');
-            $table->foreign('user_id')->references('id')->on('Users');
+            $table->foreign('user_id')->references('id')->on('users');
         });
 
         /**
@@ -242,8 +242,8 @@ class CreateSalesModuleTables extends Migration
             $table->float('commission_amount');
             $table->date('calculation_date');
             $table->string('status', 50);
-            
-            $table->foreign('sales_person_id')->references('id')->on('Users');
+
+            $table->foreign('sales_person_id')->references('id')->on('users');
             $table->foreign('invoice_id')->references('invoice_id')->on('SalesInvoice');
         });
 
@@ -260,7 +260,7 @@ class CreateSalesModuleTables extends Migration
             $table->float('forecast_quantity');
             $table->float('actual_quantity')->nullable();
             $table->float('variance')->nullable();
-            
+
             $table->foreign('item_id')->references('item_id')->on('items');
             $table->foreign('customer_id')->references('customer_id')->on('Customer');
         });
@@ -268,13 +268,13 @@ class CreateSalesModuleTables extends Migration
         /**
          * Add timestamps to all tables if needed
          */
-         
+
         // Uncomment this section if you need timestamps on all tables
-        
+
         Schema::table('Customer', function (Blueprint $table) {
             $table->timestamps();
         });
-        
+
         Schema::table('SalesQuotation', function (Blueprint $table) {
             $table->timestamps();
         });
@@ -282,9 +282,9 @@ class CreateSalesModuleTables extends Migration
         Schema::table('SalesOrder', function (Blueprint $table) {
             $table->timestamps();
         });
-        
+
         // ... Add to other tables as needed
-        
+
     }
 
     /**

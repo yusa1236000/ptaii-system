@@ -93,8 +93,8 @@ class CreateAccountingTables extends Migration
             $table->decimal('paid_amount', 15, 2);
             $table->decimal('balance', 15, 2);
             $table->string('status', 50);
-            $table->foreign('vendor_id')->references('vendor_id')->on('Vendor');
-            $table->foreign('invoice_id')->references('invoice_id')->on('VendorInvoice');
+            $table->foreign('vendor_id')->references('vendor_id')->on('vendors');
+            $table->foreign('invoice_id')->references('invoice_id')->on('vendor_invoices');
         });
 
         // Payable Payments

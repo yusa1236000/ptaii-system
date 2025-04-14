@@ -1,6 +1,12 @@
 <!-- src/views/inventory/ItemCategories.vue -->
 <template>
   <div class="item-categories">
+    <!-- Debug Info for Development -->
+    <div v-if="debug" class="debug-panel">
+      <h3>Debug Info</h3>
+      <pre>{{ debugInfo }}</pre>
+    </div>
+
     <!-- Search and Filter Section -->
     <SearchFilter
       v-model:value="searchQuery"
@@ -178,7 +184,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import SearchFilter from '../../components/common/SearchFilter.vue';
 import CategoryService from '@/services/CategoryService.js';
 
@@ -188,6 +194,15 @@ export default {
     SearchFilter
   },
   setup() {
+    // Debug mode - set to true for development, false for production
+    const debug = ref(true);
+    const debugInfo = reactive({
+      apiBaseUrl: '',
+      lastApiCall: '',
+      lastResponse: null,
+      lastError: null
+    });
+
     // Data
     const categories = ref([]);
     const isLoading = ref(true);
@@ -200,7 +215,7 @@ export default {
     const categoryForm = ref({
       name: '',
       description: '',
-      parent_category_id: ''
+      parent_category_id: null
     });
     const categoryToDelete = ref({});
     
@@ -249,15 +264,28 @@ export default {
     // Methods
     const fetchCategories = async () => {
       isLoading.value = true;
+      debugInfo.lastApiCall = 'fetchCategories()';
       
       try {
         // Use the actual API service to fetch categories
         const result = await CategoryService.getCategories();
-        categories.value = result.data || [];
-        isLoading.value = false;
+        console.log('API Response:', result);
+        debugInfo.lastResponse = result;
+
+        // Make sure result.data is an array
+        if (Array.isArray(result.data)) {
+          categories.value = result.data;
+        } else if (result.data && Array.isArray(result.data.data)) {
+          // Handle nested data structure common in Laravel APIs
+          categories.value = result.data.data;
+        } else {
+          console.error('Unexpected API response format:', result);
+          debugInfo.lastError = 'Unexpected API response format';
+          categories.value = [];
+        }
       } catch (error) {
         console.error('Error fetching categories:', error);
-        isLoading.value = false;
+        debugInfo.lastError = error;
         
         // Fallback to dummy data if API call fails
         categories.value = [
@@ -267,13 +295,8 @@ export default {
             description: 'Electronic devices and components',
             parent_category_id: null,
             parentCategory: null,
-            items: [
-              { item_id: 1, name: 'Laptop Model X' },
-              { item_id: 2, name: 'Smartphone Y Pro' }
-            ],
-            childCategories: [
-              { category_id: 2, name: 'Accessories' }
-            ]
+            items: [],
+            childCategories: []
           },
           {
             category_id: 2,
@@ -281,37 +304,12 @@ export default {
             description: 'Device accessories and peripherals',
             parent_category_id: 1,
             parentCategory: { category_id: 1, name: 'Electronics' },
-            items: [
-              { item_id: 3, name: 'USB Cable Type-C' },
-              { item_id: 5, name: 'Wireless Mouse' },
-              { item_id: 6, name: 'Mechanical Keyboard' },
-              { item_id: 7, name: 'HDMI Cable 2m' }
-            ],
-            childCategories: []
-          },
-          {
-            category_id: 3,
-            name: 'Furniture',
-            description: 'Office and home furniture',
-            parent_category_id: null,
-            parentCategory: null,
-            items: [
-              { item_id: 4, name: 'Office Chair' }
-            ],
-            childCategories: []
-          },
-          {
-            category_id: 4,
-            name: 'Office Supplies',
-            description: 'Consumable office supplies',
-            parent_category_id: null,
-            parentCategory: null,
-            items: [
-              { item_id: 8, name: 'A4 Paper Ream' }
-            ],
+            items: [],
             childCategories: []
           }
         ];
+      } finally {
+        isLoading.value = false;
       }
     };
     
@@ -328,7 +326,7 @@ export default {
       categoryForm.value = {
         name: '',
         description: '',
-        parent_category_id: ''
+        parent_category_id: null
       };
       showCategoryModal.value = true;
     };
@@ -339,7 +337,7 @@ export default {
         category_id: category.category_id,
         name: category.name,
         description: category.description || '',
-        parent_category_id: category.parent_category_id || ''
+        parent_category_id: category.parent_category_id
       };
       showCategoryModal.value = true;
     };
@@ -349,77 +347,49 @@ export default {
     };
     
     const saveCategory = async () => {
+      debugInfo.lastApiCall = isEditMode.value ? 'updateCategory()' : 'createCategory()';
+      console.log('Saving category data:', categoryForm.value);
+      
       try {
         if (isEditMode.value) {
+          // Prepare data for update - make sure parent_category_id is null if empty
+          const updateData = {
+            ...categoryForm.value,
+            parent_category_id: categoryForm.value.parent_category_id || null
+          };
+          
+          console.log('Update data being sent:', updateData);
+          
           // Use actual API service to update category
-          await CategoryService.updateCategory(
+          const result = await CategoryService.updateCategory(
             categoryForm.value.category_id, 
-            categoryForm.value
+            updateData
           );
           
+          console.log('Update response:', result);
+          debugInfo.lastResponse = result;
+          
           // Update local state
-          const index = categories.value.findIndex(c => c.category_id === categoryForm.value.category_id);
-          if (index !== -1) {
-            const updatedCategory = {
-              ...categories.value[index],
-              name: categoryForm.value.name,
-              description: categoryForm.value.description,
-              parent_category_id: categoryForm.value.parent_category_id || null
-            };
-            
-            // Update parent category reference
-            if (categoryForm.value.parent_category_id) {
-              const parentCategory = categories.value.find(c => c.category_id === parseInt(categoryForm.value.parent_category_id));
-              updatedCategory.parentCategory = parentCategory ? { 
-                category_id: parentCategory.category_id, 
-                name: parentCategory.name 
-              } : null;
-            } else {
-              updatedCategory.parentCategory = null;
-            }
-            
-            categories.value[index] = updatedCategory;
-          }
+          await fetchCategories(); // Refresh the list from server
           
           alert('Category updated successfully!');
         } else {
-          // Use actual API service to create category
-          const result = await CategoryService.createCategory(categoryForm.value);
-          const newCategory = result.data;
+          // Prepare data for create - make sure parent_category_id is null if empty
+          const createData = {
+            ...categoryForm.value,
+            parent_category_id: categoryForm.value.parent_category_id || null
+          };
           
-          // Add the new category to local state
-          if (newCategory) {
-            // Set parent category reference
-            if (newCategory.parent_category_id) {
-              const parentCategory = categories.value.find(c => c.category_id === newCategory.parent_category_id);
-              newCategory.parentCategory = parentCategory ? { 
-                category_id: parentCategory.category_id, 
-                name: parentCategory.name 
-              } : null;
-              
-              // Add this category to parent's child categories
-              if (parentCategory) {
-                const parentIndex = categories.value.findIndex(c => c.category_id === newCategory.parent_category_id);
-                if (parentIndex !== -1) {
-                  if (!categories.value[parentIndex].childCategories) {
-                    categories.value[parentIndex].childCategories = [];
-                  }
-                  categories.value[parentIndex].childCategories.push({
-                    category_id: newCategory.category_id,
-                    name: newCategory.name
-                  });
-                }
-              }
-            } else {
-              newCategory.parentCategory = null;
-            }
-            
-            // Initialize empty arrays
-            newCategory.items = [];
-            newCategory.childCategories = [];
-            
-            categories.value.push(newCategory);
-          }
+          console.log('Create data being sent:', createData);
+          
+          // Use actual API service to create category
+          const result = await CategoryService.createCategory(createData);
+          
+          console.log('Create response:', result);
+          debugInfo.lastResponse = result;
+          
+          // Refresh categories list
+          await fetchCategories();
           
           alert('Category added successfully!');
         }
@@ -427,8 +397,22 @@ export default {
         closeCategoryModal();
       } catch (error) {
         console.error('Error saving category:', error);
-        if (error.response && error.response.data && error.response.data.message) {
-          alert(`Error: ${error.response.data.message}`);
+        debugInfo.lastError = error;
+        
+        if (error.response && error.response.data) {
+          console.error('API error response:', error.response.data);
+          
+          if (error.response.data.message) {
+            alert(`Error: ${error.response.data.message}`);
+          } else if (error.response.data.errors) {
+            // Format validation errors
+            const errors = Object.values(error.response.data.errors)
+              .flat()
+              .join('\n');
+            alert(`Validation errors:\n${errors}`);
+          } else {
+            alert('An error occurred while saving the category. Please try again.');
+          }
         } else {
           alert('An error occurred while saving the category. Please try again.');
         }
@@ -445,6 +429,8 @@ export default {
     };
     
     const deleteCategory = async () => {
+      debugInfo.lastApiCall = 'deleteCategory()';
+      
       try {
         if (categoryToDelete.value.items?.length > 0 || categoryToDelete.value.childCategories?.length > 0) {
           alert('Cannot delete a category that has items or child categories.');
@@ -452,25 +438,20 @@ export default {
         }
         
         // Use actual API service to delete category
-        await CategoryService.deleteCategory(categoryToDelete.value.category_id);
+        const result = await CategoryService.deleteCategory(categoryToDelete.value.category_id);
         
-        // Update local state
-        categories.value = categories.value.filter(c => c.category_id !== categoryToDelete.value.category_id);
+        console.log('Delete response:', result);
+        debugInfo.lastResponse = result;
         
-        // If this category had a parent, update the parent's childCategories array
-        if (categoryToDelete.value.parent_category_id) {
-          const parentIndex = categories.value.findIndex(c => c.category_id === categoryToDelete.value.parent_category_id);
-          if (parentIndex !== -1) {
-            categories.value[parentIndex].childCategories = categories.value[parentIndex].childCategories.filter(
-              c => c.category_id !== categoryToDelete.value.category_id
-            );
-          }
-        }
+        // Refresh categories list
+        await fetchCategories();
         
         closeDeleteModal();
         alert('Category deleted successfully!');
       } catch (error) {
         console.error('Error deleting category:', error);
+        debugInfo.lastError = error;
+        
         if (error.response && error.response.data && error.response.data.message) {
           alert(`Error: ${error.response.data.message}`);
         } else {
@@ -481,6 +462,11 @@ export default {
     
     // Lifecycle hooks
     onMounted(() => {
+      // Get API base URL for debugging
+      import.meta.env 
+        ? debugInfo.apiBaseUrl = import.meta.env.VITE_APP_API_URL || 'Not set (using default)'
+        : debugInfo.apiBaseUrl = process.env.VUE_APP_API_URL || 'Not set (using default)';
+      
       fetchCategories();
     });
     
@@ -495,6 +481,8 @@ export default {
       isEditMode,
       categoryForm,
       categoryToDelete,
+      debug,
+      debugInfo,
       applyFilters,
       clearSearch,
       openAddCategoryModal,
@@ -514,6 +502,22 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.debug-panel {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-family: monospace;
+  font-size: 0.875rem;
+  overflow: auto;
+  max-height: 300px;
+}
+
+.debug-panel pre {
+  white-space: pre-wrap;
 }
 
 .categories-container {

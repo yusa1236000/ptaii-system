@@ -79,30 +79,30 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
-    
+
     // Item Routes
     Route::apiResource('items', ItemController::class);
     Route::get('/items/stock-status', [ItemController::class, 'stockStatus']);
-    
+
     // Category Routes
     Route::apiResource('item-categories', CategoryController::class);
-    
+
     // UOM Routes
     //Route::apiResource('unit-of-measures', UnitOfMeasureController::class);
-    
+
     // Warehouse Routes
     Route::apiResource('warehouses', WarehouseController::class);
     Route::apiResource('warehouses.zones', WarehouseZoneController::class);
     Route::apiResource('warehouses.zones.locations', WarehouseLocationController::class);
-    
+
     // Transaction Routes
     Route::apiResource('stock-transactions', StockTransactionController::class);
-    
+
     // Adjustment Routes
     Route::apiResource('stock-adjustments', StockAdjustmentController::class);
     Route::patch('/stock-adjustments/{stock_adjustment}/approve', [StockAdjustmentController::class, 'approve']);
     Route::patch('/stock-adjustments/{stock_adjustment}/cancel', [StockAdjustmentController::class, 'cancel']);
-    
+
     // Reports
     Route::get('/reports/stock', [ReportController::class, 'stockReport']);
     Route::get('/reports/movement', [ReportController::class, 'movementReport']);
@@ -113,42 +113,42 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('vendors', VendorController::class);
     Route::get('vendors/{vendor}/evaluations', [VendorController::class, 'evaluations']);
     Route::get('vendors/{vendor}/purchase-orders', [VendorController::class, 'purchaseOrders']);
-    
+
     // Purchase Requisitions
     Route::apiResource('purchase-requisitions', PurchaseRequisitionController::class);
     Route::patch('purchase-requisitions/{purchaseRequisition}/status', [PurchaseRequisitionController::class, 'updateStatus']);
-    
+
     // Request For Quotations
     Route::apiResource('request-for-quotations', RequestForQuotationController::class);
     Route::patch('request-for-quotations/{requestForQuotation}/status', [RequestForQuotationController::class, 'updateStatus']);
-    
+
     // Vendor Quotations
     Route::apiResource('vendor-quotations', VendorQuotationController::class);
     Route::patch('vendor-quotations/{vendorQuotation}/status', [VendorQuotationController::class, 'updateStatus']);
-    
+
     // Purchase Orders
     Route::apiResource('purchase-orders', PurchaseOrderController::class);
     Route::patch('purchase-orders/{purchaseOrder}/status', [PurchaseOrderController::class, 'updateStatus']);
     Route::post('purchase-orders/create-from-quotation', [PurchaseOrderController::class, 'createFromQuotation']);
-    
+
     // Goods Receipts
     Route::apiResource('goods-receipts', GoodsReceiptController::class);
     Route::post('goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm']);
-    
+
     // Vendor Invoices
     Route::apiResource('vendor-invoices', VendorInvoiceController::class);
     Route::post('vendor-invoices/{vendorInvoice}/approve', [VendorInvoiceController::class, 'approve']);
     Route::post('vendor-invoices/{vendorInvoice}/pay', [VendorInvoiceController::class, 'pay']);
-    
+
     // Vendor Contracts
     Route::apiResource('vendor-contracts', VendorContractController::class);
     Route::post('vendor-contracts/{vendorContract}/activate', [VendorContractController::class, 'activate']);
     Route::post('vendor-contracts/{vendorContract}/terminate', [VendorContractController::class, 'terminate']);
-    
+
     // Vendor Evaluations
     Route::apiResource('vendor-evaluations', VendorEvaluationController::class);
     Route::get('vendor-performance', [VendorEvaluationController::class, 'vendorPerformance']);
-    
+
     // Customer routes
     Route::prefix('customers')->group(function () {
         Route::get('/', [CustomerController::class, 'index']);
@@ -343,52 +343,52 @@ Route::middleware('auth:sanctum')->group(function () {
         // Chart of Accounts
         Route::get('chart-of-accounts/hierarchy', [ChartOfAccountController::class, 'hierarchy']);
         Route::apiResource('chart-of-accounts', ChartOfAccountController::class);
-        
+
         // Accounting Periods
         Route::get('accounting-periods/current', [AccountingPeriodController::class, 'current']);
         Route::apiResource('accounting-periods', AccountingPeriodController::class);
-        
+
         // Journal Entries
         Route::post('journal-entries/{id}/post', [JournalEntryController::class, 'post']);
         Route::apiResource('journal-entries', JournalEntryController::class);
-        
+
         // Customer Receivables
         Route::get('customer-receivables/aging', [CustomerReceivableController::class, 'aging']);
         Route::apiResource('customer-receivables', CustomerReceivableController::class);
-        
+
         // Receivable Payments
         Route::apiResource('receivable-payments', ReceivablePaymentController::class);
-        
+
         // Vendor Payables
         Route::get('vendor-payables/aging', [VendorPayableController::class, 'aging']);
         Route::apiResource('vendor-payables', VendorPayableController::class);
-        
+
         // Payable Payments
         Route::apiResource('payable-payments', PayablePaymentController::class);
-        
+
         // Tax Transactions
         Route::get('tax-transactions/summary', [TaxTransactionController::class, 'summary']);
         Route::apiResource('tax-transactions', TaxTransactionController::class);
-        
+
         // Fixed Assets
         Route::apiResource('fixed-assets', FixedAssetController::class);
-        
+
         // Asset Depreciations
         Route::post('fixed-assets/{id}/calculate-depreciation', [AssetDepreciationController::class, 'calculateDepreciation']);
         Route::apiResource('asset-depreciations', AssetDepreciationController::class);
-        
+
         // Budgets
         Route::get('budgets/variance-report', [BudgetController::class, 'varianceReport']);
         Route::apiResource('budgets', BudgetController::class);
-        
+
         // Bank Accounts
         Route::apiResource('bank-accounts', BankAccountController::class);
-        
+
         // Bank Reconciliations
         Route::post('bank-reconciliations/{id}/finalize', [BankReconciliationController::class, 'finalize']);
         Route::apiResource('bank-reconciliations', BankReconciliationController::class);
         Route::apiResource('bank-reconciliations.lines', BankReconciliationController::class);
-        
+
         // Financial Reports
         Route::prefix('reports')->group(function () {
             Route::get('trial-balance', [FinancialReportController::class, 'trialBalance']);

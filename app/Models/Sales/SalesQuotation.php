@@ -15,7 +15,7 @@ class SalesQuotation extends Model
     protected $primaryKey = 'quotation_id';
     public $timestamps = false;
 
-    
+
     protected $fillable = [
         'quotation_number',
         'quotation_date',

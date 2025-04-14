@@ -1,0 +1,129 @@
+// src/services/DeliveryService.js
+import api from "./api";
+
+/**
+ * Service for delivery operations
+ */
+const DeliveryService = {
+    /**
+     * Get all deliveries
+     * @param {object} params Query parameters (pagination, filters, etc.)
+     * @returns {Promise} Promise with deliveries response
+     */
+    getDeliveries: async (params = {}) => {
+        const response = await api.get("/deliveries", { params });
+        return response.data;
+        // try {
+        // } catch (error) {
+        //     throw error;
+        // }
+    },
+
+    /**
+     * Get delivery by ID
+     * @param {number} id Delivery ID
+     * @returns {Promise} Promise with delivery response
+     */
+    getDeliveryById: async (id) => {
+        const response = await api.get(`/deliveries/${id}`);
+        return response.data;
+        // try {
+        // } catch (error) {
+        //     throw error;
+        // }
+    },
+
+    /**
+     * Create a new delivery
+     * @param {object} deliveryData Delivery data
+     * @returns {Promise} Promise with create delivery response
+     */
+    createDelivery: async (deliveryData) => {
+        const response = await api.post("/deliveries", deliveryData);
+        return response.data;
+        // try {
+        // } catch (error) {
+        //     throw error;
+        // }
+    },
+
+    /**
+     * Update delivery
+     * @param {number} id Delivery ID
+     * @param {object} deliveryData Delivery data to update
+     * @returns {Promise} Promise with update delivery response
+     */
+    updateDelivery: async (id, deliveryData) => {
+        const response = await api.put(`/deliveries/${id}`, deliveryData);
+        return response.data;
+        // try {
+        // } catch (error) {
+        //     throw error;
+        // }
+    },
+
+    /**
+     * Delete delivery
+     * @param {number} id Delivery ID
+     * @returns {Promise} Promise with delete delivery response
+     */
+    deleteDelivery: async (id) => {
+        const response = await api.delete(`/deliveries/${id}`);
+        return response.data;
+        // try {
+        // } catch (error) {
+        //     throw error;
+        // }
+    },
+
+    /**
+     * Get deliveries by order ID
+     * @param {number} orderId Order ID
+     * @returns {Promise} Promise with deliveries for order
+     */
+    getDeliveriesByOrder: async (orderId) => {
+        const response = await api.get(`/orders/${orderId}/deliveries`);
+        return response.data;
+        // try {
+        // } catch (error) {
+        //     throw error;
+        // }
+    },
+
+    /**
+     * Create delivery for order
+     * @param {number} orderId Order ID
+     * @param {object} deliveryData Delivery data
+     * @returns {Promise} Promise with create delivery response
+     */
+    createDeliveryForOrder: async (orderId, deliveryData) => {
+        const response = await api.post(
+            `/orders/${orderId}/deliveries`,
+            deliveryData
+        );
+        return response.data;
+        // try {
+        // } catch (error) {
+        //     throw error;
+        // }
+    },
+
+    /**
+     * Update delivery status
+     * @param {number} id Delivery ID
+     * @param {string} status New status
+     * @returns {Promise} Promise with update status response
+     */
+    updateDeliveryStatus: async (id, status) => {
+        const response = await api.put(`/deliveries/${id}/status`, {
+            status,
+        });
+        return response.data;
+        // try {
+        // } catch (error) {
+        //     throw error;
+        // }
+    },
+};
+
+export default DeliveryService;

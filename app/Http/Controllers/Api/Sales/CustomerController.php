@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Sales;
 
+use App\Http\Controllers\Controller;
 use App\Models\Sales\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -55,11 +56,11 @@ class CustomerController extends Controller
     public function show($id)
     {
         $customer = Customer::find($id);
-        
+
         if (!$customer) {
             return response()->json(['message' => 'Customer not found'], 404);
         }
-        
+
         return response()->json(['data' => $customer], 200);
     }
 
@@ -73,11 +74,11 @@ class CustomerController extends Controller
     public function update(Request $request, $id)
     {
         $customer = Customer::find($id);
-        
+
         if (!$customer) {
             return response()->json(['message' => 'Customer not found'], 404);
         }
-        
+
         $validator = Validator::make($request->all(), [
             'customer_code' => 'required|unique:Customer,customer_code,' . $id . ',customer_id',
             'name' => 'required|string|max:100',
@@ -106,11 +107,11 @@ class CustomerController extends Controller
     public function destroy($id)
     {
         $customer = Customer::find($id);
-        
+
         if (!$customer) {
             return response()->json(['message' => 'Customer not found'], 404);
         }
-        
+
         $customer->delete();
         return response()->json(['message' => 'Customer deleted successfully'], 200);
     }
@@ -124,11 +125,11 @@ class CustomerController extends Controller
     public function quotations($id)
     {
         $customer = Customer::find($id);
-        
+
         if (!$customer) {
             return response()->json(['message' => 'Customer not found'], 404);
         }
-        
+
         $quotations = $customer->salesQuotations;
         return response()->json(['data' => $quotations], 200);
     }
@@ -142,11 +143,11 @@ class CustomerController extends Controller
     public function orders($id)
     {
         $customer = Customer::find($id);
-        
+
         if (!$customer) {
             return response()->json(['message' => 'Customer not found'], 404);
         }
-        
+
         $orders = $customer->salesOrders;
         return response()->json(['data' => $orders], 200);
     }
@@ -160,11 +161,11 @@ class CustomerController extends Controller
     public function invoices($id)
     {
         $customer = Customer::find($id);
-        
+
         if (!$customer) {
             return response()->json(['message' => 'Customer not found'], 404);
         }
-        
+
         $invoices = $customer->salesInvoices;
         return response()->json(['data' => $invoices], 200);
     }

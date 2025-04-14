@@ -39,10 +39,10 @@ class SalesQuotationController extends Controller
             'payment_terms' => 'nullable|string',
             'delivery_terms' => 'nullable|string',
             'lines' => 'required|array',
-            'lines.*.item_id' => 'required|exists:Item,item_id',
+            'lines.*.item_id' => 'required|exists:items,item_id',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.quantity' => 'required|numeric|min:0',
-            'lines.*.uom_id' => 'required|exists:UnitOfMeasure,uom_id',
+            'lines.*.uom_id' => 'required|exists:unit_of_measures,uom_id',
             'lines.*.discount' => 'nullable|numeric|min:0',
         ]);
 
@@ -85,9 +85,9 @@ class SalesQuotationController extends Controller
             }
 
             DB::commit();
-            
+
             return response()->json([
-                'data' => $quotation->load('salesQuotationLines'), 
+                'data' => $quotation->load('salesQuotationLines'),
                 'message' => 'Sales quotation created successfully'
             ], 201);
         } catch (\Exception $e) {
@@ -105,11 +105,11 @@ class SalesQuotationController extends Controller
     public function show($id)
     {
         $quotation = SalesQuotation::with(['customer', 'salesQuotationLines.item', 'salesQuotationLines.unitOfMeasure'])->find($id);
-        
+
         if (!$quotation) {
             return response()->json(['message' => 'Sales quotation not found'], 404);
         }
-        
+
         return response()->json(['data' => $quotation], 200);
     }
 
@@ -123,11 +123,11 @@ class SalesQuotationController extends Controller
     public function update(Request $request, $id)
     {
         $quotation = SalesQuotation::find($id);
-        
+
         if (!$quotation) {
             return response()->json(['message' => 'Sales quotation not found'], 404);
         }
-        
+
         $validator = Validator::make($request->all(), [
             'quotation_number' => 'required|unique:SalesQuotation,quotation_number,' . $id . ',quotation_id',
             'quotation_date' => 'required|date',
@@ -155,27 +155,27 @@ class SalesQuotationController extends Controller
     public function destroy($id)
     {
         $quotation = SalesQuotation::find($id);
-        
+
         if (!$quotation) {
             return response()->json(['message' => 'Sales quotation not found'], 404);
         }
-        
+
         // Check if the quotation has related sales orders
         if ($quotation->salesOrders->count() > 0) {
             return response()->json(['message' => 'Cannot delete quotation with related sales orders'], 400);
         }
-        
+
         try {
             DB::beginTransaction();
-            
+
             // Delete related quotation lines
             $quotation->salesQuotationLines()->delete();
-            
+
             // Delete the quotation
             $quotation->delete();
-            
+
             DB::commit();
-            
+
             return response()->json(['message' => 'Sales quotation deleted successfully'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -193,16 +193,16 @@ class SalesQuotationController extends Controller
     public function addLine(Request $request, $id)
     {
         $quotation = SalesQuotation::find($id);
-        
+
         if (!$quotation) {
             return response()->json(['message' => 'Sales quotation not found'], 404);
         }
-        
+
         $validator = Validator::make($request->all(), [
-            'item_id' => 'required|exists:Item,item_id',
+            'item_id' => 'required|exists:items,item_id',
             'unit_price' => 'required|numeric|min:0',
             'quantity' => 'required|numeric|min:0',
-            'uom_id' => 'required|exists:UnitOfMeasure,uom_id',
+            'uom_id' => 'required|exists:unit_of_measures,uom_id',
             'discount' => 'nullable|numeric|min:0',
             'tax' => 'nullable|numeric|min:0'
         ]);
@@ -242,22 +242,22 @@ class SalesQuotationController extends Controller
     public function updateLine(Request $request, $id, $lineId)
     {
         $quotation = SalesQuotation::find($id);
-        
+
         if (!$quotation) {
             return response()->json(['message' => 'Sales quotation not found'], 404);
         }
-        
+
         $line = SalesQuotationLine::where('quotation_id', $id)->where('line_id', $lineId)->first();
-        
+
         if (!$line) {
             return response()->json(['message' => 'Quotation line not found'], 404);
         }
-        
+
         $validator = Validator::make($request->all(), [
-            'item_id' => 'required|exists:Item,item_id',
+            'item_id' => 'required|exists:items,item_id',
             'unit_price' => 'required|numeric|min:0',
             'quantity' => 'required|numeric|min:0',
-            'uom_id' => 'required|exists:UnitOfMeasure,uom_id',
+            'uom_id' => 'required|exists:unit_of_measures,uom_id',
             'discount' => 'nullable|numeric|min:0',
             'tax' => 'nullable|numeric|min:0'
         ]);
@@ -295,19 +295,19 @@ class SalesQuotationController extends Controller
     public function removeLine($id, $lineId)
     {
         $quotation = SalesQuotation::find($id);
-        
+
         if (!$quotation) {
             return response()->json(['message' => 'Sales quotation not found'], 404);
         }
-        
+
         $line = SalesQuotationLine::where('quotation_id', $id)->where('line_id', $lineId)->first();
-        
+
         if (!$line) {
             return response()->json(['message' => 'Quotation line not found'], 404);
         }
-        
+
         $line->delete();
-        
+
         return response()->json(['message' => 'Quotation line removed successfully'], 200);
     }
 }
