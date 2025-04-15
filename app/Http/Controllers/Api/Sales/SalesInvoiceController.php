@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Api\Sales;
 
-use App\Models\SalesInvoice;
-use App\Models\SalesInvoiceLine;
-use App\Models\SalesOrder;
-use App\Models\SOLine;
-use App\Models\CustomerReceivable;
+use App\Http\Controllers\Controller;
+use App\Models\Sales\SalesInvoice;
+use App\Models\Sales\SalesInvoiceLine;
+use App\Models\Sales\SalesOrder;
+use App\Models\Sales\SOLine;
+use App\Models\Accounting\CustomerReceivable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;

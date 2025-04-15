@@ -407,7 +407,7 @@ export default {
             if (!form.value.customer_id) return;
 
             try {
-                const response = await axios.get("/sales/orders", {
+                const response = await axios.get("/orders", {
                     params: {
                         customer_id: form.value.customer_id,
                         status: "Confirmed,Partially Delivered,Delivered", // Only get orders that can be invoiced
@@ -471,23 +471,23 @@ export default {
             }
 
             try {
-                const response = await axios.get(
-                    `/sales/orders/${form.value.so_id}`
-                );
+                const response = await axios.get(`/orders/${form.value.so_id}`);
                 const order = response.data.data;
 
                 // Populate invoice lines from order lines
-                form.value.lines = order.salesOrderLines.map((line) => ({
-                    item_id: line.item_id,
-                    unit_price: line.unit_price,
-                    quantity: line.quantity,
-                    uom_id: line.uom_id,
-                    discount: line.discount || 0,
-                    tax: line.tax || 0,
-                    subtotal: line.subtotal,
-                    total: line.total,
-                    so_line_id: line.line_id, // Reference to original order line
-                }));
+                form.value.lines = (order.salesOrderLines || []).map(
+                    (line) => ({
+                        item_id: line.item_id,
+                        unit_price: line.unit_price,
+                        quantity: line.quantity,
+                        uom_id: line.uom_id,
+                        discount: line.discount || 0,
+                        tax: line.tax || 0,
+                        subtotal: line.subtotal,
+                        total: line.total,
+                        so_line_id: line.line_id, // Reference to original order line
+                    })
+                );
 
                 // Update payment terms if not already set
                 if (!form.value.payment_terms && order.payment_terms) {
