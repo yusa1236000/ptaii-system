@@ -11,9 +11,10 @@ class Delivery extends Model
 {
     use HasFactory;
 
+    protected $table = 'Delivery';
     protected $primaryKey = 'delivery_id';
     public $timestamps = false;
-    
+
     protected $fillable = [
         'delivery_number',
         'delivery_date',

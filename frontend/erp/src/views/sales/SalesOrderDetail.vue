@@ -471,12 +471,12 @@ export default {
 
             try {
                 // Load unit of measures for reference
-                const uomResponse = await axios.get("/api/unit-of-measures");
+                const uomResponse = await axios.get("/unit-of-measures");
                 unitOfMeasures.value = uomResponse.data.data;
 
                 // Load order details
                 const orderResponse = await axios.get(
-                    `/api/sales/orders/${route.params.id}`
+                    `/orders/${route.params.id}`
                 );
                 order.value = orderResponse.data.data;
             } catch (error) {
@@ -622,7 +622,7 @@ export default {
 
         const confirmOrderAction = async () => {
             try {
-                await axios.put(`/api/sales/orders/${order.value.so_id}`, {
+                await axios.put(`/sales/orders/${order.value.so_id}`, {
                     ...order.value,
                     status: "Confirmed",
                 });

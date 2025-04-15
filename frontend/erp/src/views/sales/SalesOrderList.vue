@@ -168,8 +168,19 @@ import { ref, onMounted, reactive } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 
+import DataTable from "@/components/common/DataTable.vue";
+import SearchFilter from "@/components/common/SearchFilter.vue";
+import PaginationComponent from "@/components/common/Pagination.vue";
+import ConfirmationModal from "@/components/common/ConfirmationModal.vue";
+
 export default {
     name: "SalesOrderList",
+    components: {
+        DataTable,
+        SearchFilter,
+        PaginationComponent,
+        ConfirmationModal,
+    },
     setup() {
         const router = useRouter();
         const orders = ref([]);
