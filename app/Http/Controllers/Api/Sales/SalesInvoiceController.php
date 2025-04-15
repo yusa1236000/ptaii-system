@@ -52,7 +52,7 @@ class SalesInvoiceController extends Controller
 
             // Get the sales order
             $salesOrder = SalesOrder::find($request->so_id);
-            
+
             $totalAmount = 0;
             $taxAmount = 0;
 
@@ -71,7 +71,7 @@ class SalesInvoiceController extends Controller
             // Create invoice lines
             foreach ($request->lines as $line) {
                 $soLine = SOLine::find($line['so_line_id']);
-                
+
                 // Validate if the invoiced quantity is valid
                 if ($line['quantity'] > $soLine->quantity) {
                     DB::rollBack();
@@ -79,13 +79,13 @@ class SalesInvoiceController extends Controller
                         'message' => 'Invoiced quantity exceeds ordered quantity for item ' . $soLine->item_id
                     ], 400);
                 }
-                
+
                 // Calculate amounts
                 $subtotal = $soLine->unit_price * $line['quantity'];
                 $discount = ($soLine->discount / $soLine->quantity) * $line['quantity'];
                 $tax = ($soLine->tax / $soLine->quantity) * $line['quantity'];
                 $total = $subtotal - $discount + $tax;
-                
+
                 SalesInvoiceLine::create([
                     'invoice_id' => $invoice->invoice_id,
                     'so_line_id' => $line['so_line_id'],
@@ -97,7 +97,7 @@ class SalesInvoiceController extends Controller
                     'tax' => $tax,
                     'total' => $total
                 ]);
-                
+
                 $totalAmount += $total;
                 $taxAmount += $tax;
             }
@@ -123,9 +123,9 @@ class SalesInvoiceController extends Controller
             $salesOrder->update(['status' => 'Invoiced']);
 
             DB::commit();
-            
+
             return response()->json([
-                'data' => $invoice->load('salesInvoiceLines'), 
+                'data' => $invoice->load('salesInvoiceLines'),
                 'message' => 'Sales invoice created successfully'
             ], 201);
         } catch (\Exception $e) {
@@ -159,7 +159,7 @@ class SalesInvoiceController extends Controller
 
             // Get the sales order with its lines
             $salesOrder = SalesOrder::with('salesOrderLines')->find($request->so_id);
-            
+
             // Check if order is in a valid state for invoicing
             if (!in_array($salesOrder->status, ['Confirmed', 'Delivered'])) {
                 return response()->json(['message' => 'Sales order must be confirmed or delivered to create an invoice'], 400);
@@ -207,9 +207,9 @@ class SalesInvoiceController extends Controller
             $salesOrder->update(['status' => 'Invoiced']);
 
             DB::commit();
-            
+
             return response()->json([
-                'data' => $invoice->load('salesInvoiceLines'), 
+                'data' => $invoice->load('salesInvoiceLines'),
                 'message' => 'Sales invoice created from order successfully'
             ], 201);
         } catch (\Exception $e) {
@@ -227,18 +227,18 @@ class SalesInvoiceController extends Controller
     public function show($id)
     {
         $invoice = SalesInvoice::with([
-            'customer', 
-            'salesOrder', 
-            'salesInvoiceLines.item', 
+            'customer',
+            'salesOrder',
+            'salesInvoiceLines.item',
             'salesInvoiceLines.salesOrderLine',
             'customerReceivables',
             'salesReturns'
         ])->find($id);
-        
+
         if (!$invoice) {
             return response()->json(['message' => 'Sales invoice not found'], 404);
         }
-        
+
         return response()->json(['data' => $invoice], 200);
     }
 
@@ -252,7 +252,7 @@ class SalesInvoiceController extends Controller
     public function update(Request $request, $id)
     {
         $invoice = SalesInvoice::find($id);
-        
+
         if (!$invoice) {
             return response()->json(['message' => 'Sales invoice not found'], 404);
         }
@@ -261,7 +261,7 @@ class SalesInvoiceController extends Controller
         if (in_array($invoice->status, ['Paid', 'Closed'])) {
             return response()->json(['message' => 'Cannot update a ' . $invoice->status . ' invoice'], 400);
         }
-        
+
         $validator = Validator::make($request->all(), [
             'invoice_number' => 'required|unique:SalesInvoice,invoice_number,' . $id . ',invoice_id',
             'invoice_date' => 'required|date',
@@ -291,7 +291,7 @@ class SalesInvoiceController extends Controller
             }
 
             DB::commit();
-            
+
             return response()->json(['data' => $invoice, 'message' => 'Sales invoice updated successfully'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -308,42 +308,42 @@ class SalesInvoiceController extends Controller
     public function destroy($id)
     {
         $invoice = SalesInvoice::find($id);
-        
+
         if (!$invoice) {
             return response()->json(['message' => 'Sales invoice not found'], 404);
         }
-        
+
         // Check if invoice can be deleted (not paid and no returns)
         if (in_array($invoice->status, ['Paid', 'Closed'])) {
             return response()->json(['message' => 'Cannot delete a ' . $invoice->status . ' invoice'], 400);
         }
-        
+
         if ($invoice->salesReturns->count() > 0) {
             return response()->json(['message' => 'Cannot delete invoice with related returns'], 400);
         }
-        
+
         try {
             DB::beginTransaction();
-            
+
             // Delete related receivables
             CustomerReceivable::where('invoice_id', $invoice->invoice_id)->delete();
-            
+
             // Delete related invoice lines
             $invoice->salesInvoiceLines()->delete();
-            
+
             // Delete the invoice
             $invoice->delete();
-            
+
             // Update sales order status if needed
             $salesOrder = SalesOrder::find($invoice->so_id);
             $remainingInvoices = SalesInvoice::where('so_id', $invoice->so_id)->count();
-            
+
             if ($remainingInvoices === 0) {
                 $salesOrder->update(['status' => 'Confirmed']);
             }
-            
+
             DB::commit();
-            
+
             return response()->json(['message' => 'Sales invoice deleted successfully'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -360,17 +360,17 @@ class SalesInvoiceController extends Controller
     public function paymentInfo($id)
     {
         $invoice = SalesInvoice::find($id);
-        
+
         if (!$invoice) {
             return response()->json(['message' => 'Sales invoice not found'], 404);
         }
-        
+
         $receivable = CustomerReceivable::where('invoice_id', $id)->with('receivablePayments')->first();
-        
+
         if (!$receivable) {
             return response()->json(['message' => 'Receivable information not found'], 404);
         }
-        
+
         return response()->json(['data' => $receivable, 'message' => 'Payment information retrieved successfully'], 200);
     }
 }

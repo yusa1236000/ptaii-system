@@ -150,6 +150,88 @@
                         <span v-if="!sidebarCollapsed">Cycle Counting</span>
                     </router-link>
                 </div>
+                <!-- Purchasing Section -->
+                <div class="menu-section">
+                    <div
+                        @click="toggleMenuSection('purchasing')"
+                        class="section-header"
+                    >
+                        <div class="section-title-container">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span v-if="!sidebarCollapsed" class="section-title"
+                                >Purchasing</span
+                            >
+                        </div>
+                        <i
+                            v-if="!sidebarCollapsed"
+                            :class="
+                                menuSections.purchasing
+                                    ? 'fas fa-chevron-down'
+                                    : 'fas fa-chevron-right'
+                            "
+                            class="section-icon"
+                        ></i>
+                    </div>
+                </div>
+
+                <div
+                    v-show="!sidebarCollapsed && menuSections.purchasing"
+                    class="submenu"
+                >
+                    <router-link
+                        to="/purchasing/vendors"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-users"></i>
+                        <span v-if="!sidebarCollapsed">Vendors</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/requisitions"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-file-alt"></i>
+                        <span v-if="!sidebarCollapsed">Requisitions</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/rfqs"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span v-if="!sidebarCollapsed">RFQs</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/orders"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-clipboard-list"></i>
+                        <span v-if="!sidebarCollapsed">Purchase Orders</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/goods-receipts"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-truck-loading"></i>
+                        <span v-if="!sidebarCollapsed">Goods Receipts</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/vendor-invoices"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-file-invoice"></i>
+                        <span v-if="!sidebarCollapsed">Vendor Invoices</span>
+                    </router-link>
+                </div>
 
                 <!-- Sales Section -->
                 <div class="menu-section">
@@ -400,6 +482,7 @@ export default {
         const menuSections = reactive({
             inventory: false,
             stockOperations: false,
+            purchasing: false,
             sales: false,
             reports: false,
             admin: false,

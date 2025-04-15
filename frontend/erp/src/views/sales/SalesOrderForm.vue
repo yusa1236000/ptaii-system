@@ -578,10 +578,7 @@ export default {
 
                 if (isEditMode.value) {
                     // Update existing order
-                    await axios.put(
-                        `/sales/orders/${form.value.so_id}`,
-                        orderData
-                    );
+                    await axios.put(`/orders/${form.value.so_id}`, orderData);
                     alert("Order berhasil diperbarui!");
                 } else {
                     // Create new order

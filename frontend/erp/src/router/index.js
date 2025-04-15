@@ -9,7 +9,7 @@ import ItemsList from "../views/inventory/ItemsList.vue";
 import ItemDetail from "../views/inventory/ItemDetail.vue";
 import UnitOfMeasureList from "../views/inventory/UnitOfMeasureList.vue";
 import UnitOfMeasureDetail from "../views/inventory/UnitOfMeasureDetail.vue";
-import WarehousesList from "../views/inventory/WarehousesList.vue";
+// import WarehousesList from "../views/inventory/WarehousesList.vue";
 import StockTransactions from "../views/inventory/StockTransactions.vue";
 import StockAdjustments from "../views/inventory/StockAdjustments.vue";
 import ItemCategories from "../views/inventory/ItemCategories.vue";
@@ -41,7 +41,18 @@ import SalesInvoicePrint from "../views/sales/SalesInvoicePrint.vue";
 import DeliveryList from "../views/sales/DeliveryList.vue";
 import DeliveryDetail from "../views/sales/DeliveryDetail.vue";
 import DeliveryForm from "../views/sales/DeliveryForm.vue";
-import DeliveryPrint from "../views/sales/DeliveryPrint.vue";
+// import DeliveryPrint from "../views/sales/DeliveryPrint.vue";
+// Add these imports to the imports section
+import VendorList from "../views/purchasing/VendorList.vue";
+import VendorDetail from "../views/purchasing/VendorDetail.vue";
+import VendorCreate from "../views/purchasing/VendorCreate.vue";
+import VendorEdit from "../views/purchasing/VendorEdit.vue";
+
+// Import components Warehouse
+import WarehouseList from "../views/inventory/WarehouseList.vue";
+import WarehouseDetail from "../views/inventory/WarehouseDetail.vue";
+import WarehouseZoneDetail from "../views/inventory/WarehouseZoneDetail.vue";
+import WarehouseLocationForm from "../views/inventory/WarehouseLocationForm.vue";
 
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
@@ -108,11 +119,11 @@ const routes = [
                 component: UnitOfMeasureDetail,
                 props: true,
             },
-            {
-                path: "warehouses",
-                name: "Warehouses",
-                component: WarehousesList,
-            },
+            // {
+            //     path: "warehouses",
+            //     name: "Warehouses",
+            //     component: WarehousesList,
+            // },
             // {
             // path: 'warehouses/:id',
             // name: 'WarehouseDetails',
@@ -296,13 +307,13 @@ const routes = [
                 props: true,
                 meta: { requiresAuth: true },
             },
-            {
-                path: "/sales/deliveries/:id/print",
-                name: "PrintDelivery",
-                component: DeliveryPrint,
-                props: true,
-                meta: { requiresAuth: true },
-            },
+            // {
+            //     path: "/sales/deliveries/:id/print",
+            //     name: "PrintDelivery",
+            //     component: DeliveryPrint,
+            //     props: true,
+            //     meta: { requiresAuth: true },
+            // },
             // {
             //     path: "/sales/forecasts/formmodal",
             //     name: "SalesForecastFormModal",
@@ -339,6 +350,70 @@ const routes = [
             // name: 'MovementReport',
             // component: () => import('../views/reports/MovementReport.vue')
             // },
+            // Add these routes within the children array of the AppLayout route
+            {
+                path: "purchasing/vendors",
+                name: "VendorList",
+                component: VendorList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "purchasing/vendors/create",
+                name: "VendorCreate",
+                component: VendorCreate,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "purchasing/vendors/:id",
+                name: "VendorDetail",
+                component: VendorDetail,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "purchasing/vendors/:id/edit",
+                name: "VendorEdit",
+                component: VendorEdit,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            // Warehouse routes
+            {
+                path: "/warehouses",
+                name: "Warehouses",
+                component: WarehouseList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/warehouses/:id",
+                name: "WarehouseDetail",
+                component: WarehouseDetail,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
+            // Warehouse zone and location management
+            {
+                path: "/warehouses/:warehouseId/zones/:zoneId",
+                name: "WarehouseZoneDetail",
+                component: WarehouseZoneDetail,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/warehouses/:warehouseId/zones/:zoneId/locations/add",
+                name: "AddWarehouseLocation",
+                component: WarehouseLocationForm,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/warehouses/:warehouseId/zones/:zoneId/locations/:locationId/edit",
+                name: "EditWarehouseLocation",
+                component: WarehouseLocationForm,
+                props: true,
+                meta: { requiresAuth: true },
+            },
             // Admin Routes
             {
                 path: "admin/users",

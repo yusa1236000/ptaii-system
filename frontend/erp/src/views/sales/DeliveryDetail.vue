@@ -1,967 +1,796 @@
 <!-- src/views/sales/DeliveryDetail.vue -->
 <template>
     <div class="delivery-detail">
-        <div class="page-header">
-            <div class="header-left">
-                <button class="btn btn-secondary btn-sm" @click="goBack">
-                    <i class="fas fa-arrow-left"></i> Kembali
-                </button>
-                <h1 v-if="delivery">
-                    Detail Pengiriman: {{ delivery.delivery_number }}
-                </h1>
-            </div>
-            <div class="header-actions" v-if="delivery">
-                <button
-                    v-if="canEdit"
-                    class="btn btn-primary"
-                    @click="editDelivery"
-                >
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-success" @click="printDelivery">
-                    <i class="fas fa-print"></i> Cetak
-                </button>
-            </div>
-        </div>
-
-        <div v-if="isLoading" class="loading-container">
-            <i class="fas fa-spinner fa-spin"></i> Memuat data pengiriman...
-        </div>
-
-        <div v-else-if="!delivery" class="empty-state">
-            <div class="empty-icon">
-                <i class="fas fa-exclamation-circle"></i>
-            </div>
-            <h3>Pengiriman tidak ditemukan</h3>
-            <p>
-                Pengiriman yang Anda cari mungkin telah dihapus atau tidak ada.
-            </p>
-            <button class="btn btn-primary" @click="goBack">
-                Kembali ke daftar pengiriman
-            </button>
-        </div>
-
-        <div v-else class="delivery-container">
-            <!-- Delivery Header Information -->
-            <div class="card delivery-info">
-                <div class="card-header">
-                    <h3>Informasi Pengiriman</h3>
-                    <div
-                        class="status-badge-lg"
-                        :class="getStatusClass(delivery.delivery_status)"
-                    >
-                        {{ getStatusLabel(delivery.delivery_status) }}
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">No. Pengiriman</div>
-                            <div class="info-value">
-                                {{ delivery.delivery_number }}
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">No. Sales Order</div>
-                            <div class="info-value">
-                                <a
-                                    @click.prevent="
-                                        viewOrder(delivery.order.so_id)
-                                    "
-                                    href="#"
-                                    class="link"
-                                >
-                                    {{ delivery.order.so_number }}
-                                </a>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Tanggal Pengiriman</div>
-                            <div class="info-value">
-                                {{ formatDate(delivery.delivery_date) }}
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Estimasi Kedatangan</div>
-                            <div class="info-value">
-                                {{ formatDate(delivery.expected_arrival_date) }}
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Kurir</div>
-                            <div class="info-value">
-                                {{ delivery.carrier || "-" }}
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">No. Resi</div>
-                            <div class="info-value">
-                                {{ delivery.tracking_number || "-" }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Customer & Shipping Information -->
-            <div class="card customer-info">
-                <div class="card-header">
-                    <h3>Informasi Pelanggan & Pengiriman</h3>
-                </div>
-                <div class="card-body">
-                    <div class="info-columns">
-                        <div class="info-column">
-                            <h4 class="info-title">Pelanggan</h4>
-                            <div class="info-block">
-                                <div class="customer-name">
-                                    {{ delivery.order.customer.name }}
-                                </div>
-                                <div
-                                    v-if="
-                                        delivery.order.customer.contact_person
-                                    "
-                                >
-                                    Kontak:
-                                    {{ delivery.order.customer.contact_person }}
-                                </div>
-                                <div v-if="delivery.order.customer.phone">
-                                    Telepon: {{ delivery.order.customer.phone }}
-                                </div>
-                                <div v-if="delivery.order.customer.email">
-                                    Email: {{ delivery.order.customer.email }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="info-column">
-                            <h4 class="info-title">Alamat Pengiriman</h4>
-                            <div class="info-block">
-                                <div v-if="delivery.shipping_address">
-                                    {{ delivery.shipping_address }}
-                                </div>
-                                <div
-                                    v-else-if="delivery.order.customer.address"
-                                >
-                                    {{ delivery.order.customer.address }}
-                                </div>
-                                <div v-else>
-                                    <span class="text-muted"
-                                        >Alamat tidak tersedia</span
-                                    >
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Delivery Items -->
-            <div class="card delivery-items">
-                <div class="card-header">
-                    <h3>Item Pengiriman</h3>
-                </div>
-                <div class="card-body">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Deskripsi</th>
-                                <th>Jumlah</th>
-                                <th>Satuan</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="(item, index) in delivery.deliveryItems"
-                                :key="item.delivery_item_id || index"
-                            >
-                                <td>
-                                    <div class="item-name">
-                                        {{ item.item.name }}
-                                    </div>
-                                    <div class="item-code">
-                                        {{ item.item.item_code }}
-                                    </div>
-                                </td>
-                                <td>{{ item.item.description || "-" }}</td>
-                                <td>{{ item.quantity }}</td>
-                                <td>{{ item.unitOfMeasure?.symbol || "-" }}</td>
-                                <td>
-                                    <span
-                                        class="status-badge"
-                                        :class="
-                                            getStatusClass(
-                                                item.status || 'Pending'
-                                            )
-                                        "
-                                    >
-                                        {{
-                                            getStatusLabel(
-                                                item.status || "Pending"
-                                            )
-                                        }}
-                                    </span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Status History -->
-            <div
-                v-if="
-                    delivery.statusHistory && delivery.statusHistory.length > 0
-                "
-                class="card status-history"
+      <div class="page-header">
+        <h1>Detail Pengiriman</h1>
+        <div class="page-actions">
+          <button class="btn btn-secondary" @click="goBack">
+            <i class="fas fa-arrow-left"></i> Kembali
+          </button>
+          <div class="btn-group" v-if="delivery">
+            <button 
+              class="btn btn-primary" 
+              @click="editDelivery"
+              v-if="canEdit"
             >
-                <div class="card-header">
-                    <h3>Riwayat Status</h3>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        <div
-                            v-for="(history, index) in delivery.statusHistory"
-                            :key="index"
-                            class="timeline-item"
-                        >
-                            <div
-                                class="timeline-icon"
-                                :class="getStatusIconClass(history.status)"
-                            >
-                                <i :class="getStatusIcon(history.status)"></i>
-                            </div>
-                            <div class="timeline-content">
-                                <div class="timeline-time">
-                                    {{ formatDateTime(history.created_at) }}
-                                </div>
-                                <div class="timeline-title">
-                                    {{ getStatusLabel(history.status) }}
-                                </div>
-                                <div
-                                    v-if="history.notes"
-                                    class="timeline-notes"
-                                >
-                                    {{ history.notes }}
-                                </div>
-                                <div class="timeline-user">
-                                    Oleh: {{ history.user?.name || "System" }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Update Status Section -->
-            <div v-if="canUpdateStatus" class="card update-status">
-                <div class="card-header">
-                    <h3>Perbarui Status</h3>
-                </div>
-                <div class="card-body">
-                    <div class="status-update-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="newStatus">Status Baru</label>
-                                <select
-                                    id="newStatus"
-                                    v-model="newStatus"
-                                    class="form-control"
-                                >
-                                    <option value="">-- Pilih Status --</option>
-                                    <option
-                                        v-for="status in availableStatuses"
-                                        :key="status.value"
-                                        :value="status.value"
-                                    >
-                                        {{ status.label }}
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="statusNotes"
-                                    >Catatan (Opsional)</label
-                                >
-                                <textarea
-                                    id="statusNotes"
-                                    v-model="statusNotes"
-                                    class="form-control"
-                                    rows="2"
-                                ></textarea>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button
-                                class="btn btn-primary"
-                                @click="updateDeliveryStatus"
-                                :disabled="!newStatus || isUpdatingStatus"
-                            >
-                                <i class="fas fa-save"></i>
-                                {{
-                                    isUpdatingStatus
-                                        ? "Memperbarui..."
-                                        : "Perbarui Status"
-                                }}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notes Section -->
-            <div v-if="delivery.notes" class="card delivery-notes">
-                <div class="card-header">
-                    <h3>Catatan Pengiriman</h3>
-                </div>
-                <div class="card-body">
-                    <p>{{ delivery.notes }}</p>
-                </div>
-            </div>
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            
+            <button 
+              v-if="delivery.status === 'Pending'" 
+              class="btn btn-info"
+              @click="markAsInTransit"
+            >
+              <i class="fas fa-truck"></i> Mulai Pengiriman
+            </button>
+            
+            <button 
+              v-if="delivery.status === 'In Transit'" 
+              class="btn btn-success"
+              @click="completeDelivery"
+            >
+              <i class="fas fa-check"></i> Selesaikan
+            </button>
+            
+            <button 
+              v-if="canCancel" 
+              class="btn btn-danger"
+              @click="confirmCancel"
+            >
+              <i class="fas fa-times"></i> Batalkan
+            </button>
+            
+            <button
+              class="btn btn-secondary"
+              @click="printDeliveryNote"
+            >
+              <i class="fas fa-print"></i> Cetak
+            </button>
+          </div>
         </div>
+      </div>
+      
+      <div v-if="isLoading" class="loading-indicator">
+        <i class="fas fa-spinner fa-spin"></i> Memuat data pengiriman...
+      </div>
+      
+      <div v-else-if="!delivery" class="empty-state">
+        <div class="empty-icon">
+          <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <h3>Pengiriman tidak ditemukan</h3>
+        <p>Pengiriman yang Anda cari mungkin telah dihapus atau tidak ada.</p>
+        <button class="btn btn-primary" @click="goBack">
+          Kembali ke daftar pengiriman
+        </button>
+      </div>
+      
+      <div v-else class="delivery-container">
+        <!-- Delivery Header -->
+        <div class="detail-card">
+          <div class="card-header">
+            <h2>Informasi Pengiriman</h2>
+            <div class="delivery-status" :class="getStatusClass(delivery.status)">
+              {{ getStatusLabel(delivery.status) }}
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="info-grid">
+              <div class="info-group">
+                <label>Nomor Pengiriman</label>
+                <div class="info-value">{{ delivery.delivery_number }}</div>
+              </div>
+              
+              <div class="info-group">
+                <label>Tanggal Pengiriman</label>
+                <div class="info-value">{{ formatDate(delivery.delivery_date) }}</div>
+              </div>
+              
+              <div class="info-group">
+                <label>Nomor Sales Order</label>
+                <div class="info-value">
+                  <router-link :to="`/sales/orders/${delivery.so_id}`">
+                    {{ delivery.salesOrder?.so_number || '-' }}
+                  </router-link>
+                </div>
+              </div>
+              
+              <div class="info-group">
+                <label>Metode Pengiriman</label>
+                <div class="info-value">{{ delivery.shipping_method || '-' }}</div>
+              </div>
+              
+              <div class="info-group">
+                <label>Nomor Pelacakan</label>
+                <div class="info-value">{{ delivery.tracking_number || '-' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Customer Information -->
+        <div class="detail-card">
+          <div class="card-header">
+            <h2>Informasi Pelanggan</h2>
+          </div>
+          <div class="card-body">
+            <div class="customer-info">
+              <div class="info-group">
+                <label>Nama Pelanggan</label>
+                <div class="info-value">{{ delivery.customer.name }}</div>
+              </div>
+              
+              <div class="info-group">
+                <label>Kode Pelanggan</label>
+                <div class="info-value">{{ delivery.customer.customer_code }}</div>
+              </div>
+              
+              <div class="info-group">
+                <label>Alamat</label>
+                <div class="info-value">{{ delivery.customer.address || '-' }}</div>
+              </div>
+              
+              <div class="info-group">
+                <label>Contact Person</label>
+                <div class="info-value">{{ delivery.customer.contact_person || '-' }}</div>
+              </div>
+              
+              <div class="info-group">
+                <label>Telepon</label>
+                <div class="info-value">{{ delivery.customer.phone || '-' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Delivery Items -->
+        <div class="detail-card">
+          <div class="card-header">
+            <h2>Item Pengiriman</h2>
+          </div>
+          <div class="card-body">
+            <div class="delivery-items">
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Jumlah Dikirim</th>
+                    <th>Gudang</th>
+                    <th>Lokasi</th>
+                    <th>Batch Number</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="line in delivery.deliveryLines" :key="line.line_id">
+                    <td>
+                      <div class="item-info">
+                        <div class="item-code">{{ line.item.item_code }}</div>
+                        <div class="item-name">{{ line.item.name }}</div>
+                      </div>
+                    </td>
+                    <td>{{ line.delivered_quantity }} {{ line.salesOrderLine?.unitOfMeasure?.symbol || '' }}</td>
+                    <td>{{ line.warehouse?.name || '-' }}</td>
+                    <td>{{ line.warehouseLocation?.name || '-' }}</td>
+                    <td>{{ line.batch_number || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Delivery Timeline -->
+        <div class="detail-card">
+          <div class="card-header">
+            <h2>Timeline Pengiriman</h2>
+          </div>
+          <div class="card-body">
+            <div class="delivery-timeline">
+              <div class="timeline-item" :class="{ 'active': delivery.status === 'Pending' || delivery.status === 'In Transit' || delivery.status === 'Completed' }">
+                <div class="timeline-icon">
+                  <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="timeline-content">
+                  <h3>Pengiriman Dibuat</h3>
+                  <p>{{ formatDate(delivery.delivery_date) }}</p>
+                </div>
+              </div>
+              
+              <div class="timeline-item" :class="{ 'active': delivery.status === 'In Transit' || delivery.status === 'Completed' }">
+                <div class="timeline-icon">
+                  <i class="fas fa-truck"></i>
+                </div>
+                <div class="timeline-content">
+                  <h3>Dalam Perjalanan</h3>
+                  <p>Item sedang dalam proses pengiriman</p>
+                </div>
+              </div>
+              
+              <div class="timeline-item" :class="{ 'active': delivery.status === 'Completed' }">
+                <div class="timeline-icon">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="timeline-content">
+                  <h3>Pengiriman Selesai</h3>
+                  <p>Item telah diterima oleh pelanggan</p>
+                </div>
+              </div>
+              
+              <div class="timeline-item cancelled" :class="{ 'active': delivery.status === 'Cancelled' }">
+                <div class="timeline-icon">
+                  <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="timeline-content">
+                  <h3>Pengiriman Dibatalkan</h3>
+                  <p>Pengiriman telah dibatalkan</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Cancel Confirmation Modal -->
+      <ConfirmationModal
+        v-if="showCancelModal"
+        title="Konfirmasi Pembatalan"
+        :message="`Apakah Anda yakin ingin membatalkan pengiriman <strong>${delivery.delivery_number}</strong>?`"
+        confirm-button-text="Batalkan"
+        confirm-button-class="btn btn-danger"
+        @confirm="cancelDelivery"
+        @close="showCancelModal = false"
+      />
+      
+      <!-- Complete Confirmation Modal -->
+      <ConfirmationModal
+        v-if="showCompleteModal"
+        title="Konfirmasi Selesai"
+        :message="`Apakah Anda yakin ingin menyelesaikan pengiriman <strong>${delivery.delivery_number}</strong>?`"
+        confirm-button-text="Selesaikan"
+        confirm-button-class="btn btn-success"
+        @confirm="confirmCompleteDelivery"
+        @close="showCompleteModal = false"
+      />
     </div>
-</template>
-
-<script>
-import { ref, computed, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import DeliveryService from "@/services/DeliveryService";
-
-export default {
-    name: "DeliveryDetail",
+  </template>
+  
+  <script>
+  import { ref, computed, onMounted } from 'vue';
+  import { useRouter, useRoute } from 'vue-router';
+  import axios from 'axios';
+  
+  export default {
+    name: 'DeliveryDetail',
     setup() {
-        const route = useRoute();
-        const router = useRouter();
-        const deliveryId = Number(route.params.id);
-
-        const delivery = ref(null);
-        const isLoading = ref(true);
-        const newStatus = ref("");
-        const statusNotes = ref("");
-        const isUpdatingStatus = ref(false);
-
-        // Fetch delivery details
-        const fetchDelivery = async () => {
-            isLoading.value = true;
-            try {
-                const response = await DeliveryService.getDeliveryById(
-                    deliveryId
-                );
-                delivery.value = response.data;
-            } catch (error) {
-                console.error("Error fetching delivery:", error);
-                delivery.value = null;
-            } finally {
-                isLoading.value = false;
-            }
-        };
-
-        // Computed properties
-        const canEdit = computed(() => {
-            if (!delivery.value) return false;
-            return (
-                delivery.value.delivery_status !== "Delivered" &&
-                delivery.value.delivery_status !== "Cancelled"
-            );
+      const router = useRouter();
+      const route = useRoute();
+      
+      // Data
+      const delivery = ref(null);
+      const isLoading = ref(true);
+      const showCancelModal = ref(false);
+      const showCompleteModal = ref(false);
+      
+      // Computed properties
+      const canEdit = computed(() => {
+        if (!delivery.value) return false;
+        return delivery.value.status !== 'Completed' && delivery.value.status !== 'Cancelled';
+      });
+      
+      const canCancel = computed(() => {
+        if (!delivery.value) return false;
+        return delivery.value.status !== 'Completed' && delivery.value.status !== 'Cancelled';
+      });
+      
+      // Load delivery data
+      const loadDelivery = async () => {
+        isLoading.value = true;
+        
+        try {
+          const response = await axios.get(`/deliveries/${route.params.id}`);
+          delivery.value = response.data.data;
+        } catch (error) {
+          console.error('Error loading delivery:', error);
+          delivery.value = null;
+        } finally {
+          isLoading.value = false;
+        }
+      };
+      
+      // Format date
+      const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('id-ID', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
         });
-
-        const canUpdateStatus = computed(() => {
-            if (!delivery.value) return false;
-            return (
-                delivery.value.delivery_status !== "Delivered" &&
-                delivery.value.delivery_status !== "Cancelled"
-            );
-        });
-
-        const availableStatuses = computed(() => {
-            if (!delivery.value) return [];
-
-            const currentStatus = delivery.value.delivery_status;
-
-            // Define possible status transitions
-            const transitions = {
-                Pending: [
-                    { value: "In Transit", label: "Dalam Perjalanan" },
-                    { value: "Cancelled", label: "Dibatalkan" },
-                ],
-                "In Transit": [
-                    { value: "Delivered", label: "Terkirim" },
-                    { value: "Returned", label: "Dikembalikan" },
-                ],
-                Returned: [
-                    {
-                        value: "In Transit",
-                        label: "Dalam Perjalanan (Pengiriman Ulang)",
-                    },
-                ],
-            };
-
-            return transitions[currentStatus] || [];
-        });
-
-        // Format date for display
-        const formatDate = (dateString) => {
-            if (!dateString) return "-";
-
-            const date = new Date(dateString);
-            return date.toLocaleDateString("id-ID", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-            });
-        };
-
-        const formatDateTime = (dateTimeString) => {
-            if (!dateTimeString) return "-";
-
-            const date = new Date(dateTimeString);
-            return date.toLocaleDateString("id-ID", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-            });
-        };
-
-        // Get status label
-        const getStatusLabel = (status) => {
-            switch (status) {
-                case "Pending":
-                    return "Menunggu";
-                case "In Transit":
-                    return "Dalam Perjalanan";
-                case "Delivered":
-                    return "Terkirim";
-                case "Returned":
-                    return "Dikembalikan";
-                case "Cancelled":
-                    return "Dibatalkan";
-                default:
-                    return status;
-            }
-        };
-
-        // Get status class for styling
-        const getStatusClass = (status) => {
-            switch (status) {
-                case "Pending":
-                    return "status-pending";
-                case "In Transit":
-                    return "status-transit";
-                case "Delivered":
-                    return "status-delivered";
-                case "Returned":
-                    return "status-returned";
-                case "Cancelled":
-                    return "status-cancelled";
-                default:
-                    return "";
-            }
-        };
-
-        // Get status icon
-        const getStatusIcon = (status) => {
-            switch (status) {
-                case "Pending":
-                    return "fas fa-clock";
-                case "In Transit":
-                    return "fas fa-truck";
-                case "Delivered":
-                    return "fas fa-check-circle";
-                case "Returned":
-                    return "fas fa-undo";
-                case "Cancelled":
-                    return "fas fa-times-circle";
-                default:
-                    return "fas fa-circle";
-            }
-        };
-
-        // Get status icon class
-        const getStatusIconClass = (status) => {
-            switch (status) {
-                case "Pending":
-                    return "icon-pending";
-                case "In Transit":
-                    return "icon-transit";
-                case "Delivered":
-                    return "icon-delivered";
-                case "Returned":
-                    return "icon-returned";
-                case "Cancelled":
-                    return "icon-cancelled";
-                default:
-                    return "";
-            }
-        };
-
-        // Navigation methods
-        const goBack = () => {
-            router.push("/sales/deliveries");
-        };
-
-        const viewOrder = (orderId) => {
-            router.push(`/sales/orders/${orderId}`);
-        };
-
-        const editDelivery = () => {
-            router.push(`/sales/deliveries/${deliveryId}/edit`);
-        };
-
-        const printDelivery = () => {
-            router.push(`/sales/deliveries/${deliveryId}/print`);
-        };
-
-        // Update delivery status
-        const updateDeliveryStatus = async () => {
-            if (!newStatus.value) return;
-
-            isUpdatingStatus.value = true;
-            try {
-                await DeliveryService.updateDeliveryStatus(deliveryId, {
-                    status: newStatus.value,
-                    notes: statusNotes.value,
-                });
-
-                // Refresh delivery data
-                await fetchDelivery();
-
-                // Reset form
-                newStatus.value = "";
-                statusNotes.value = "";
-
-                alert("Status pengiriman berhasil diperbarui!");
-            } catch (error) {
-                console.error("Error updating delivery status:", error);
-                alert(
-                    "Gagal memperbarui status pengiriman. Silakan coba lagi."
-                );
-            } finally {
-                isUpdatingStatus.value = false;
-            }
-        };
-
-        onMounted(() => {
-            fetchDelivery();
-        });
-
-        return {
-            delivery,
-            isLoading,
-            newStatus,
-            statusNotes,
-            isUpdatingStatus,
-            canEdit,
-            canUpdateStatus,
-            availableStatuses,
-            formatDate,
-            formatDateTime,
-            getStatusLabel,
-            getStatusClass,
-            getStatusIcon,
-            getStatusIconClass,
-            goBack,
-            viewOrder,
-            editDelivery,
-            printDelivery,
-            updateDeliveryStatus,
-        };
-    },
-};
-</script>
-
-<style scoped>
-.delivery-detail {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.page-header {
+      };
+      
+      // Get status label
+      const getStatusLabel = (status) => {
+        switch (status) {
+          case 'Pending': return 'Menunggu';
+          case 'In Transit': return 'Dalam Pengiriman';
+          case 'Completed': return 'Selesai';
+          case 'Cancelled': return 'Dibatalkan';
+          default: return status;
+        }
+      };
+      
+      // Get status class
+      const getStatusClass = (status) => {
+        switch (status) {
+          case 'Pending': return 'status-pending';
+          case 'In Transit': return 'status-transit';
+          case 'Completed': return 'status-completed';
+          case 'Cancelled': return 'status-cancelled';
+          default: return '';
+        }
+      };
+      
+      // Navigation methods
+      const goBack = () => {
+        router.push('/sales/deliveries');
+      };
+      
+      const editDelivery = () => {
+        router.push(`/sales/deliveries/${delivery.value.delivery_id}/edit`);
+      };
+      
+      // Actions
+      const markAsInTransit = async () => {
+        try {
+          await axios.put(`/deliveries/${delivery.value.delivery_id}`, {
+            ...delivery.value,
+            status: 'In Transit'
+          });
+          
+          delivery.value.status = 'In Transit';
+          alert('Status pengiriman berhasil diubah menjadi Dalam Perjalanan');
+        } catch (error) {
+          console.error('Error updating delivery status:', error);
+          alert('Terjadi kesalahan saat mengubah status pengiriman');
+        }
+      };
+      
+      const completeDelivery = () => {
+        showCompleteModal.value = true;
+      };
+      
+      const confirmCompleteDelivery = async () => {
+        try {
+          await axios.post(`/deliveries/${delivery.value.delivery_id}/complete`);
+          
+          delivery.value.status = 'Completed';
+          showCompleteModal.value = false;
+          alert('Pengiriman berhasil diselesaikan!');
+        } catch (error) {
+          console.error('Error completing delivery:', error);
+          alert('Terjadi kesalahan saat menyelesaikan pengiriman');
+        }
+      };
+      
+      const confirmCancel = () => {
+        showCancelModal.value = true;
+      };
+      
+      const cancelDelivery = async () => {
+        try {
+          await axios.put(`/deliveries/${delivery.value.delivery_id}`, {
+            ...delivery.value,
+            status: 'Cancelled'
+          });
+          
+          delivery.value.status = 'Cancelled';
+          showCancelModal.value = false;
+          alert('Pengiriman berhasil dibatalkan!');
+        } catch (error) {
+          console.error('Error cancelling delivery:', error);
+          alert('Terjadi kesalahan saat membatalkan pengiriman');
+        }
+      };
+      
+      const printDeliveryNote = () => {
+        window.print();
+      };
+      
+      onMounted(() => {
+        loadDelivery();
+      });
+      
+      return {
+        delivery,
+        isLoading,
+        canEdit,
+        canCancel,
+        showCancelModal,
+        showCompleteModal,
+        formatDate,
+        getStatusLabel,
+        getStatusClass,
+        goBack,
+        editDelivery,
+        markAsInTransit,
+        completeDelivery,
+        confirmCompleteDelivery,
+        confirmCancel,
+        cancelDelivery,
+        printDeliveryNote
+      };
+    }
+  };
+  </script>
+  
+  <style scoped>
+  .delivery-detail {
+    padding: 1rem 0;
+  }
+  
+  .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.page-header h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: var(--gray-800);
-}
-
-.btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.875rem;
-}
-
-.loading-container,
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 2rem;
-    background-color: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    text-align: center;
-}
-
-.loading-container i {
-    font-size: 2rem;
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-}
-
-.empty-icon {
-    font-size: 3rem;
-    color: var(--warning-color);
-    margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-    margin-bottom: 1rem;
-    color: var(--gray-800);
-}
-
-.empty-state p {
     margin-bottom: 1.5rem;
-    color: var(--gray-600);
-}
-
-.delivery-container {
+  }
+  
+  .page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    color: #1e293b;
+  }
+  
+  .page-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+  
+  .btn-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .delivery-container {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-}
-
-.card {
+  }
+  
+  .detail-card {
     background-color: white;
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-}
-
-.card-header {
+  }
+  
+  .card-header {
+    background-color: #f8fafc;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
-    background-color: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-}
-
-.card-header h3 {
-    margin: 0;
+  }
+  
+  .card-header h2 {
     font-size: 1.125rem;
-    color: var(--gray-800);
-}
-
-.card-body {
+    font-weight: 600;
+    margin: 0;
+    color: #1e293b;
+  }
+  
+  .card-body {
     padding: 1.5rem;
-}
-
-.info-grid {
+  }
+  
+  .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
-}
-
-.info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.info-label {
+  }
+  
+  .customer-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .info-group {
+    margin-bottom: 0.75rem;
+  }
+  
+  .info-group label {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+  }
+  
+  .info-value {
+    font-size: 0.875rem;
+    color: #1e293b;
+    font-weight: 500;
+  }
+  
+  .delivery-status {
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--gray-500);
-    text-transform: uppercase;
-}
-
-.info-value {
-    font-size: 0.875rem;
-    color: var(--gray-800);
-}
-
-.info-columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-}
-
-.info-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--gray-700);
-    margin: 0 0 0.75rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--gray-200);
-}
-
-.info-block {
-    font-size: 0.875rem;
-    color: var(--gray-800);
-    line-height: 1.5;
-}
-
-.customer-name {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.link {
-    color: var(--primary-color);
-    cursor: pointer;
-    text-decoration: none;
-}
-
-.link:hover {
-    text-decoration: underline;
-}
-
-.status-badge {
-    display: inline-flex;
-    align-items: center;
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.status-badge-lg {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-}
-
-.status-pending {
-    background-color: var(--gray-200);
-    color: var(--gray-700);
-}
-
-.status-transit {
-    background-color: var(--primary-bg);
-    color: var(--primary-color);
-}
-
-.status-delivered {
-    background-color: var(--success-bg);
-    color: var(--success-color);
-}
-
-.status-returned {
-    background-color: var(--warning-bg);
-    color: var(--warning-color);
-}
-
-.status-cancelled {
-    background-color: var(--danger-bg);
-    color: var(--danger-color);
-}
-
-.data-table {
+  }
+  
+  .status-pending {
+    background-color: #e2e8f0;
+    color: #475569;
+  }
+  
+  .status-transit {
+    background-color: #dbeafe;
+    color: #2563eb;
+  }
+  
+  .status-completed {
+    background-color: #d1fae5;
+    color: #059669;
+  }
+  
+  .status-cancelled {
+    background-color: #fee2e2;
+    color: #dc2626;
+  }
+  
+  .items-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.875rem;
-}
-
-.data-table th {
+  }
+  
+  .items-table th,
+  .items-table td {
+    padding: 0.75rem;
     text-align: left;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--gray-200);
-    font-weight: 600;
-    color: var(--gray-700);
-    background-color: var(--gray-50);
-}
-
-.data-table td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--gray-100);
-    color: var(--gray-800);
-    vertical-align: middle;
-}
-
-.data-table tr:last-child td {
-    border-bottom: none;
-}
-
-.item-name {
+  }
+  
+  .items-table th {
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
     font-weight: 500;
-    color: var(--gray-800);
-}
-
-.item-code {
+    color: #64748b;
     font-size: 0.75rem;
-    color: var(--gray-500);
-    margin-top: 0.25rem;
-}
-
-.timeline {
+  }
+  
+  .items-table td {
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+  }
+  
+  .item-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .item-code {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+  
+  .item-name {
+    font-weight: 500;
+  }
+  
+  .delivery-timeline {
     position: relative;
     padding-left: 2rem;
-}
-
-.timeline:before {
-    content: "";
+  }
+  
+  .delivery-timeline::before {
+    content: '';
     position: absolute;
     top: 0;
-    bottom: 0;
-    left: 11px;
+    left: 8px;
+    height: 100%;
     width: 2px;
-    background-color: var(--gray-200);
-}
-
-.timeline-item {
+    background-color: #e2e8f0;
+  }
+  
+  .timeline-item {
     position: relative;
-    margin-bottom: 1.5rem;
-}
-
-.timeline-item:last-child {
-    margin-bottom: 0;
-}
-
-.timeline-icon {
+    padding-bottom: 2rem;
+    opacity: 0.5;
+  }
+  
+  .timeline-item.active {
+    opacity: 1;
+  }
+  
+  .timeline-item:last-child {
+    padding-bottom: 0;
+  }
+  
+  .timeline-icon {
     position: absolute;
     left: -2rem;
-    width: 24px;
-    height: 24px;
+    top: 0;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    background-color: var(--gray-300);
+    background-color: white;
+    border: 2px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
-    color: white;
     z-index: 1;
-}
-
-.icon-pending {
-    background-color: var(--gray-400);
-}
-
-.icon-transit {
-    background-color: var(--primary-color);
-}
-
-.icon-delivered {
-    background-color: var(--success-color);
-}
-
-.icon-returned {
-    background-color: var(--warning-color);
-}
-
-.icon-cancelled {
-    background-color: var(--danger-color);
-}
-
-.timeline-content {
-    background-color: var(--gray-50);
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
-}
-
-.timeline-time {
-    font-size: 0.75rem;
-    color: var(--gray-500);
-    margin-bottom: 0.25rem;
-}
-
-.timeline-title {
-    font-weight: 600;
-    color: var(--gray-800);
-    margin-bottom: 0.25rem;
-}
-
-.timeline-notes {
+  }
+  
+  .timeline-item.active .timeline-icon {
+    background-color: #2563eb;
+    border-color: #2563eb;
+    color: white;
+  }
+  
+  .timeline-item.cancelled.active .timeline-icon {
+    background-color: #dc2626;
+    border-color: #dc2626;
+  }
+  
+  .timeline-content h3 {
     font-size: 0.875rem;
-    color: var(--gray-700);
-    margin-bottom: 0.5rem;
-}
-
-.timeline-user {
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    color: #1e293b;
+  }
+  
+  .timeline-content p {
     font-size: 0.75rem;
-    color: var(--gray-500);
-    font-style: italic;
-}
-
-.status-update-form {
-    background-color: var(--gray-50);
-    border-radius: 0.5rem;
-    padding: 1rem;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.form-group {
+    color: #64748b;
+    margin: 0;
+  }
+  
+  .loading-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem 0;
+    color: #64748b;
+    font-size: 1rem;
+  }
+  
+  .loading-indicator i {
+    margin-right: 0.5rem;
+  }
+  
+  .empty-state {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-group label {
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 0;
+    text-align: center;
+    color: #64748b;
+  }
+  
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #cbd5e1;
+  }
+  
+  .empty-state h3 {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem 0;
+    color: #1e293b;
+  }
+  
+  .empty-state p {
+    margin: 0 0 1.5rem 0;
+    font-size: 0.875rem;
+  }
+  
+  .btn {
+    padding: 0.625rem 1rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--gray-700);
-}
-
-.form-control {
-    padding: 0.625rem;
-    border: 1px solid var(--gray-300);
     border-radius: 0.375rem;
-    font-size: 0.875rem;
-}
-
-.form-actions {
+    cursor: pointer;
     display: flex;
-    justify-content: flex-end;
-}
-
-.text-muted {
-    color: var(--gray-500);
-    font-style: italic;
-}
-
-@media (max-width: 768px) {
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  
+  .btn-primary {
+    background-color: #2563eb;
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1d4ed8;
+  }
+  
+  .btn-secondary {
+    background-color: #e2e8f0;
+    color: #1e293b;
+  }
+  
+  .btn-secondary:hover {
+    background-color: #cbd5e1;
+  }
+  
+  .btn-info {
+    background-color: #0ea5e9;
+    color: white;
+  }
+  
+  .btn-info:hover {
+    background-color: #0284c7;
+  }
+  
+  .btn-success {
+    background-color: #059669;
+    color: white;
+  }
+  
+  .btn-success:hover {
+    background-color: #047857;
+  }
+  
+  .btn-danger {
+    background-color: #dc2626;
+    color: white;
+  }
+  
+  .btn-danger:hover {
+    background-color: #b91c1c;
+  }
+  
+  @media (max-width: 768px) {
     .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
     }
-
-    .header-actions {
-        align-self: flex-end;
+    
+    .btn-group {
+      flex-wrap: wrap;
     }
-
-    .info-grid {
-        grid-template-columns: 1fr;
+    
+    .info-grid,
+    .customer-info {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
     }
-
-    .info-columns {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
+    
+    .items-table {
+      display: block;
+      overflow-x: auto;
     }
-
-    .form-row {
-        grid-template-columns: 1fr;
+  }
+  
+  /* Print styles */
+  @media print {
+    .page-actions,
+    .btn,
+    .btn-group {
+      display: none !important;
     }
-}
-</style>
+    
+    .page-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .detail-card {
+      page-break-inside: avoid;
+      margin-bottom: 2rem;
+      box-shadow: none;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .items-table th,
+    .items-table td {
+      padding: 0.5rem;
+    }
+  }
+  </style>

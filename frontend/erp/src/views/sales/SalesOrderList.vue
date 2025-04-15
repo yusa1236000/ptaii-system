@@ -135,6 +135,14 @@
                     >
                         <i class="fas fa-trash"></i>
                     </button>
+                    <button
+                        v-if="canDeleteOrder(item)"
+                        class="action-btn delete"
+                        title="Hapus Order"
+                        @click="confirmDelete(item)"
+                    >
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </template>
         </DataTable>
