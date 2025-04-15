@@ -42,10 +42,10 @@ class SalesOrderController extends Controller
             'expected_delivery' => 'nullable|date',
             'status' => 'required|string|max:50',
             'lines' => 'required|array',
-            'lines.*.item_id' => 'required|exists:Item,item_id',
+            'lines.*.item_id' => 'required|exists:items,item_id',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.quantity' => 'required|numeric|min:0',
-            'lines.*.uom_id' => 'required|exists:UnitOfMeasure,uom_id',
+            'lines.*.uom_id' => 'required|exists:unit_of_measures,uom_id',
             'lines.*.discount' => 'nullable|numeric|min:0',
         ]);
 
@@ -330,10 +330,10 @@ class SalesOrderController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'item_id' => 'required|exists:Item,item_id',
+            'item_id' => 'required|exists:items,item_id',
             'unit_price' => 'required|numeric|min:0',
             'quantity' => 'required|numeric|min:0',
-            'uom_id' => 'required|exists:UnitOfMeasure,uom_id',
+            'uom_id' => 'required|exists:unit_of_measures,uom_id',
             'discount' => 'nullable|numeric|min:0',
             'tax' => 'nullable|numeric|min:0'
         ]);
@@ -404,10 +404,10 @@ class SalesOrderController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'item_id' => 'required|exists:Item,item_id',
+            'item_id' => 'required|exists:items,item_id',
             'unit_price' => 'required|numeric|min:0',
             'quantity' => 'required|numeric|min:0',
-            'uom_id' => 'required|exists:UnitOfMeasure,uom_id',
+            'uom_id' => 'required|exists:unit_of_measures,uom_id',
             'discount' => 'nullable|numeric|min:0',
             'tax' => 'nullable|numeric|min:0'
         ]);

@@ -62,7 +62,6 @@
                                 id="customer_id"
                                 v-model="form.customer_id"
                                 required
-                                @change="handleCustomerChange"
                             >
                                 <option value="">-- Pilih Pelanggan --</option>
                                 <option
@@ -76,28 +75,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="quotation_id"
-                                >Referensi Penawaran</label
-                            >
-                            <select
-                                id="quotation_id"
-                                v-model="form.quotation_id"
-                                @change="handleQuotationChange"
-                            >
-                                <option value="">-- Tanpa Referensi --</option>
-                                <option
-                                    v-for="quotation in filteredQuotations"
-                                    :key="quotation.quotation_id"
-                                    :value="quotation.quotation_id"
-                                >
-                                    {{ quotation.quotation_number }}
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
                             <label for="expected_delivery"
                                 >Perkiraan Pengiriman</label
                             >
@@ -107,7 +84,9 @@
                                 v-model="form.expected_delivery"
                             />
                         </div>
+                    </div>
 
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="payment_terms">Syarat Pembayaran</label>
                             <input
@@ -117,9 +96,7 @@
                                 placeholder="Contoh: 30 hari setelah pengiriman"
                             />
                         </div>
-                    </div>
 
-                    <div class="form-row">
                         <div class="form-group">
                             <label for="delivery_terms"
                                 >Syarat Pengiriman</label
@@ -131,35 +108,35 @@
                                 placeholder="Contoh: Franco gudang pembeli"
                             />
                         </div>
+                    </div>
 
-                        <div class="form-group" v-if="isEditMode">
-                            <label for="status">Status*</label>
-                            <select id="status" v-model="form.status" required>
-                                <option value="Draft">Draft</option>
-                                <option value="Confirmed">Dikonfirmasi</option>
-                                <option value="Processing">Diproses</option>
-                                <option value="Shipped">Dikirim</option>
-                                <option value="Delivered">Terkirim</option>
-                                <option value="Invoiced" disabled>
-                                    Difakturkan
-                                </option>
-                                <option value="Closed" disabled>Selesai</option>
-                            </select>
-                            <small
-                                v-if="
-                                    form.status === 'Invoiced' ||
-                                    form.status === 'Closed'
-                                "
-                                class="text-muted"
-                            >
-                                Status tidak dapat diubah karena sudah
-                                {{
-                                    form.status === "Invoiced"
-                                        ? "difakturkan"
-                                        : "selesai"
-                                }}
-                            </small>
-                        </div>
+                    <div class="form-group" v-if="isEditMode">
+                        <label for="status">Status*</label>
+                        <select id="status" v-model="form.status" required>
+                            <option value="Draft">Draft</option>
+                            <option value="Confirmed">Dikonfirmasi</option>
+                            <option value="Processing">Diproses</option>
+                            <option value="Shipped">Dikirim</option>
+                            <option value="Delivered">Terkirim</option>
+                            <option value="Invoiced" disabled>
+                                Difakturkan
+                            </option>
+                            <option value="Closed" disabled>Selesai</option>
+                        </select>
+                        <small
+                            v-if="
+                                form.status === 'Invoiced' ||
+                                form.status === 'Closed'
+                            "
+                            class="text-muted"
+                        >
+                            Status tidak dapat diubah karena sudah
+                            {{
+                                form.status === "Invoiced"
+                                    ? "difakturkan"
+                                    : "selesai"
+                            }}
+                        </small>
                     </div>
                 </div>
             </div>
@@ -371,7 +348,6 @@ export default {
 
         // Reference data
         const customers = ref([]);
-        const quotations = ref([]);
         const items = ref([]);
         const unitOfMeasures = ref([]);
 
@@ -383,17 +359,6 @@ export default {
         // Check if we're in edit mode
         const isEditMode = computed(() => {
             return route.params.id !== undefined;
-        });
-
-        // Filter quotations based on selected customer
-        const filteredQuotations = computed(() => {
-            if (!form.value.customer_id) return [];
-
-            return quotations.value.filter(
-                (q) =>
-                    q.customer_id == form.value.customer_id &&
-                    q.status === "Accepted"
-            );
         });
 
         // Generate a unique sales order number
@@ -423,15 +388,6 @@ export default {
                 // Load unit of measures
                 const uomResponse = await axios.get("/unit-of-measures");
                 unitOfMeasures.value = uomResponse.data.data;
-
-                // Load quotations
-                const quotationsResponse = await axios.get(
-                    "/sales/quotations",
-                    {
-                        params: { status: "Accepted" },
-                    }
-                );
-                quotations.value = quotationsResponse.data.data;
             } catch (err) {
                 console.error("Error loading reference data:", err);
                 error.value = "Terjadi kesalahan saat memuat data referensi.";
@@ -450,9 +406,7 @@ export default {
             error.value = "";
 
             try {
-                const response = await axios.get(
-                    `/sales/orders/${route.params.id}`
-                );
+                const response = await axios.get(`/orders/${route.params.id}`);
                 const order = response.data.data;
 
                 // Set form data
@@ -493,49 +447,7 @@ export default {
             }
         };
 
-        // Event handlers
-        const handleCustomerChange = () => {
-            // Reset quotation id when customer changes
-            form.value.quotation_id = "";
-        };
-
-        const handleQuotationChange = async () => {
-            if (!form.value.quotation_id) return;
-
-            try {
-                const response = await axios.get(
-                    `/sales/quotations/${form.value.quotation_id}`
-                );
-                const quotation = response.data.data;
-
-                // Copy terms from quotation
-                form.value.payment_terms = quotation.payment_terms || "";
-                form.value.delivery_terms = quotation.delivery_terms || "";
-
-                // Replace order lines with quotation lines
-                if (
-                    quotation.salesQuotationLines &&
-                    quotation.salesQuotationLines.length > 0
-                ) {
-                    form.value.lines = quotation.salesQuotationLines.map(
-                        (line) => ({
-                            item_id: line.item_id,
-                            unit_price: line.unit_price,
-                            quantity: line.quantity,
-                            uom_id: line.uom_id,
-                            discount: line.discount || 0,
-                            tax: line.tax || 0,
-                            subtotal: line.subtotal,
-                            total: line.total,
-                        })
-                    );
-                }
-            } catch (err) {
-                console.error("Error loading quotation details:", err);
-                error.value = "Terjadi kesalahan saat memuat data penawaran.";
-            }
-        };
-
+        // Event handler for item change
         const handleItemChange = (event, index) => {
             const itemId = form.value.lines[index].item_id;
             if (!itemId) return;
@@ -673,7 +585,7 @@ export default {
                     alert("Order berhasil diperbarui!");
                 } else {
                     // Create new order
-                    await axios.post("/sales/orders", orderData);
+                    await axios.post("/orders", orderData);
                     alert("Order berhasil dibuat!");
                 }
 
@@ -707,13 +619,10 @@ export default {
             customers,
             items,
             unitOfMeasures,
-            filteredQuotations,
             isLoading,
             isSubmitting,
             error,
             isEditMode,
-            handleCustomerChange,
-            handleQuotationChange,
             handleItemChange,
             addLine,
             removeLine,

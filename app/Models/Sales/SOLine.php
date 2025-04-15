@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Item;
+use App\Models\UnitOfMeasure;
 
 class SOLine extends Model
 {
@@ -14,7 +16,7 @@ class SOLine extends Model
     protected $primaryKey = 'line_id';
     protected $table = 'SOLine';
     public $timestamps = false;
-    
+
     protected $fillable = [
         'so_id',
         'item_id',

@@ -162,7 +162,7 @@
                             </thead>
                             <tbody>
                                 <tr
-                                    v-for="line in quotation.salesQuotationLines"
+                                    v-for="line in quotation.salesQuotationLine"
                                     :key="line.line_id"
                                 >
                                     <td>
@@ -405,9 +405,9 @@ export default {
 
         // Calculate subtotal of all lines
         const calculateSubtotal = () => {
-            if (!quotation.value || !quotation.value.salesQuotationLines)
+            if (!quotation.value || !quotation.value.salesQuotationLine)
                 return 0;
-            return quotation.value.salesQuotationLines.reduce(
+            return quotation.value.salesQuotationLine.reduce(
                 (sum, line) => sum + (line.subtotal || 0),
                 0
             );
@@ -415,9 +415,9 @@ export default {
 
         // Calculate total tax of all lines
         const calculateTotalTax = () => {
-            if (!quotation.value || !quotation.value.salesQuotationLines)
+            if (!quotation.value || !quotation.value.salesQuotationLine)
                 return 0;
-            return quotation.value.salesQuotationLines.reduce(
+            return quotation.value.salesQuotationLine.reduce(
                 (sum, line) => sum + (line.tax || 0),
                 0
             );
@@ -425,9 +425,9 @@ export default {
 
         // Calculate grand total
         const calculateGrandTotal = () => {
-            if (!quotation.value || !quotation.value.salesQuotationLines)
+            if (!quotation.value || !quotation.value.salesQuotationLine)
                 return 0;
-            return quotation.value.salesQuotationLines.reduce(
+            return quotation.value.salesQuotationLine.reduce(
                 (sum, line) => sum + (line.total || 0),
                 0
             );
