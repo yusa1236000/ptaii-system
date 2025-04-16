@@ -54,6 +54,11 @@ import WarehouseDetail from "../views/inventory/WarehouseDetail.vue";
 import WarehouseZoneDetail from "../views/inventory/WarehouseZoneDetail.vue";
 import WarehouseLocationForm from "../views/inventory/WarehouseLocationForm.vue";
 
+// Import the Sales Return components
+import SalesReturnList from "@/views/sales/SalesReturnList.vue";
+import SalesReturnDetail from "@/views/sales/SalesReturnDetail.vue";
+import SalesReturnForm from "@/views/sales/SalesReturnForm.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -304,6 +309,33 @@ const routes = [
                 path: "/sales/deliveries/:id/edit",
                 name: "EditDelivery",
                 component: DeliveryForm,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            //SalesReturn
+            {
+                path: "/sales/returns",
+                name: "SalesReturns",
+                component: SalesReturnList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/sales/returns/create",
+                name: "CreateSalesReturn",
+                component: SalesReturnForm,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/sales/returns/:id",
+                name: "SalesReturnDetail",
+                component: SalesReturnDetail,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/sales/returns/:id/edit",
+                name: "EditSalesReturn",
+                component: SalesReturnForm,
                 props: true,
                 meta: { requiresAuth: true },
             },

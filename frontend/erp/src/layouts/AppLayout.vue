@@ -325,6 +325,43 @@
                     </router-link>
                 </div>
 
+                <div class="menu-section">
+                    <div
+                        @click="toggleMenuSection('manufacturing')"
+                        class="section-header"
+                    >
+                        <div class="section-title-container">
+                            <i class="fas fa-industry"></i>
+                            <span v-if="!sidebarCollapsed" class="section-title"
+                                >Manufacturing</span
+                            >
+                        </div>
+                        <i
+                            v-if="!sidebarCollapsed"
+                            :class="
+                                menuSections.manufacturing
+                                    ? 'fas fa-chevron-down'
+                                    : 'fas fa-chevron-right'
+                            "
+                            class="section-icon"
+                        ></i>
+                    </div>
+                </div>
+
+                <div
+                    v-show="!sidebarCollapsed && menuSections.manufacturing"
+                    class="submenu"
+                >
+                    <router-link
+                        to="/manufacturing/boms"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-clipboard-list"></i>
+                        <span v-if="!sidebarCollapsed">Bill of Materials</span>
+                    </router-link>
+                </div>
+
                 <!-- Reports Section -->
                 <div class="menu-section">
                     <div
@@ -484,6 +521,7 @@ export default {
             stockOperations: false,
             purchasing: false,
             sales: false,
+            manufacturing: false,
             reports: false,
             admin: false,
         });
@@ -509,6 +547,10 @@ export default {
                 path.includes("/sales/")
             ) {
                 menuSections.sales = true;
+            } else if (
+                path.includes("/manufacturing/") // Add this condition
+            ) {
+                menuSections.manufacturing = true;
             } else if (path.includes("/reports/")) {
                 menuSections.reports = true;
             } else if (path.includes("/admin/")) {
