@@ -9,8 +9,8 @@ class PRLine extends Model
 {
     use HasFactory;
 
+    protected $table = 'pr_lines';
     protected $primaryKey = 'line_id';
-    
     protected $fillable = [
         'pr_id',
         'item_id',

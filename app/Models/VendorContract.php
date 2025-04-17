@@ -9,8 +9,8 @@ class VendorContract extends Model
 {
     use HasFactory;
 
+    protected $table = 'vendor_contracts';
     protected $primaryKey = 'contract_id';
-    
     protected $fillable = [
         'vendor_id',
         'contract_number',

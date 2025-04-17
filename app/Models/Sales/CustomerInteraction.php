@@ -10,6 +10,7 @@ class CustomerInteraction extends Model
 {
     use HasFactory;
 
+    protected $table = 'CustomerInteraction';
     protected $primaryKey = 'interaction_id';
     public $timestamps = false;
     

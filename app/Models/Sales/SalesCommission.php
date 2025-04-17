@@ -10,6 +10,7 @@ class SalesCommission extends Model
 {
     use HasFactory;
 
+    protected $table = 'SalesCommission';
     protected $primaryKey = 'commission_id';
     public $timestamps = false;
     

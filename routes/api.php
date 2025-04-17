@@ -5,23 +5,27 @@ use Illuminate\Support\Facades\Route;
 
 // routes/api.php
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\ItemCategoryController;
-use App\Http\Controllers\Api\UnitOfMeasureController;
-use App\Http\Controllers\Api\ItemController;
-use App\Http\Controllers\Api\WarehouseController;
-use App\Http\Controllers\Api\StockTransactionController;
-use App\Http\Controllers\Api\StockAdjustmentController;
+use App\Http\Controllers\Api\Inventory\ItemCategoryController;
+use App\Http\Controllers\Api\Inventory\UnitOfMeasureController;
+use App\Http\Controllers\Api\Inventory\ItemController;
+use App\Http\Controllers\Api\Inventory\WarehouseController;
+use App\Http\Controllers\Api\Inventory\WarehouseZoneController;
+use App\Http\Controllers\Api\Inventory\WarehouseLocationController;
+use App\Http\Controllers\Api\Inventory\ItemBatchController;
+use App\Http\Controllers\Api\Inventory\StockTransactionController;
+use App\Http\Controllers\Api\Inventory\StockAdjustmentController;
+use App\Http\Controllers\Api\Inventory\CycleCountingController;
 
 // purchase order
-use App\Http\Controllers\API\VendorController;
-use App\Http\Controllers\API\PurchaseRequisitionController;
-use App\Http\Controllers\API\RequestForQuotationController;
-use App\Http\Controllers\API\VendorQuotationController;
-use App\Http\Controllers\API\PurchaseOrderController;
-use App\Http\Controllers\API\GoodsReceiptController;
-use App\Http\Controllers\API\VendorInvoiceController;
-use App\Http\Controllers\API\VendorContractController;
-use App\Http\Controllers\API\VendorEvaluationController;
+use App\Http\Controllers\Api\VendorController;
+use App\Http\Controllers\Api\PurchaseRequisitionController;
+use App\Http\Controllers\Api\RequestForQuotationController;
+use App\Http\Controllers\Api\VendorQuotationController;
+use App\Http\Controllers\Api\PurchaseOrderController;
+use App\Http\Controllers\Api\GoodsReceiptController;
+use App\Http\Controllers\Api\VendorInvoiceController;
+use App\Http\Controllers\Api\VendorContractController;
+use App\Http\Controllers\Api\VendorEvaluationController;
 
 // Sales Order
 use App\Http\Controllers\Api\Sales\CustomerController;
@@ -80,34 +84,79 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
 
+    // // Item Routes
+    // Route::apiResource('items', ItemController::class);
+    // Route::get('/items/stock-status', [ItemController::class, 'stockStatus']);
+
+    // // Category Routes
+    // Route::apiResource('item-categories', CategoryController::class);
+
+    // // UOM Routes
+    // //Route::apiResource('unit-of-measures', UnitOfMeasureController::class);
+
+    // // Warehouse Routes
+    // Route::apiResource('warehouses', WarehouseController::class);
+    // Route::apiResource('warehouses.zones', WarehouseZoneController::class);
+    // Route::apiResource('warehouses.zones.locations', WarehouseLocationController::class);
+
+    // // Transaction Routes
+    // Route::apiResource('stock-transactions', StockTransactionController::class);
+
+    // // Adjustment Routes
+    // Route::apiResource('stock-adjustments', StockAdjustmentController::class);
+    // Route::patch('/stock-adjustments/{stock_adjustment}/approve', [StockAdjustmentController::class, 'approve']);
+    // Route::patch('/stock-adjustments/{stock_adjustment}/cancel', [StockAdjustmentController::class, 'cancel']);
+
+    // // Reports
+    // Route::get('/reports/stock', [ReportController::class, 'stockReport']);
+    // Route::get('/reports/movement', [ReportController::class, 'movementReport']);
+    // Route::get('/reports/adjustment', [ReportController::class, 'adjustmentReport']);
+    // Route::get('/reports/valuation', [ReportController::class, 'valuationReport']);
+
+    // Item Category Routes
+    Route::get('categories/tree', [ItemCategoryController::class, 'tree']);
+    Route::resource('categories', ItemCategoryController::class);
+    
+    // Unit of Measure Routes
+    Route::resource('uoms', UnitOfMeasureController::class);
+    
     // Item Routes
-    Route::apiResource('items', ItemController::class);
-    Route::get('/items/stock-status', [ItemController::class, 'stockStatus']);
-
-    // Category Routes
-    Route::apiResource('item-categories', CategoryController::class);
-
-    // UOM Routes
-    //Route::apiResource('unit-of-measures', UnitOfMeasureController::class);
-
+    Route::get('items/stock-levels', [ItemController::class, 'stockLevelReport']);
+    Route::post('items/{id}/update-stock', [ItemController::class, 'updateStock']);
+    Route::resource('items', ItemController::class);
+    
     // Warehouse Routes
-    Route::apiResource('warehouses', WarehouseController::class);
-    Route::apiResource('warehouses.zones', WarehouseZoneController::class);
-    Route::apiResource('warehouses.zones.locations', WarehouseLocationController::class);
-
-    // Transaction Routes
-    Route::apiResource('stock-transactions', StockTransactionController::class);
-
-    // Adjustment Routes
-    Route::apiResource('stock-adjustments', StockAdjustmentController::class);
-    Route::patch('/stock-adjustments/{stock_adjustment}/approve', [StockAdjustmentController::class, 'approve']);
-    Route::patch('/stock-adjustments/{stock_adjustment}/cancel', [StockAdjustmentController::class, 'cancel']);
-
-    // Reports
-    Route::get('/reports/stock', [ReportController::class, 'stockReport']);
-    Route::get('/reports/movement', [ReportController::class, 'movementReport']);
-    Route::get('/reports/adjustment', [ReportController::class, 'adjustmentReport']);
-    Route::get('/reports/valuation', [ReportController::class, 'valuationReport']);
+    Route::get('warehouses/{id}/inventory', [WarehouseController::class, 'inventory']);
+    Route::resource('warehouses', WarehouseController::class);
+    
+    // Warehouse Zone Routes
+    Route::resource('warehouses/{warehouse_id}/zones', WarehouseZoneController::class);
+    
+    // Warehouse Location Routes
+    Route::get('zones/{zone_id}/locations/{id}/inventory', [WarehouseLocationController::class, 'inventory']);
+    Route::resource('zones/{zone_id}/locations', WarehouseLocationController::class);
+    
+    // Item Batch Routes
+    Route::get('batches/near-expiry/{days?}', [ItemBatchController::class, 'nearExpiry']);
+    Route::resource('items/{item_id}/batches', ItemBatchController::class);
+    
+    // Stock Transaction Routes
+    Route::get('transactions/items/{item_id}/movement', [StockTransactionController::class, 'itemMovement']);
+    Route::post('transactions/transfer', [StockTransactionController::class, 'transfer']);
+    Route::resource('transactions', StockTransactionController::class);
+    
+    // Stock Adjustment Routes
+    Route::post('adjustments/{id}/submit', [StockAdjustmentController::class, 'submit']);
+    Route::post('adjustments/{id}/approve', [StockAdjustmentController::class, 'approve']);
+    Route::post('adjustments/{id}/reject', [StockAdjustmentController::class, 'reject']);
+    Route::resource('adjustments', StockAdjustmentController::class);
+    
+    // Cycle Counting Routes
+    Route::post('cycle-counts/generate', [CycleCountingController::class, 'generateTasks']);
+    Route::post('cycle-counts/{id}/submit', [CycleCountingController::class, 'submit']);
+    Route::post('cycle-counts/{id}/approve', [CycleCountingController::class, 'approve']);
+    Route::post('cycle-counts/{id}/reject', [CycleCountingController::class, 'reject']);
+    Route::resource('cycle-counts', CycleCountingController::class);
 
     // Vendors
     Route::apiResource('vendors', VendorController::class);

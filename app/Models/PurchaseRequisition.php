@@ -9,8 +9,8 @@ class PurchaseRequisition extends Model
 {
     use HasFactory;
 
+    protected $table = 'purchase_requisitions';
     protected $primaryKey = 'pr_id';
-    
     protected $fillable = [
         'pr_number',
         'pr_date',

@@ -325,6 +325,7 @@
                     </router-link>
                 </div>
 
+                <!-- Manufacturing Section -->
                 <div class="menu-section">
                     <div
                         @click="toggleMenuSection('manufacturing')"
@@ -358,8 +359,9 @@
                         active-class="active"
                     >
                         <i class="fas fa-clipboard-list"></i>
-                        <span v-if="!sidebarCollapsed">Bill of Materials</span>
+                        <span v-if="!sidebarCollapsed">Bills of Materials</span>
                     </router-link>
+                    <!-- Add other manufacturing menu items here -->
                 </div>
 
                 <!-- Reports Section -->
@@ -547,9 +549,7 @@ export default {
                 path.includes("/sales/")
             ) {
                 menuSections.sales = true;
-            } else if (
-                path.includes("/manufacturing/") // Add this condition
-            ) {
+            } else if (path.includes("/manufacturing/")) {
                 menuSections.manufacturing = true;
             } else if (path.includes("/reports/")) {
                 menuSections.reports = true;

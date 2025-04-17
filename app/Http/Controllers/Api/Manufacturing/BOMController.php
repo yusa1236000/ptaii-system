@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api\Manufacturing;
 
+use App\Http\Controllers\Controller;
 use App\Models\Manufacturing\BOM;
 use App\Models\Manufacturing\BOMLine;
+use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class BOMController extends Controller
 {
@@ -15,10 +18,53 @@ class BOMController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $boms = BOM::with(['product', 'unitOfMeasure'])->get();
-        return response()->json(['data' => $boms]);
+        $query = BOM::with(['items', 'unit_of_measures']);
+
+        // Filtering by status
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
+
+        // Search by bom_code or item name
+        if ($request->has('search') && $request->search !== '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('bom_code', 'like', "%{$search}%")
+                  ->orWhereHas('items', function ($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Sorting
+        $sortField = $request->get('sort_field', 'bom_code');
+        $sortOrder = $request->get('sort_order', 'asc');
+
+        // To support sorting by related item name, handle 'item.name' key
+        if ($sortField === 'item.name') {
+            $query->join('items', 'boms.item_id', '=', 'items.item_id')
+                  ->orderBy('items.name', $sortOrder)
+                  ->select('boms.*');
+        } else {
+            $query->orderBy($sortField, $sortOrder);
+        }
+
+        // Pagination parameters
+        $perPage = $request->get('per_page', 10);
+
+        $boms = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $boms->items(),
+            'meta' => [
+                'total' => $boms->total(),
+                'last_page' => $boms->lastPage(),
+                'current_page' => $boms->currentPage(),
+                'per_page' => $boms->perPage(),
+            ],
+        ]);
     }
 
     /**
@@ -30,17 +76,17 @@ class BOMController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|integer|exists:Product,product_id',
+            'item_id' => 'required|integer|exists:items,item_id',
             'bom_code' => 'required|string|max:50',
             'revision' => 'required|string|max:10',
             'effective_date' => 'required|date',
             'status' => 'required|string|max:50',
             'standard_quantity' => 'required|numeric',
-            'uom_id' => 'required|integer|exists:UnitOfMeasure,uom_id',
+            'uom_id' => 'required|integer|exists:unit_of_measures,uom_id',
             'bom_lines' => 'sometimes|array',
-            'bom_lines.*.item_id' => 'required|integer|exists:Item,item_id',
+            'bom_lines.*.item_id' => 'required|integer|exists:items,item_id',
             'bom_lines.*.quantity' => 'required|numeric',
-            'bom_lines.*.uom_id' => 'required|integer|exists:UnitOfMeasure,uom_id',
+            'bom_lines.*.uom_id' => 'required|integer|exists:unit_of_measures,uom_id',
             'bom_lines.*.is_critical' => 'sometimes|boolean',
             'bom_lines.*.notes' => 'nullable|string',
         ]);
@@ -52,7 +98,7 @@ class BOMController extends Controller
         DB::beginTransaction();
         try {
             $bom = BOM::create([
-                'product_id' => $request->product_id,
+                'item_id' => $request->item_id,
                 'bom_code' => $request->bom_code,
                 'revision' => $request->revision,
                 'effective_date' => $request->effective_date,
@@ -94,13 +140,23 @@ class BOMController extends Controller
      */
     public function show($id)
     {
-        $bom = BOM::with(['product', 'unitOfMeasure', 'bomLines.item', 'bomLines.unitOfMeasure'])->find($id);
-        
-        if (!$bom) {
-            return response()->json(['message' => 'BOM not found'], 404);
+        try {
+            // Try loading only main relationships first
+            $bom = BOM::with(['items', 'unit_of_measures'])->find($id);
+            
+            if (!$bom) {
+                return response()->json(['message' => 'BOM not found'], 404);
+            }
+            
+            // Load bomLines and their relations separately to isolate errors
+            $bom->load(['bomLines.items', 'bomLines.unit_of_measures']);
+            
+            return response()->json(['data' => $bom]);
+        } catch (\Exception $e) {
+            // Log the exception message for debugging
+            Log::error('Error fetching BOM: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to fetch BOM', 'error' => $e->getMessage()], 500);
         }
-        
-        return response()->json(['data' => $bom]);
     }
 
     /**
@@ -119,13 +175,13 @@ class BOMController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'product_id' => 'sometimes|required|integer|exists:Product,product_id',
+            'item_id' => 'sometimes|required|integer|exists:items,item_id',
             'bom_code' => 'sometimes|required|string|max:50',
             'revision' => 'sometimes|required|string|max:10',
             'effective_date' => 'sometimes|required|date',
             'status' => 'sometimes|required|string|max:50',
             'standard_quantity' => 'sometimes|required|numeric',
-            'uom_id' => 'sometimes|required|integer|exists:UnitOfMeasure,uom_id',
+            'uom_id' => 'sometimes|required|integer|exists:unit_of_measures,uom_id',
         ]);
 
         if ($validator->fails()) {

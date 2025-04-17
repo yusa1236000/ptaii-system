@@ -9,8 +9,8 @@ class RequestForQuotation extends Model
 {
     use HasFactory;
 
+    protected $table = 'request_for_quotations';
     protected $primaryKey = 'rfq_id';
-    
     protected $fillable = [
         'rfq_number',
         'rfq_date',

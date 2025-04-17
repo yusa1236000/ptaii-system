@@ -9,8 +9,8 @@ class PurchaseOrder extends Model
 {
     use HasFactory;
 
+    protected $table = 'purchase_orders';
     protected $primaryKey = 'po_id';
-    
     protected $fillable = [
         'po_number',
         'po_date',

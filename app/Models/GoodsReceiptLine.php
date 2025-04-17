@@ -9,8 +9,8 @@ class GoodsReceiptLine extends Model
 {
     use HasFactory;
 
+    protected $table = 'goods_receipt_lines';
     protected $primaryKey = 'line_id';
-    
     protected $fillable = [
         'receipt_id',
         'po_line_id',

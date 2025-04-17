@@ -1,5 +1,5 @@
 <?php
-// app/Models/ItemCategory.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,16 +13,25 @@ class ItemCategory extends Model
     protected $primaryKey = 'category_id';
     protected $fillable = ['name', 'description', 'parent_category_id'];
 
-    public function parentCategory()
+    /**
+     * Get the parent category
+     */
+    public function parent()
     {
         return $this->belongsTo(ItemCategory::class, 'parent_category_id', 'category_id');
     }
 
-    public function childCategories()
+    /**
+     * Get the child categories
+     */
+    public function children()
     {
         return $this->hasMany(ItemCategory::class, 'parent_category_id', 'category_id');
     }
 
+    /**
+     * Get the items in this category
+     */
     public function items()
     {
         return $this->hasMany(Item::class, 'category_id', 'category_id');

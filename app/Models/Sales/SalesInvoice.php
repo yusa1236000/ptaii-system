@@ -12,7 +12,6 @@ class SalesInvoice extends Model
     use HasFactory;
 
     protected $table = 'SalesInvoice';
-
     protected $primaryKey = 'invoice_id';
     public $timestamps = false;
 

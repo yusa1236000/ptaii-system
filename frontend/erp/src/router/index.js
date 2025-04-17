@@ -59,6 +59,13 @@ import SalesReturnList from "@/views/sales/SalesReturnList.vue";
 import SalesReturnDetail from "@/views/sales/SalesReturnDetail.vue";
 import SalesReturnForm from "@/views/sales/SalesReturnForm.vue";
 
+//Puchase Requisition
+import PurchaseRequisitionList from "../views/purchasing/PurchaseRequisitionList.vue";
+import PurchaseRequisitionForm from "../views/purchasing/PurchaseRequisitionForm.vue";
+import PurchaseRequisitionDetail from "../views/purchasing/PurchaseRequisitionDetail.vue";
+import PurchaseRequisitionApproval from "../views/purchasing/PurchaseRequisitionApproval.vue";
+import ConvertToRFQ from "../views/purchasing/ConvertToRFQ.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -200,6 +207,49 @@ const routes = [
                 component: SalesQuotationPrint,
                 props: true,
             },
+
+            //Purchase Requisition
+            {
+                path: "/purchasing/requisitions",
+                name: "PurchaseRequisitions",
+                component: PurchaseRequisitionList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/requisitions/create",
+                name: "CreatePurchaseRequisition",
+                component: PurchaseRequisitionForm,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/requisitions/:id",
+                name: "PurchaseRequisitionDetail",
+                component: PurchaseRequisitionDetail,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/requisitions/:id/edit",
+                name: "EditPurchaseRequisition",
+                component: PurchaseRequisitionForm,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/requisitions/:id/approve",
+                name: "ApprovePurchaseRequisition",
+                component: PurchaseRequisitionApproval,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/requisitions/:id/convert",
+                name: "ConvertToRFQ",
+                component: ConvertToRFQ,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
             //TambahanIyusyusa
             {
                 path: "/sales/forecasts",
@@ -339,6 +389,7 @@ const routes = [
                 props: true,
                 meta: { requiresAuth: true },
             },
+
             // {
             //     path: "/sales/deliveries/:id/print",
             //     name: "PrintDelivery",
@@ -352,20 +403,7 @@ const routes = [
             //     component: SalesForecastFormModal,
             // },
             //Sampaisini
-            // BOM Routes
-            //{
-            //path: '/manufacturing/boms',
-            //name: 'BOMList',
-            //component: () => import('../views/manufacturing/BOMList.vue'),
-            //meta: { requiresAuth: true }
-            //},
-            //{
-            //path: '/manufacturing/boms/:id',
-            //name: 'BOMDetail',
-            //component: () => import('../views/manufacturing/BOMDetail.vue'),
-            //props: true,
-            //meta: { requiresAuth: true }
-            //},
+            //
             // {
             // path: 'cycle-counts',
             // name: 'CycleCounting',

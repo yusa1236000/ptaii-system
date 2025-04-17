@@ -11,6 +11,7 @@ class SalesInvoiceLine extends Model
 {
     use HasFactory;
 
+    protected $table = 'SalesInvoiceLine';
     protected $primaryKey = 'line_id';
     public $timestamps = false;
     

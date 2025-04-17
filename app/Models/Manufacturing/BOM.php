@@ -11,7 +11,7 @@ class BOM extends Model
 {
     use HasFactory;
 
-    protected $table = 'BOM';
+    protected $table = 'boms';
     protected $primaryKey = 'bom_id';
     public $timestamps = false;
 

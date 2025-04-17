@@ -9,8 +9,8 @@ class VendorInvoiceLine extends Model
 {
     use HasFactory;
 
+    protected $table = 'vendor_invoice_lines';
     protected $primaryKey = 'line_id';
-    
     protected $fillable = [
         'invoice_id',
         'po_line_id',

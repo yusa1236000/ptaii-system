@@ -10,6 +10,7 @@ class SalesReturnLine extends Model
 {
     use HasFactory;
 
+    protected $table = 'SalesReturnLine';
     protected $primaryKey = 'line_id';
     public $timestamps = false;
     

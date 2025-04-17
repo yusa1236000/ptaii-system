@@ -9,8 +9,8 @@ class RFQLine extends Model
 {
     use HasFactory;
 
+    protected $table = 'rfq_lines';
     protected $primaryKey = 'line_id';
-    
     protected $fillable = [
         'rfq_id',
         'item_id',

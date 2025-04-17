@@ -9,8 +9,8 @@ class VendorQuotation extends Model
 {
     use HasFactory;
 
+    protected $table = 'vendor_quotations';
     protected $primaryKey = 'quotation_id';
-    
     protected $fillable = [
         'rfq_id',
         'vendor_id',

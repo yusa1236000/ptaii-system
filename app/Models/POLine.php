@@ -9,8 +9,8 @@ class POLine extends Model
 {
     use HasFactory;
 
+    protected $table = 'po_lines';
     protected $primaryKey = 'line_id';
-    
     protected $fillable = [
         'po_id',
         'item_id',

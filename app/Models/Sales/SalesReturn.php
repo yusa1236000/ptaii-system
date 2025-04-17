@@ -11,6 +11,7 @@ class SalesReturn extends Model
 {
     use HasFactory;
 
+    protected $table = 'SalesReturn';
     protected $primaryKey = 'return_id';
     public $timestamps = false;
     

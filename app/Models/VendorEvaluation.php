@@ -9,8 +9,8 @@ class VendorEvaluation extends Model
 {
     use HasFactory;
 
+    protected $table = 'vendor_evaluations';
     protected $primaryKey = 'evaluation_id';
-    
     protected $fillable = [
         'vendor_id',
         'evaluation_date',

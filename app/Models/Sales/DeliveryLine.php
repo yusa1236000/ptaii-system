@@ -10,6 +10,7 @@ class DeliveryLine extends Model
 {
     use HasFactory;
 
+    protected $table = 'DeliveryLine';
     protected $primaryKey = 'line_id';
     public $timestamps = false;
     
