@@ -80,6 +80,13 @@ import PurchaseOrderForm from "../views/purchasing/PurchaseOrderForm.vue";
 import CreatePOFromQuotation from "../views/purchasing/CreatePOFromQuotation.vue";
 import PurchaseOrderTrack from "../views/purchasing/PurchaseOrderTrack.vue";
 
+//GoodReceipt
+import GoodsReceiptList from "../views/purchasing/GoodsReceiptList.vue";
+import GoodsReceiptFormView from "../views/purchasing/GoodsReceiptFormView.vue";
+import GoodsReceiptDetail from "../views/purchasing/GoodsReceiptDetail.vue";
+import ReceiptConfirmation from "../views/purchasing/ReceiptConfirmation.vue";
+import PendingReceiptsDashboard from "../views/purchasing/PendingReceiptsDashboard.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -344,6 +351,95 @@ const routes = [
                 path: "/purchasing/quotations/:id/create-po",
                 name: "CreatePOFromQuotation",
                 component: CreatePOFromQuotation,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
+            // Goods Receipts Routes
+            {
+                path: "/purchasing/goods-receipts",
+                name: "GoodsReceiptList",
+                component: GoodsReceiptList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/goods-receipts/create",
+                name: "CreateGoodsReceipt",
+                component: GoodsReceiptFormView,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/goods-receipts/dashboard",
+                name: "PendingReceiptsDashboard",
+                component: PendingReceiptsDashboard,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/goods-receipts/:id",
+                name: "GoodsReceiptDetail",
+                component: GoodsReceiptDetail,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/goods-receipts/:id/edit",
+                name: "EditGoodsReceipt",
+                component: GoodsReceiptFormView,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/goods-receipts/:id/confirm",
+                name: "ConfirmGoodsReceipt",
+                component: ReceiptConfirmation,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
+            // Vendor Invoice
+            {
+                path: "/purchasing/vendor-invoices",
+                name: "VendorInvoiceList",
+                component: () =>
+                    import("../views/purchasing/VendorInvoiceList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/vendor-invoices/create",
+                name: "VendorInvoiceCreate",
+                component: () =>
+                    import("../views/purchasing/VendorInvoiceCreate.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/vendor-invoices/",
+                name: "VendorInvoiceDetail",
+                component: () =>
+                    import("../views/purchasing/VendorInvoiceDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/vendor-invoices//edit",
+                name: "VendorInvoiceEdit",
+                component: () =>
+                    import("../views/purchasing/VendorInvoiceEdit.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/vendor-invoices//approve",
+                name: "VendorInvoiceApproval",
+                component: () =>
+                    import("../views/purchasing/VendorInvoiceApproval.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/vendor-invoices//payment",
+                name: "VendorInvoicePayment",
+                component: () =>
+                    import("../views/purchasing/VendorInvoicePayment.vue"),
                 props: true,
                 meta: { requiresAuth: true },
             },
