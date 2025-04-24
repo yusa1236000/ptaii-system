@@ -1,215 +1,204 @@
 <!-- src/views/accounting/JournalBatchUpload.vue -->
 <template>
-    <div class="journal-batch-upload-container">
-      <div class="page-header">
-        <h1>Upload Batch Jurnal</h1>
-        <div class="action-buttons">
-          <button @click="$router.go(-1)" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Kembali
-          </button>
+    <div class="journal-batch-upload">
+      <div class="card">
+        <div class="card-header">
+          <h3>Journal Batch Upload</h3>
         </div>
-      </div>
 
-      <div class="row">
-        <div class="col">
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">Upload File</h2>
-            </div>
-            <div class="card-body">
-              <div class="upload-instructions mb-4">
-                <h3><i class="fas fa-info-circle"></i> Petunjuk Upload</h3>
-                <ul>
-                  <li>Format file yang didukung: Excel (.xlsx, .xls) atau CSV (.csv)</li>
-                  <li>Maksimal ukuran file: 5MB</li>
-                  <li>Kolom yang diperlukan: Nomor Jurnal, Tanggal, Kode Akun, Debit, Kredit, Deskripsi</li>
-                  <li>Pastikan total debit dan kredit seimbang untuk setiap jurnal</li>
-                  <li>Periode akuntansi akan otomatis diambil berdasarkan tanggal jurnal</li>
-                </ul>
-                <div class="template-download">
-                  <p>Belum memiliki template? Download template di bawah ini:</p>
-                  <button @click="downloadTemplate" class="btn btn-outline-primary">
-                    <i class="fas fa-download"></i> Download Template
-                  </button>
+        <div class="card-body">
+          <div class="upload-section mb-4">
+            <h4 class="mb-3">Upload Journal Entries</h4>
+
+            <div class="alert alert-info">
+              <div class="d-flex">
+                <i class="fas fa-info-circle mr-3 mt-1"></i>
+                <div>
+                  <p class="mb-2">Please upload a CSV file containing journal entries data with the following columns:</p>
+                  <ul class="mb-2">
+                    <li><strong>journal_number</strong> - Unique identifier for the journal entry</li>
+                    <li><strong>entry_date</strong> - Date of the journal entry (YYYY-MM-DD format)</li>
+                    <li><strong>description</strong> - Description of the journal entry</li>
+                    <li><strong>account_code</strong> - Chart of account code</li>
+                    <li><strong>debit_amount</strong> - Debit amount (leave blank for credit entries)</li>
+                    <li><strong>credit_amount</strong> - Credit amount (leave blank for debit entries)</li>
+                    <li><strong>line_description</strong> - Description for the journal line (optional)</li>
+                  </ul>
+                  <p class="mb-0">
+                    <a href="#" @click.prevent="downloadTemplate" class="text-primary">
+                      <i class="fas fa-download mr-1"></i> Download template file
+                    </a>
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div class="file-upload">
-                <div class="upload-box" @click="triggerFileInput" @dragover.prevent @dragenter.prevent="dragEnter" @dragleave.prevent="dragLeave" @drop.prevent="handleFileDrop">
-                  <div v-if="!fileSelected">
-                    <i class="fas fa-file-upload upload-icon"></i>
-                    <p class="upload-text">
-                      <span v-if="isDragging">Lepaskan file di sini</span>
-                      <span v-else>Klik atau seret file ke sini untuk mengunggah</span>
-                    </p>
-                    <span class="upload-hint">Excel atau CSV</span>
-                  </div>
-                  <div v-else class="selected-file">
-                    <i :class="fileIcon"></i>
-                    <div class="file-info">
-                      <p class="file-name">{{ selectedFile.name }}</p>
-                      <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
-                    </div>
-                    <button type="button" class="btn-icon" @click.stop="removeFile">
-                      <i class="fas fa-times"></i>
-                    </button>
-                  </div>
-                </div>
+            <div class="form-group mt-4">
+              <label for="periodId">Accounting Period</label>
+              <select
+                id="periodId"
+                v-model="periodId"
+                class="form-control"
+                :class="{ 'is-invalid': submitted && !periodId }"
+                required
+              >
+                <option value="">Select Accounting Period</option>
+                <option v-for="period in periods" :key="period.period_id" :value="period.period_id">
+                  {{ period.period_name }}
+                </option>
+              </select>
+              <div v-if="submitted && !periodId" class="invalid-feedback">
+                Accounting period is required
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="fileUpload">CSV File</label>
+              <div class="custom-file">
                 <input
                   type="file"
-                  ref="fileInput"
-                  class="hidden-file-input"
-                  accept=".xlsx,.xls,.csv"
-                  @change="handleFileChange"
-                />
-              </div>
-
-              <div class="form-group mt-4">
-                <label for="default_period">Periode Akuntansi Default</label>
-                <select
-                  id="default_period"
-                  v-model="defaultPeriodId"
-                  class="form-control"
-                  required
+                  class="custom-file-input"
+                  id="fileUpload"
+                  @change="handleFileUpload"
+                  accept=".csv"
+                  :class="{ 'is-invalid': submitted && !file }"
                 >
-                  <option value="" disabled>Pilih Periode</option>
-                  <option v-for="period in periods" :key="period.period_id" :value="period.period_id">
-                    {{ period.period_name }} ({{ formatDate(period.start_date) }} - {{ formatDate(period.end_date) }})
-                  </option>
-                </select>
-                <small class="form-text text-muted">
-                  Periode default akan digunakan jika tanggal jurnal tidak cocok dengan periode manapun.
-                </small>
-              </div>
-
-              <div class="validation-options">
-                <label class="checkbox-container">
-                  <input type="checkbox" v-model="skipValidation">
-                  <span class="checkbox-label">Lewati validasi (tidak disarankan)</span>
+                <label class="custom-file-label" for="fileUpload">
+                  {{ file ? file.name : 'Choose file' }}
                 </label>
-                <label class="checkbox-container">
-                  <input type="checkbox" v-model="dryRun">
-                  <span class="checkbox-label">Validasi saja (tidak menyimpan data)</span>
+                <div v-if="submitted && !file" class="invalid-feedback">
+                  Please select a CSV file
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="custom-control custom-checkbox">
+                <input
+                  type="checkbox"
+                  class="custom-control-input"
+                  id="autoPost"
+                  v-model="autoPost"
+                >
+                <label class="custom-control-label" for="autoPost">
+                  Auto-post journal entries after validation
                 </label>
               </div>
+            </div>
 
-              <div class="form-actions">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="uploadFile"
-                  :disabled="!fileSelected || isUploading"
-                >
-                  <i v-if="isUploading" class="fas fa-spinner fa-spin"></i>
-                  <i v-else class="fas fa-upload"></i>
-                  {{ isUploading ? 'Sedang Mengupload...' : 'Upload Jurnal' }}
-                </button>
-              </div>
+            <div class="mt-4">
+              <button
+                @click="uploadFile"
+                class="btn btn-primary"
+                :disabled="isUploading"
+              >
+                <i :class="isUploading ? 'fas fa-spinner fa-spin' : 'fas fa-upload'"></i>
+                {{ isUploading ? 'Uploading...' : 'Upload and Validate' }}
+              </button>
+
+              <router-link to="/accounting/journal-entries" class="btn btn-secondary ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Journal Entries
+              </router-link>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Preview & Results Section -->
-      <div class="row mt-4" v-if="uploadComplete">
-        <div class="col">
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">Hasil Upload</h2>
+          <!-- Preview Section (shown after validation) -->
+          <div v-if="validatedEntries.length > 0" class="preview-section mt-5">
+            <h4 class="mb-3">Preview Journal Entries</h4>
+
+            <div v-if="validationErrors.length > 0" class="alert alert-danger mb-4">
+              <h5><i class="fas fa-exclamation-circle mr-2"></i> Validation Errors</h5>
+              <ul class="mb-0 mt-2">
+                <li v-for="(error, index) in validationErrors" :key="index">
+                  {{ error }}
+                </li>
+              </ul>
             </div>
-            <div class="card-body">
-              <!-- Summary -->
-              <div class="upload-summary">
-                <div class="summary-item" :class="{ 'text-success': successCount > 0 }">
-                  <i class="fas fa-check-circle"></i>
-                  <div class="summary-text">
-                    <span class="summary-count">{{ successCount }}</span>
-                    <span class="summary-label">Jurnal Berhasil</span>
-                  </div>
-                </div>
 
-                <div class="summary-item" :class="{ 'text-danger': errorCount > 0 }">
-                  <i class="fas fa-times-circle"></i>
-                  <div class="summary-text">
-                    <span class="summary-count">{{ errorCount }}</span>
-                    <span class="summary-label">Jurnal Gagal</span>
-                  </div>
-                </div>
+            <div class="table-responsive">
+              <table class="table table-bordered table-sm">
+                <thead class="bg-light">
+                  <tr>
+                    <th>Journal #</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Account Code</th>
+                    <th>Account Name</th>
+                    <th class="text-right">Debit</th>
+                    <th class="text-right">Credit</th>
+                    <th>Line Description</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template v-for="(entry, entryIndex) in validatedEntries" :key="entryIndex">
+                    <tr
+                      v-for="(line, lineIndex) in entry.lines"
+                      :key="`${entryIndex}-${lineIndex}`"
+                      :class="{ 'table-danger': line.error }"
+                    >
+                      <td v-if="lineIndex === 0" :rowspan="entry.lines.length">
+                        {{ entry.journal_number }}
+                      </td>
+                      <td v-if="lineIndex === 0" :rowspan="entry.lines.length">
+                        {{ formatDate(entry.entry_date) }}
+                      </td>
+                      <td v-if="lineIndex === 0" :rowspan="entry.lines.length">
+                        {{ entry.description }}
+                      </td>
+                      <td>{{ line.account_code }}</td>
+                      <td>{{ line.account_name || 'Unknown Account' }}</td>
+                      <td class="text-right">{{ formatCurrency(line.debit_amount) }}</td>
+                      <td class="text-right">{{ formatCurrency(line.credit_amount) }}</td>
+                      <td>{{ line.line_description || '-' }}</td>
+                      <td v-if="lineIndex === 0" :rowspan="entry.lines.length">
+                        <span
+                          :class="entry.is_valid ? 'badge badge-success' : 'badge badge-danger'"
+                        >
+                          {{ entry.is_valid ? 'Valid' : 'Invalid' }}
+                        </span>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
 
-                <div class="summary-item">
-                  <i class="fas fa-file-alt"></i>
-                  <div class="summary-text">
-                    <span class="summary-count">{{ totalCount }}</span>
-                    <span class="summary-label">Total Jurnal</span>
-                  </div>
-                </div>
-              </div>
+            <div class="mt-4">
+              <button
+                @click="processEntries"
+                class="btn btn-success"
+                :disabled="isProcessing || validationErrors.length > 0"
+              >
+                <i :class="isProcessing ? 'fas fa-spinner fa-spin' : 'fas fa-check'"></i>
+                {{ isProcessing ? 'Processing...' : 'Process Valid Journal Entries' }}
+              </button>
+            </div>
+          </div>
 
-              <!-- Success List -->
-              <div v-if="successEntries.length > 0" class="result-section">
-                <h3 class="text-success">
-                  <i class="fas fa-check-circle"></i> Jurnal Berhasil
-                </h3>
-                <div class="table-responsive">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>Nomor Jurnal</th>
-                        <th>Tanggal</th>
-                        <th>Jumlah Akun</th>
-                        <th>Total</th>
-                        <th>Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="entry in successEntries" :key="entry.journal_id">
-                        <td>{{ entry.journal_number }}</td>
-                        <td>{{ formatDate(entry.entry_date) }}</td>
-                        <td>{{ entry.line_count }} akun</td>
-                        <td>{{ formatCurrency(entry.total_amount) }}</td>
-                        <td>
-                          <router-link :to="`/accounting/journal-entries/${entry.journal_id}`" class="btn-icon" title="Lihat Detail">
-                            <i class="fas fa-eye"></i>
-                          </router-link>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+          <!-- Results Section (shown after processing) -->
+          <div v-if="processingComplete" class="results-section mt-5">
+            <div class="alert" :class="processingSuccess ? 'alert-success' : 'alert-danger'">
+              <h5>
+                <i :class="processingSuccess ? 'fas fa-check-circle' : 'fas fa-times-circle'" class="mr-2"></i>
+                {{ processingSuccess ? 'Processing Complete' : 'Processing Failed' }}
+              </h5>
+              <p>{{ processingMessage }}</p>
+              <p v-if="processingSuccess">
+                <strong>Created:</strong> {{ successCount }} journal entries
+                <br>
+                <strong>Posted:</strong> {{ autoPost ? successCount : '0' }} journal entries
+              </p>
+            </div>
 
-              <!-- Error List -->
-              <div v-if="errorEntries.length > 0" class="result-section">
-                <h3 class="text-danger">
-                  <i class="fas fa-times-circle"></i> Jurnal Gagal
-                </h3>
-                <div class="table-responsive">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>Baris</th>
-                        <th>Nomor Jurnal</th>
-                        <th>Tanggal</th>
-                        <th>Kesalahan</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="(entry, index) in errorEntries" :key="index">
-                        <td>{{ entry.row }}</td>
-                        <td>{{ entry.journal_number }}</td>
-                        <td>{{ entry.entry_date ? formatDate(entry.entry_date) : '-' }}</td>
-                        <td>{{ entry.error }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+            <div class="mt-4">
+              <router-link to="/accounting/journal-entries" class="btn btn-primary">
+                <i class="fas fa-list mr-1"></i> View Journal Entries
+              </router-link>
 
-                <div class="mt-3">
-                  <button @click="downloadErrorReport" class="btn btn-outline-danger">
-                    <i class="fas fa-download"></i> Download Laporan Kesalahan
-                  </button>
-                </div>
-              </div>
+              <button @click="resetForm" class="btn btn-secondary ml-2">
+                <i class="fas fa-redo mr-1"></i> Upload Another Batch
+              </button>
             </div>
           </div>
         </div>
@@ -218,462 +207,341 @@
   </template>
 
   <script>
+  import { ref, onMounted } from 'vue';
+  //import { useRouter } from 'vue-router';
   import axios from 'axios';
+  import Papa from 'papaparse';
 
   export default {
     name: 'JournalBatchUpload',
-    data() {
-      return {
-        selectedFile: null,
-        fileSelected: false,
-        isDragging: false,
-        isUploading: false,
-        uploadComplete: false,
-        periods: [],
-        defaultPeriodId: '',
-        skipValidation: false,
-        dryRun: false,
+    setup() {
+      //const router = useRouter();
 
-        // Upload results
-        successCount: 0,
-        errorCount: 0,
-        totalCount: 0,
-        successEntries: [],
-        errorEntries: []
-      };
-    },
-    computed: {
-      fileIcon() {
-        if (!this.selectedFile) return 'fas fa-file';
+      // State
+      const periodId = ref('');
+      const periods = ref([]);
+      const file = ref(null);
+      const autoPost = ref(false);
+      const isUploading = ref(false);
+      const isProcessing = ref(false);
+      const submitted = ref(false);
+      const validatedEntries = ref([]);
+      const validationErrors = ref([]);
+      const processingComplete = ref(false);
+      const processingSuccess = ref(false);
+      const processingMessage = ref('');
+      const successCount = ref(0);
+      const accounts = ref([]);
 
-        const extension = this.selectedFile.name.split('.').pop().toLowerCase();
-
-        if (['xlsx', 'xls'].includes(extension)) {
-          return 'fas fa-file-excel';
-        } else if (extension === 'csv') {
-          return 'fas fa-file-csv';
-        }
-
-        return 'fas fa-file';
-      }
-    },
-    created() {
-      this.loadPeriods();
-    },
-    methods: {
-      async loadPeriods() {
+      // Methods
+      const loadPeriods = async () => {
         try {
           const response = await axios.get('/api/accounting/accounting-periods');
-          this.periods = response.data.data;
+          periods.value = response.data.data.filter(period => period.status === 'Open');
 
-          // Get current period
-          const currentPeriodResponse = await axios.get('/api/accounting/accounting-periods/current');
-          if (currentPeriodResponse.data.data) {
-            this.defaultPeriodId = currentPeriodResponse.data.data.period_id;
-          } else if (this.periods.length > 0) {
-            // If no current period, use the most recent one
-            this.defaultPeriodId = this.periods[0].period_id;
+          // Set default period if available
+          if (periods.value.length > 0) {
+            periodId.value = periods.value[0].period_id;
           }
         } catch (error) {
-          this.$toast.error('Gagal memuat data periode', {
-            position: 'top-right',
-            duration: 3000
-          });
-          console.error('Error loading periods:', error);
+          console.error('Error loading accounting periods:', error);
         }
-      },
-      triggerFileInput() {
-        this.$refs.fileInput.click();
-      },
-      dragEnter() {
-        this.isDragging = true;
-      },
-      dragLeave() {
-        this.isDragging = false;
-      },
-      handleFileDrop(event) {
-        this.isDragging = false;
-        const files = event.dataTransfer.files;
+      };
 
-        if (files.length > 0) {
-          this.processFile(files[0]);
+      const loadAccounts = async () => {
+        try {
+          const response = await axios.get('/api/accounting/chart-of-accounts');
+          accounts.value = response.data.data.filter(account => account.is_active);
+        } catch (error) {
+          console.error('Error loading chart of accounts:', error);
         }
-      },
-      handleFileChange(event) {
-        const files = event.target.files;
+      };
 
-        if (files.length > 0) {
-          this.processFile(files[0]);
-        }
-      },
-      processFile(file) {
-        // Check file type
-        const extension = file.name.split('.').pop().toLowerCase();
-        if (!['xlsx', 'xls', 'csv'].includes(extension)) {
-          this.$toast.error('Format file tidak didukung. Harap unggah file Excel (.xlsx, .xls) atau CSV (.csv)', {
-            position: 'top-right',
-            duration: 3000
-          });
+      const handleFileUpload = (event) => {
+        file.value = event.target.files[0];
+      };
+
+      const downloadTemplate = () => {
+        // Create template CSV content
+        const headers = 'journal_number,entry_date,description,account_code,debit_amount,credit_amount,line_description\n';
+        const sampleData =
+          'JV-2023-001,2023-04-24,Office Rent Payment,1001,,5000000,Bank Account\n' +
+          'JV-2023-001,2023-04-24,Office Rent Payment,6001,5000000,,Rent Expense\n' +
+          'JV-2023-002,2023-04-25,Utility Bill Payment,1001,,750000,Bank Account\n' +
+          'JV-2023-002,2023-04-25,Utility Bill Payment,6002,750000,,Utility Expense';
+
+        const content = headers + sampleData;
+
+        // Create and download the file
+        const blob = new Blob([content], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = 'journal_entries_template.csv';
+        link.click();
+      };
+
+      const uploadFile = () => {
+        submitted.value = true;
+
+        if (!periodId.value || !file.value) {
           return;
         }
 
-        // Check file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-          this.$toast.error('Ukuran file terlalu besar. Maksimal ukuran file adalah 5MB', {
-            position: 'top-right',
-            duration: 3000
-          });
-          return;
-        }
+        isUploading.value = true;
+        validatedEntries.value = [];
+        validationErrors.value = [];
 
-        this.selectedFile = file;
-        this.fileSelected = true;
-      },
-      removeFile() {
-        this.selectedFile = null;
-        this.fileSelected = false;
-        this.$refs.fileInput.value = '';
-      },
-      formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      },
-      formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('id-ID', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
+        // Parse CSV file
+        Papa.parse(file.value, {
+          header: true,
+          skipEmptyLines: true,
+          complete: result => validateCsvData(result.data),
+          error: error => {
+            isUploading.value = false;
+            validationErrors.value.push(`CSV parsing error: ${error.message}`);
+          }
         });
-      },
-      formatCurrency(value) {
+      };
+
+      const validateCsvData = (data) => {
+        if (!data || data.length === 0) {
+          isUploading.value = false;
+          validationErrors.value.push('CSV file is empty or invalid');
+          return;
+        }
+
+        // Group by journal number
+        const journalGroups = {};
+
+        data.forEach((row, index) => {
+          const lineNum = index + 2; // +2 for header row and 1-indexed
+
+          // Validate required fields
+          if (!row.journal_number) {
+            validationErrors.value.push(`Line ${lineNum}: Missing journal number`);
+            return;
+          }
+
+          if (!row.entry_date) {
+            validationErrors.value.push(`Line ${lineNum}: Missing entry date`);
+            return;
+          }
+
+          if (!row.account_code) {
+            validationErrors.value.push(`Line ${lineNum}: Missing account code`);
+            return;
+          }
+
+          // Validate date format
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (!dateRegex.test(row.entry_date)) {
+            validationErrors.value.push(`Line ${lineNum}: Invalid date format (should be YYYY-MM-DD)`);
+            return;
+          }
+
+          // Validate amounts
+          const debitAmount = parseFloat(row.debit_amount || 0);
+          const creditAmount = parseFloat(row.credit_amount || 0);
+
+          if (debitAmount > 0 && creditAmount > 0) {
+            validationErrors.value.push(`Line ${lineNum}: Cannot have both debit and credit amounts`);
+            return;
+          }
+
+          if (debitAmount === 0 && creditAmount === 0) {
+            validationErrors.value.push(`Line ${lineNum}: Either debit or credit amount must be greater than zero`);
+            return;
+          }
+
+          // Validate account code
+          const account = accounts.value.find(a => a.account_code === row.account_code);
+          const accountError = !account;
+
+          if (accountError) {
+            validationErrors.value.push(`Line ${lineNum}: Invalid account code '${row.account_code}'`);
+          }
+
+          // Group by journal number
+          if (!journalGroups[row.journal_number]) {
+            journalGroups[row.journal_number] = {
+              journal_number: row.journal_number,
+              entry_date: row.entry_date,
+              description: row.description || `Journal Entry ${row.journal_number}`,
+              period_id: periodId.value,
+              lines: [],
+              is_valid: true
+            };
+          }
+
+          // Add line to journal group
+          journalGroups[row.journal_number].lines.push({
+            account_code: row.account_code,
+            account_id: account ? account.account_id : null,
+            account_name: account ? account.name : null,
+            debit_amount: debitAmount,
+            credit_amount: creditAmount,
+            line_description: row.line_description || '',
+            error: accountError
+          });
+
+          // Mark journal as invalid if line has error
+          if (accountError) {
+            journalGroups[row.journal_number].is_valid = false;
+          }
+        });
+
+        // Validate each journal entry (debits = credits)
+        Object.values(journalGroups).forEach(journal => {
+          const totalDebit = journal.lines.reduce((sum, line) => sum + (line.debit_amount || 0), 0);
+          const totalCredit = journal.lines.reduce((sum, line) => sum + (line.credit_amount || 0), 0);
+
+          if (Math.abs(totalDebit - totalCredit) > 0.01) {
+            journal.is_valid = false;
+            validationErrors.value.push(`Journal ${journal.journal_number}: Total debits (${formatCurrency(totalDebit)}) do not equal total credits (${formatCurrency(totalCredit)})`);
+          }
+        });
+
+        // Set validated entries
+        validatedEntries.value = Object.values(journalGroups);
+
+        isUploading.value = false;
+      };
+
+      const processEntries = async () => {
+        isProcessing.value = true;
+        successCount.value = 0;
+
+        try {
+          const validEntries = validatedEntries.value.filter(entry => entry.is_valid);
+
+          if (validEntries.length === 0) {
+            processingComplete.value = true;
+            processingSuccess.value = false;
+            processingMessage.value = 'No valid journal entries to process.';
+            isProcessing.value = false;
+            return;
+          }
+
+          // Process each journal entry
+          for (const entry of validEntries) {
+            try {
+              // Prepare journal entry data
+              const journalData = {
+                journal_number: entry.journal_number,
+                entry_date: entry.entry_date,
+                description: entry.description,
+                period_id: periodId.value,
+                status: autoPost.value ? 'Posted' : 'Draft',
+                lines: entry.lines.map(line => ({
+                  account_id: line.account_id,
+                  debit_amount: line.debit_amount || 0,
+                  credit_amount: line.credit_amount || 0,
+                  description: line.line_description || null
+                }))
+              };
+
+              // Create journal entry
+              const response = await axios.post('/api/accounting/journal-entries', journalData);
+
+              // Post journal entry if auto-post is enabled
+              if (autoPost.value && response.data.data && response.data.data.journal_id) {
+                await axios.post(`/api/accounting/journal-entries/${response.data.data.journal_id}/post`);
+              }
+
+              successCount.value++;
+            } catch (error) {
+              console.error(`Error processing journal entry ${entry.journal_number}:`, error);
+              validationErrors.value.push(`Error creating journal entry ${entry.journal_number}: ${error.response?.data?.message || error.message}`);
+            }
+          }
+
+          // Set processing results
+          processingComplete.value = true;
+          processingSuccess.value = successCount.value > 0;
+          processingMessage.value = successCount.value === validEntries.length
+            ? `Successfully processed all ${successCount.value} journal entries.`
+            : `Processed ${successCount.value} out of ${validEntries.length} journal entries. Some entries failed to process.`;
+        } catch (error) {
+          console.error('Error processing journal entries:', error);
+          processingComplete.value = true;
+          processingSuccess.value = false;
+          processingMessage.value = `Error processing journal entries: ${error.message}`;
+        } finally {
+          isProcessing.value = false;
+        }
+      };
+
+      const resetForm = () => {
+        file.value = null;
+        submitted.value = false;
+        validatedEntries.value = [];
+        validationErrors.value = [];
+        processingComplete.value = false;
+
+        // Reset file input
+        const fileInput = document.getElementById('fileUpload');
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      };
+
+      const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const [year, month, day] = dateString.split('-');
+        return `${day}/${month}/${year}`;
+      };
+
+      const formatCurrency = (amount) => {
         return new Intl.NumberFormat('id-ID', {
           style: 'currency',
           currency: 'IDR',
           minimumFractionDigits: 2
-        }).format(value || 0);
-      },
-      async uploadFile() {
-        if (!this.selectedFile) return;
+        }).format(parseFloat(amount) || 0);
+      };
 
-        if (!this.defaultPeriodId) {
-          this.$toast.error('Harap pilih periode akuntansi default', {
-            position: 'top-right',
-            duration: 3000
-          });
-          return;
-        }
+      // Lifecycle hooks
+      onMounted(() => {
+        loadPeriods();
+        loadAccounts();
+      });
 
-        this.isUploading = true;
-        this.uploadComplete = false;
-
-        // Create form data
-        const formData = new FormData();
-        formData.append('file', this.selectedFile);
-        formData.append('default_period_id', this.defaultPeriodId);
-        formData.append('skip_validation', this.skipValidation ? '1' : '0');
-        formData.append('dry_run', this.dryRun ? '1' : '0');
-
-        try {
-          const response = await axios.post('/api/accounting/journal-entries/batch-upload', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
-
-          this.$toast.success(this.dryRun ? 'Validasi batch jurnal berhasil' : 'Upload batch jurnal berhasil', {
-            position: 'top-right',
-            duration: 3000
-          });
-
-          // Process results
-          const result = response.data;
-          this.successCount = result.success_count || 0;
-          this.errorCount = result.error_count || 0;
-          this.totalCount = result.total_count || 0;
-          this.successEntries = result.success_entries || [];
-          this.errorEntries = result.error_entries || [];
-
-          this.uploadComplete = true;
-        } catch (error) {
-          console.error('Error uploading journal batch:', error);
-
-          if (error.response && error.response.data && error.response.data.message) {
-            this.$toast.error(error.response.data.message, {
-              position: 'top-right',
-              duration: 3000
-            });
-          } else {
-            this.$toast.error('Gagal mengupload file. Silakan coba lagi.', {
-              position: 'top-right',
-              duration: 3000
-            });
-          }
-        } finally {
-          this.isUploading = false;
-        }
-      },
-      downloadTemplate() {
-        // Create a hidden link element and trigger download
-        const link = document.createElement('a');
-        link.href = '/templates/journal_batch_template.xlsx'; // Path to template file
-        link.download = 'journal_batch_template.xlsx';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      },
-      downloadErrorReport() {
-        if (this.errorEntries.length === 0) return;
-
-        // Convert error entries to CSV
-        let csvContent = 'data:text/csv;charset=utf-8,';
-        csvContent += 'Baris,Nomor Jurnal,Tanggal,Kesalahan\n';
-
-        this.errorEntries.forEach(entry => {
-          const row = [
-            entry.row,
-            entry.journal_number || '',
-            entry.entry_date || '',
-            entry.error || ''
-          ].map(value => `"${value}"`).join(',');
-
-          csvContent += row + '\n';
-        });
-
-        // Create a hidden link element and trigger download
-        const link = document.createElement('a');
-        link.href = encodeURI(csvContent);
-        link.download = 'journal_upload_errors.csv';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      return {
+        periodId,
+        periods,
+        file,
+        autoPost,
+        isUploading,
+        isProcessing,
+        submitted,
+        validatedEntries,
+        validationErrors,
+        processingComplete,
+        processingSuccess,
+        processingMessage,
+        successCount,
+        handleFileUpload,
+        downloadTemplate,
+        uploadFile,
+        processEntries,
+        resetForm,
+        formatDate,
+        formatCurrency
+      };
     }
   };
   </script>
 
   <style scoped>
-  .journal-batch-upload-container {
-    padding: 1rem;
+  .journal-batch-upload {
+    padding: 1rem 0;
   }
 
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .row {
-    display: flex;
-    margin: 0 -0.5rem;
-  }
-
-  .col {
-    padding: 0 0.5rem;
-    flex: 1;
-  }
-
-  .mt-4 {
-    margin-top: 1.5rem;
-  }
-
-  .upload-instructions {
-    background-color: var(--gray-50);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .upload-instructions h3 {
-    color: var(--primary-color);
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .upload-instructions ul {
+  .alert ul {
     padding-left: 1.5rem;
-    margin-bottom: 1rem;
   }
 
-  .upload-instructions li {
-    margin-bottom: 0.5rem;
-  }
-
-  .template-download {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--gray-200);
-  }
-
-  .file-upload {
-    margin-bottom: 1.5rem;
-  }
-
-  .upload-box {
-    border: 2px dashed var(--gray-300);
-    border-radius: 0.5rem;
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background-color 0.2s;
-  }
-
-  .upload-box:hover {
-    border-color: var(--primary-color);
-    background-color: var(--gray-50);
-  }
-
-  .upload-icon {
-    font-size: 2.5rem;
-    color: var(--gray-400);
-    margin-bottom: 1rem;
-  }
-
-  .upload-text {
-    font-size: 1rem;
-    color: var(--gray-700);
-    margin-bottom: 0.5rem;
-  }
-
-  .upload-hint {
+  .badge {
     font-size: 0.75rem;
-    color: var(--gray-500);
-  }
-
-  .hidden-file-input {
-    display: none;
-  }
-
-  .selected-file {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem;
-    background-color: var(--gray-50);
-    border-radius: 0.375rem;
-  }
-
-  .selected-file i {
-    font-size: 1.5rem;
-    color: var(--primary-color);
-    margin-right: 1rem;
-  }
-
-  .file-info {
-    flex: 1;
-    text-align: left;
-  }
-
-  .file-name {
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-  }
-
-  .file-size {
-    font-size: 0.75rem;
-    color: var(--gray-500);
-  }
-
-  .validation-options {
-    margin: 1.5rem 0;
-    display: flex;
-    gap: 2rem;
-  }
-
-  .checkbox-container {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-  }
-
-  .checkbox-label {
-    margin-left: 0.5rem;
-  }
-
-  .form-actions {
-    margin-top: 2rem;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .upload-summary {
-    display: flex;
-    gap: 2rem;
-    margin-bottom: 2rem;
-  }
-
-  .summary-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.5rem;
-    background-color: var(--gray-50);
-    border-radius: 0.5rem;
-    flex: 1;
-  }
-
-  .summary-item i {
-    font-size: 2rem;
-    color: var(--gray-500);
-  }
-
-  .summary-item.text-success i {
-    color: var(--success-color);
-  }
-
-  .summary-item.text-danger i {
-    color: var(--danger-color);
-  }
-
-  .summary-count {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-
-  .summary-label {
-    display: block;
-    font-size: 0.875rem;
-    color: var(--gray-500);
-  }
-
-  .result-section {
-    margin-top: 2rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--gray-200);
-  }
-
-  .result-section h3 {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    font-size: 1.125rem;
-  }
-
-  .text-success {
-    color: var(--success-color);
-  }
-
-  .text-danger {
-    color: var(--danger-color);
-  }
-
-  /* Responsive Styles */
-  @media (max-width: 768px) {
-    .upload-summary {
-      flex-direction: column;
-      gap: 1rem;
-    }
+    padding: 0.25rem 0.5rem;
   }
   </style>

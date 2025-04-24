@@ -101,6 +101,13 @@ import PendingReceiptsDashboard from "../views/purchasing/PendingReceiptsDashboa
 // import VendorPerformanceAnalysis from "../views/purchasing/VendorPerformanceAnalysis.vue";
 // import VendorEvaluationDashboard from "../views/purchasing/VendorEvaluationDashboard.vue";
 
+//Journal Entry Management
+import JournalEntriesList from "../views/accounting/JournalEntriesList.vue";
+import JournalEntryForm from "../views/accounting/JournalEntryForm.vue";
+import JournalEntryDetail from "../views/accounting/JournalEntryDetail.vue";
+import PostJournalEntry from "../views/accounting/PostJournalEntry.vue";
+import JournalBatchUpload from "../views/accounting/JournalBatchUpload.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -878,6 +885,47 @@ const routes = [
                 name: "AccountStructureViewer",
                 component: () =>
                     import("../views/accounting/AccountStructureViewer.vue"),
+                meta: { requiresAuth: true },
+            },
+
+            //Journal Entry Management
+            {
+                path: "/accounting/journal-entries",
+                name: "JournalEntries",
+                component: JournalEntriesList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/journal-entries/create",
+                name: "CreateJournalEntry",
+                component: JournalEntryForm,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/journal-entries/batch-upload",
+                name: "JournalBatchUpload",
+                component: JournalBatchUpload,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/journal-entries/:id",
+                name: "JournalEntryDetail",
+                component: JournalEntryDetail,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/journal-entries/:id/edit",
+                name: "EditJournalEntry",
+                component: JournalEntryForm,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/journal-entries/:id/post",
+                name: "PostJournalEntry",
+                component: PostJournalEntry,
+                props: true,
                 meta: { requiresAuth: true },
             },
 

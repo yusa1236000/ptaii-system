@@ -1,418 +1,330 @@
 <!-- src/views/accounting/JournalEntryDetail.vue -->
 <template>
-    <div class="journal-entry-detail-container">
-      <div class="page-header">
-        <h1>Detail Jurnal</h1>
-        <div class="action-buttons">
-          <button @click="$router.go(-1)" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Kembali
-          </button>
-          <button v-if="journalEntry && journalEntry.status === 'Draft'" @click="showPostConfirmation" class="btn btn-success ml-2">
-            <i class="fas fa-check-circle"></i> Posting Jurnal
-          </button>
-          <router-link
-            v-if="journalEntry && journalEntry.status === 'Draft'"
-            :to="`/accounting/journal-entries/${journalEntry.journal_id}/edit`"
-            class="btn btn-primary ml-2"
-          >
-            <i class="fas fa-edit"></i> Edit
-          </router-link>
-          <button @click="printJournal" class="btn btn-secondary ml-2">
-            <i class="fas fa-print"></i> Cetak
-          </button>
-        </div>
-      </div>
+    <div class="journal-entry-detail">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3>Journal Entry Details</h3>
+          <div>
+            <router-link
+              v-if="journalEntry && journalEntry.status !== 'Posted'"
+              :to="`/accounting/journal-entries/${journalId}/edit`"
+              class="btn btn-primary mr-2"
+            >
+              <i class="fas fa-edit mr-1"></i> Edit
+            </router-link>
 
-      <div class="card" v-if="isLoading">
-        <div class="card-body">
-          <div class="loading-indicator">
-            <i class="fas fa-spinner fa-spin"></i> Memuat data...
+            <router-link
+              v-if="journalEntry && journalEntry.status !== 'Posted'"
+              :to="`/accounting/journal-entries/${journalId}/post`"
+              class="btn btn-success mr-2"
+            >
+              <i class="fas fa-check mr-1"></i> Post
+            </router-link>
+
+            <button
+              v-if="journalEntry && journalEntry.status !== 'Posted'"
+              @click="confirmDelete"
+              class="btn btn-danger mr-2"
+            >
+              <i class="fas fa-trash mr-1"></i> Delete
+            </button>
+
+            <button @click="printJournalEntry" class="btn btn-info">
+              <i class="fas fa-print mr-1"></i> Print
+            </button>
           </div>
         </div>
-      </div>
 
-      <div v-else-if="!journalEntry" class="card">
         <div class="card-body">
-          <div class="empty-state">
+          <div v-if="isLoading" class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Loading journal entry...
+          </div>
+
+          <div v-else-if="!journalEntry" class="empty-state">
             <div class="empty-icon">
-              <i class="fas fa-file-invoice"></i>
+              <i class="fas fa-exclamation-triangle"></i>
             </div>
-            <h3>Data Tidak Ditemukan</h3>
-            <p>Jurnal yang Anda cari tidak ditemukan atau telah dihapus.</p>
+            <h3>Journal Entry Not Found</h3>
+            <p>The requested journal entry could not be found.</p>
+            <router-link to="/accounting/journal-entries" class="btn btn-primary">
+              <i class="fas fa-arrow-left mr-1"></i> Back to Journal Entries
+            </router-link>
           </div>
-        </div>
-      </div>
 
-      <div v-else>
-        <!-- Journal Header Information -->
-        <div class="card mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h2 class="card-title">Informasi Jurnal</h2>
-            <span :class="getStatusBadgeClass(journalEntry.status)" class="badge">
-              {{ journalEntry.status }}
-            </span>
-          </div>
-          <div class="card-body">
-            <div class="journal-info">
-              <div class="info-row">
-                <div class="info-group">
-                  <span class="info-label">Nomor Jurnal</span>
-                  <span class="info-value">{{ journalEntry.journal_number }}</span>
-                </div>
-                <div class="info-group">
-                  <span class="info-label">Tanggal</span>
-                  <span class="info-value">{{ formatDate(journalEntry.entry_date) }}</span>
-                </div>
-                <div class="info-group">
-                  <span class="info-label">Periode</span>
-                  <span class="info-value">{{ journalEntry.accounting_period?.period_name }}</span>
-                </div>
-              </div>
-
-              <div class="info-row">
-                <div class="info-group">
-                  <span class="info-label">Tipe Referensi</span>
-                  <span class="info-value">{{ journalEntry.reference_type || '-' }}</span>
-                </div>
-                <div class="info-group">
-                  <span class="info-label">ID Referensi</span>
-                  <span class="info-value">{{ journalEntry.reference_id || '-' }}</span>
-                </div>
-                <div class="info-group">
-                  <span class="info-label">Dibuat Pada</span>
-                  <span class="info-value">{{ formatDateTime(journalEntry.created_at) }}</span>
-                </div>
-              </div>
-
-              <div class="info-row">
-                <div class="info-group full-width">
-                  <span class="info-label">Deskripsi</span>
-                  <span class="info-value">{{ journalEntry.description || '-' }}</span>
+          <div v-else>
+            <!-- Journal Header Information -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="journal-info">
+                  <h4 class="mb-3">Journal Information</h4>
+                  <table class="table table-sm table-borderless">
+                    <tbody>
+                      <tr>
+                        <th width="140">Journal Number:</th>
+                        <td><strong>{{ journalEntry.journal_number }}</strong></td>
+                      </tr>
+                      <tr>
+                        <th>Status:</th>
+                        <td>
+                          <span
+                            :class="journalEntry.status === 'Posted' ? 'badge badge-success' : 'badge badge-warning'"
+                          >
+                            {{ journalEntry.status }}
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>Date:</th>
+                        <td>{{ formatDate(journalEntry.entry_date) }}</td>
+                      </tr>
+                      <tr>
+                        <th>Period:</th>
+                        <td>{{ journalEntry.accounting_period?.period_name || '-' }}</td>
+                      </tr>
+                      <tr>
+                        <th>Description:</th>
+                        <td>{{ journalEntry.description }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Journal Lines -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Detail Jurnal</h2>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Kode Akun</th>
-                    <th>Nama Akun</th>
-                    <th class="text-right">Debit</th>
-                    <th class="text-right">Kredit</th>
-                    <th>Deskripsi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="line in journalEntry.journal_entry_lines" :key="line.line_id">
-                    <td>{{ line.chart_of_account?.account_code }}</td>
-                    <td>{{ line.chart_of_account?.name }}</td>
-                    <td class="text-right">{{ formatCurrency(line.debit_amount) }}</td>
-                    <td class="text-right">{{ formatCurrency(line.credit_amount) }}</td>
-                    <td>{{ line.description || '-' }}</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th colspan="2" class="text-right">Total</th>
-                    <th class="text-right">{{ formatCurrency(totalDebit) }}</th>
-                    <th class="text-right">{{ formatCurrency(totalCredit) }}</th>
-                    <th></th>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Print Section (hidden, only for printing) -->
-      <div id="print-section" class="print-only">
-        <div class="print-header">
-          <h1>Jurnal Akuntansi</h1>
-          <h2>{{ journalEntry?.journal_number }}</h2>
-        </div>
-
-        <div class="print-info">
-          <div class="print-info-row">
-            <div class="print-info-group">
-              <span class="print-info-label">Tanggal</span>
-              <span class="print-info-value">{{ formatDate(journalEntry?.entry_date) }}</span>
-            </div>
-            <div class="print-info-group">
-              <span class="print-info-label">Periode</span>
-              <span class="print-info-value">{{ journalEntry?.accounting_period?.period_name }}</span>
-            </div>
-            <div class="print-info-group">
-              <span class="print-info-label">Status</span>
-              <span class="print-info-value">{{ journalEntry?.status }}</span>
-            </div>
-          </div>
-
-          <div class="print-info-row">
-            <div class="print-info-group full-width">
-              <span class="print-info-label">Deskripsi</span>
-              <span class="print-info-value">{{ journalEntry?.description || '-' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <table class="print-table">
-          <thead>
-            <tr>
-              <th>Kode Akun</th>
-              <th>Nama Akun</th>
-              <th>Debit</th>
-              <th>Kredit</th>
-              <th>Deskripsi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="line in journalEntry?.journal_entry_lines" :key="line.line_id">
-              <td>{{ line.chart_of_account?.account_code }}</td>
-              <td>{{ line.chart_of_account?.name }}</td>
-              <td class="text-right">{{ formatCurrency(line.debit_amount) }}</td>
-              <td class="text-right">{{ formatCurrency(line.credit_amount) }}</td>
-              <td>{{ line.description || '-' }}</td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr>
-              <th colspan="2" class="text-right">Total</th>
-              <th class="text-right">{{ formatCurrency(totalDebit) }}</th>
-              <th class="text-right">{{ formatCurrency(totalCredit) }}</th>
-              <th></th>
-            </tr>
-          </tfoot>
-        </table>
-
-        <div class="print-footer">
-          <div class="signature-area">
-            <div class="signature-box">
-              <p>Dibuat Oleh</p>
-              <div class="signature-line"></div>
-              <p>Tanggal: _______________</p>
+              <div class="col-md-6">
+                <div class="reference-info">
+                  <h4 class="mb-3">Reference Information</h4>
+                  <table class="table table-sm table-borderless">
+                    <tbody>
+                      <tr>
+                        <th width="140">Reference Type:</th>
+                        <td>{{ journalEntry.reference_type || '-' }}</td>
+                      </tr>
+                      <tr>
+                        <th>Reference ID:</th>
+                        <td>{{ journalEntry.reference_id || '-' }}</td>
+                      </tr>
+                      <tr>
+                        <th>Created Date:</th>
+                        <td>{{ journalEntry.created_at ? formatDate(journalEntry.created_at) : '-' }}</td>
+                      </tr>
+                      <tr>
+                        <th>Last Updated:</th>
+                        <td>{{ journalEntry.updated_at ? formatDate(journalEntry.updated_at) : '-' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
-            <div class="signature-box">
-              <p>Diperiksa Oleh</p>
-              <div class="signature-line"></div>
-              <p>Tanggal: _______________</p>
+            <!-- Journal Entry Lines -->
+            <div class="journal-lines mt-4">
+              <h4 class="mb-3">Journal Entry Lines</h4>
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <thead class="bg-light">
+                    <tr>
+                      <th width="10%">Line #</th>
+                      <th width="40%">Account</th>
+                      <th width="15%" class="text-right">Debit</th>
+                      <th width="15%" class="text-right">Credit</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(line, index) in journalEntry.journal_entry_lines" :key="line.line_id">
+                      <td>{{ index + 1 }}</td>
+                      <td>
+                        <div class="d-flex flex-column">
+                          <span>{{ getAccountName(line.account_id) }}</span>
+                          <small class="text-muted">{{ getAccountCode(line.account_id) }}</small>
+                        </div>
+                      </td>
+                      <td class="text-right">{{ formatCurrency(line.debit_amount) }}</td>
+                      <td class="text-right">{{ formatCurrency(line.credit_amount) }}</td>
+                      <td>{{ line.description || '-' }}</td>
+                    </tr>
+
+                    <!-- Totals row -->
+                    <tr class="bg-light font-weight-bold">
+                      <td colspan="2" class="text-right">Totals</td>
+                      <td class="text-right">{{ formatCurrency(totalDebit) }}</td>
+                      <td class="text-right">{{ formatCurrency(totalCredit) }}</td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div class="signature-box">
-              <p>Disetujui Oleh</p>
-              <div class="signature-line"></div>
-              <p>Tanggal: _______________</p>
+            <!-- Navigation Buttons -->
+            <div class="mt-4">
+              <router-link to="/accounting/journal-entries" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Journal Entries
+              </router-link>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Confirmation Modal for Posting -->
+      <!-- Delete Confirmation Modal -->
       <ConfirmationModal
-        v-if="showPostModal"
-        title="Posting Jurnal"
-        :message="`Apakah Anda yakin ingin memposting jurnal <strong>${journalEntry?.journal_number}</strong>? <br><br>Jurnal yang sudah diposting tidak dapat diubah atau dihapus.`"
-        confirm-button-text="Posting"
-        confirm-button-class="btn btn-primary"
-        @confirm="postJournal"
-        @close="showPostModal = false"
+        v-if="showDeleteModal"
+        title="Delete Journal Entry"
+        :message="`Are you sure you want to delete the journal entry <strong>${journalEntry?.journal_number}</strong>?<br>This action cannot be undone.`"
+        confirm-button-text="Delete"
+        confirm-button-class="btn btn-danger"
+        @confirm="deleteJournalEntry"
+        @close="showDeleteModal = false"
       />
     </div>
   </template>
 
   <script>
+  import { ref, computed, onMounted } from 'vue';
+  import { useRoute, useRouter } from 'vue-router';
   import axios from 'axios';
 
   export default {
     name: 'JournalEntryDetail',
-    props: {
-      id: {
-        type: [Number, String],
-        required: true
-      }
-    },
-    data() {
-      return {
-        isLoading: true,
-        journalEntry: null,
-        showPostModal: false
-      };
-    },
-    computed: {
-      totalDebit() {
-        if (!this.journalEntry || !this.journalEntry.journal_entry_lines) return 0;
-        return this.journalEntry.journal_entry_lines.reduce((sum, line) => sum + parseFloat(line.debit_amount || 0), 0);
-      },
-      totalCredit() {
-        if (!this.journalEntry || !this.journalEntry.journal_entry_lines) return 0;
-        return this.journalEntry.journal_entry_lines.reduce((sum, line) => sum + parseFloat(line.credit_amount || 0), 0);
-      }
-    },
-    created() {
-      this.loadJournalEntry();
-    },
-    methods: {
-      async loadJournalEntry() {
-        this.isLoading = true;
+    setup() {
+      const route = useRoute();
+      const router = useRouter();
+      const journalId = route.params.id;
 
+      // State
+      const journalEntry = ref(null);
+      const accounts = ref([]);
+      const isLoading = ref(true);
+      const showDeleteModal = ref(false);
+
+      // Computed
+      const totalDebit = computed(() => {
+        if (!journalEntry.value || !journalEntry.value.journal_entry_lines) return 0;
+
+        return journalEntry.value.journal_entry_lines.reduce((sum, line) => {
+          return sum + parseFloat(line.debit_amount || 0);
+        }, 0);
+      });
+
+      const totalCredit = computed(() => {
+        if (!journalEntry.value || !journalEntry.value.journal_entry_lines) return 0;
+
+        return journalEntry.value.journal_entry_lines.reduce((sum, line) => {
+          return sum + parseFloat(line.credit_amount || 0);
+        }, 0);
+      });
+
+      // Methods
+      const loadJournalEntry = async () => {
+        isLoading.value = true;
         try {
-          const response = await axios.get(`/api/accounting/journal-entries/${this.id}`);
-          this.journalEntry = response.data.data;
+          const response = await axios.get(`/api/accounting/journal-entries/${journalId}`);
+          journalEntry.value = response.data.data;
+
+          // Load chart of accounts to get names
+          const accountsResponse = await axios.get('/api/accounting/chart-of-accounts');
+          accounts.value = accountsResponse.data.data;
         } catch (error) {
-          this.$toast.error('Gagal memuat data jurnal', {
-            position: 'top-right',
-            duration: 3000
-          });
           console.error('Error loading journal entry:', error);
+          journalEntry.value = null;
         } finally {
-          this.isLoading = false;
+          isLoading.value = false;
         }
-      },
-      formatDate(dateString) {
+      };
+
+      const getAccountName = (accountId) => {
+        const account = accounts.value.find(a => a.account_id === accountId);
+        return account ? account.name : 'Unknown Account';
+      };
+
+      const getAccountCode = (accountId) => {
+        const account = accounts.value.find(a => a.account_id === accountId);
+        return account ? account.account_code : '';
+      };
+
+      const formatDate = (dateString) => {
         if (!dateString) return '-';
         const date = new Date(dateString);
-        return date.toLocaleDateString('id-ID', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        });
-      },
-      formatDateTime(dateTimeString) {
-        if (!dateTimeString) return '-';
-        const date = new Date(dateTimeString);
-        return date.toLocaleDateString('id-ID', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      },
-      formatCurrency(value) {
+        return new Intl.DateTimeFormat('id-ID').format(date);
+      };
+
+      const formatCurrency = (amount) => {
         return new Intl.NumberFormat('id-ID', {
           style: 'currency',
           currency: 'IDR',
           minimumFractionDigits: 2
-        }).format(value || 0);
-      },
-      getStatusBadgeClass(status) {
-        switch (status) {
-          case 'Posted':
-            return 'badge-success';
-          case 'Draft':
-            return 'badge-secondary';
-          case 'Voided':
-            return 'badge-danger';
-          default:
-            return 'badge-secondary';
-        }
-      },
-      showPostConfirmation() {
-        this.showPostModal = true;
-      },
-      async postJournal() {
+        }).format(parseFloat(amount) || 0);
+      };
+
+      const confirmDelete = () => {
+        showDeleteModal.value = true;
+      };
+
+      const deleteJournalEntry = async () => {
         try {
-          await axios.post(`/api/accounting/journal-entries/${this.id}/post`);
-          this.$toast.success('Jurnal berhasil diposting', {
-            position: 'top-right',
-            duration: 3000
-          });
-          this.showPostModal = false;
-          this.loadJournalEntry();
+          await axios.delete(`/api/accounting/journal-entries/${journalId}`);
+          // TODO: Show success notification
+          router.push('/accounting/journal-entries');
         } catch (error) {
-          this.$toast.error('Gagal posting jurnal', {
-            position: 'top-right',
-            duration: 3000
-          });
-          console.error('Error posting journal:', error);
+          console.error('Error deleting journal entry:', error);
+          // TODO: Show error notification
+        } finally {
+          showDeleteModal.value = false;
         }
-      },
-      printJournal() {
-        // Open print dialog
+      };
+
+      const printJournalEntry = () => {
         window.print();
-      }
+      };
+
+      // Lifecycle hooks
+      onMounted(() => {
+        loadJournalEntry();
+      });
+
+      return {
+        journalId,
+        journalEntry,
+        isLoading,
+        totalDebit,
+        totalCredit,
+        showDeleteModal,
+        getAccountName,
+        getAccountCode,
+        formatDate,
+        formatCurrency,
+        confirmDelete,
+        deleteJournalEntry,
+        printJournalEntry
+      };
     }
   };
   </script>
 
   <style scoped>
-  .journal-entry-detail-container {
-    padding: 1rem;
+  .journal-entry-detail {
+    padding: 1rem 0;
   }
 
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
+  .journal-info, .reference-info {
+    background-color: var(--gray-50);
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+    height: 100%;
   }
 
-  .action-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .journal-info {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .info-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .info-group {
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .info-group.full-width {
-    flex-basis: 100%;
-  }
-
-  .info-label {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--gray-500);
-    margin-bottom: 0.25rem;
-  }
-
-  .info-value {
-    font-size: 0.9375rem;
-    color: var(--gray-800);
-    font-weight: 500;
+  .table th {
+    font-weight: 600;
   }
 
   .badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.35rem 0.65rem;
   }
 
-  .text-right {
-    text-align: right;
-  }
-
-  /* Print Styles */
   @media print {
-    .page-header, .card-header, .action-buttons, .btn {
+    .btn, .card-header {
       display: none !important;
     }
 
@@ -424,93 +336,5 @@
     .card-body {
       padding: 0 !important;
     }
-  }
-
-  .print-only {
-    display: none;
-  }
-
-  @media print {
-    .print-only {
-      display: block;
-    }
-
-    .journal-entry-detail-container > div:not(#print-section) {
-      display: none;
-    }
-  }
-
-  /* Print Section Styles */
-  .print-header {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-
-  .print-header h1 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .print-header h2 {
-    font-size: 1.25rem;
-    color: var(--gray-600);
-  }
-
-  .print-info {
-    margin-bottom: 2rem;
-  }
-
-  .print-info-row {
-    display: flex;
-    margin-bottom: 1rem;
-  }
-
-  .print-info-group {
-    flex: 1;
-  }
-
-  .print-info-group.full-width {
-    flex-basis: 100%;
-  }
-
-  .print-info-label {
-    font-weight: bold;
-    display: block;
-    margin-bottom: 0.25rem;
-  }
-
-  .print-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 2rem;
-  }
-
-  .print-table th,
-  .print-table td {
-    border: 1px solid var(--gray-300);
-    padding: 0.5rem;
-  }
-
-  .print-table th {
-    background-color: var(--gray-100);
-    text-align: left;
-  }
-
-  .signature-area {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 3rem;
-  }
-
-  .signature-box {
-    text-align: center;
-    flex: 1;
-    max-width: 200px;
-  }
-
-  .signature-line {
-    height: 1px;
-    background-color: var(--gray-300);
-    margin: 2rem 0;
   }
   </style>

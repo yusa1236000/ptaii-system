@@ -1,258 +1,260 @@
 <!-- src/views/accounting/JournalEntryForm.vue -->
 <template>
-    <div class="journal-entry-form-container">
-      <div class="page-header">
-        <h1>{{ isEditing ? 'Edit Jurnal' : 'Buat Jurnal Baru' }}</h1>
-        <div class="action-buttons">
-          <button @click="$router.go(-1)" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Kembali
-          </button>
-        </div>
-      </div>
-
+    <div class="journal-entry-form">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">{{ isEditing ? `Edit Jurnal #${form.journal_number}` : 'Detail Jurnal' }}</h2>
+          <h3>{{ isEditing ? 'Edit Journal Entry' : 'Create Journal Entry' }}</h3>
         </div>
 
         <div class="card-body">
           <div v-if="isLoading" class="loading-indicator">
-            <i class="fas fa-spinner fa-spin"></i> Memuat data...
+            <i class="fas fa-spinner fa-spin"></i> Loading...
           </div>
 
-          <form v-else @submit.prevent="saveJournalEntry" class="journal-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="journal_number">Nomor Jurnal</label>
-                <input
-                  type="text"
-                  id="journal_number"
-                  v-model="form.journal_number"
-                  class="form-control"
-                  required
-                  :class="{ 'is-invalid': errors.journal_number }"
-                >
-                <div v-if="errors.journal_number" class="invalid-feedback">
-                  {{ errors.journal_number[0] }}
+          <form v-else @submit.prevent="saveJournalEntry">
+            <div class="row mb-4">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="journalNumber">Journal Number</label>
+                  <input
+                    type="text"
+                    id="journalNumber"
+                    v-model="journalEntry.journal_number"
+                    class="form-control"
+                    :class="{ 'is-invalid': v$.journal_number.$error }"
+                    :disabled="isEditing"
+                    required
+                  >
+                  <div v-if="v$.journal_number.$error" class="invalid-feedback">
+                    {{ v$.journal_number.$errors[0].$message }}
+                  </div>
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="entry_date">Tanggal Jurnal</label>
-                <input
-                  type="date"
-                  id="entry_date"
-                  v-model="form.entry_date"
-                  class="form-control"
-                  required
-                  :class="{ 'is-invalid': errors.entry_date }"
-                >
-                <div v-if="errors.entry_date" class="invalid-feedback">
-                  {{ errors.entry_date[0] }}
-                </div>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="period_id">Periode Akuntansi</label>
-                <select
-                  id="period_id"
-                  v-model="form.period_id"
-                  class="form-control"
-                  required
-                  :class="{ 'is-invalid': errors.period_id }"
-                >
-                  <option value="" disabled>Pilih Periode</option>
-                  <option v-for="period in periods" :key="period.period_id" :value="period.period_id">
-                    {{ period.period_name }} ({{ formatDate(period.start_date) }} - {{ formatDate(period.end_date) }})
-                  </option>
-                </select>
-                <div v-if="errors.period_id" class="invalid-feedback">
-                  {{ errors.period_id[0] }}
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="entryDate">Entry Date</label>
+                  <input
+                    type="date"
+                    id="entryDate"
+                    v-model="journalEntry.entry_date"
+                    class="form-control"
+                    :class="{ 'is-invalid': v$.entry_date.$error }"
+                    required
+                  >
+                  <div v-if="v$.entry_date.$error" class="invalid-feedback">
+                    {{ v$.entry_date.$errors[0].$message }}
+                  </div>
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="status">Status</label>
-                <select
-                  id="status"
-                  v-model="form.status"
-                  class="form-control"
-                  required
-                  :class="{ 'is-invalid': errors.status }"
-                >
-                  <option value="Draft">Draft</option>
-                  <option value="Posted">Posted</option>
-                </select>
-                <div v-if="errors.status" class="invalid-feedback">
-                  {{ errors.status[0] }}
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="periodId">Accounting Period</label>
+                  <select
+                    id="periodId"
+                    v-model="journalEntry.period_id"
+                    class="form-control"
+                    :class="{ 'is-invalid': v$.period_id.$error }"
+                    required
+                  >
+                    <option v-for="period in periods" :key="period.period_id" :value="period.period_id">
+                      {{ period.period_name }}
+                    </option>
+                  </select>
+                  <div v-if="v$.period_id.$error" class="invalid-feedback">
+                    {{ v$.period_id.$errors[0].$message }}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="reference_type">Tipe Referensi</label>
-                <input
-                  type="text"
-                  id="reference_type"
-                  v-model="form.reference_type"
-                  class="form-control"
-                  placeholder="Contoh: Invoice, Payment, Manual"
-                  :class="{ 'is-invalid': errors.reference_type }"
-                >
-                <div v-if="errors.reference_type" class="invalid-feedback">
-                  {{ errors.reference_type[0] }}
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="referenceType">Reference Type</label>
+                  <input
+                    type="text"
+                    id="referenceType"
+                    v-model="journalEntry.reference_type"
+                    class="form-control"
+                    placeholder="E.g., Invoice, Payment, etc."
+                  >
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="reference_id">ID Referensi</label>
-                <input
-                  type="number"
-                  id="reference_id"
-                  v-model="form.reference_id"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.reference_id }"
-                >
-                <div v-if="errors.reference_id" class="invalid-feedback">
-                  {{ errors.reference_id[0] }}
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="referenceId">Reference ID</label>
+                  <input
+                    type="number"
+                    id="referenceId"
+                    v-model="journalEntry.reference_id"
+                    class="form-control"
+                    placeholder="Reference document ID"
+                  >
                 </div>
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="description">Deskripsi</label>
+            <div class="form-group mb-4">
+              <label for="description">Description</label>
               <textarea
                 id="description"
-                v-model="form.description"
+                v-model="journalEntry.description"
                 class="form-control"
-                rows="2"
-                :class="{ 'is-invalid': errors.description }"
+                :class="{ 'is-invalid': v$.description.$error }"
+                rows="3"
+                required
               ></textarea>
-              <div v-if="errors.description" class="invalid-feedback">
-                {{ errors.description[0] }}
+              <div v-if="v$.description.$error" class="invalid-feedback">
+                {{ v$.description.$errors[0].$message }}
               </div>
             </div>
 
             <div class="journal-lines">
-              <h3>Detail Jurnal</h3>
-
-              <div v-if="errors.lines" class="alert alert-danger mb-3">
-                {{ errors.lines[0] }}
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>Journal Entry Lines</h4>
+                <button type="button" class="btn btn-outline-primary" @click="addLine">
+                  <i class="fas fa-plus mr-1"></i> Add Line
+                </button>
               </div>
 
               <div class="table-responsive">
-                <table class="table table-bordered journal-lines-table">
-                  <thead>
+                <table class="table table-bordered">
+                  <thead class="bg-light">
                     <tr>
-                      <th style="width: 40%">Akun</th>
-                      <th style="width: 20%">Debit</th>
-                      <th style="width: 20%">Kredit</th>
-                      <th style="width: 20%">Deskripsi</th>
-                      <th style="width: 50px">Aksi</th>
+                      <th width="35%">Account</th>
+                      <th width="15%">Debit</th>
+                      <th width="15%">Credit</th>
+                      <th>Description</th>
+                      <th width="60px">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(line, index) in form.lines" :key="index">
+                    <tr v-for="(line, index) in journalEntry.lines" :key="index">
                       <td>
                         <select
                           v-model="line.account_id"
                           class="form-control"
+                          :class="{ 'is-invalid': hasLineError(index, 'account_id') }"
                           required
-                          :class="{ 'is-invalid': getLineError(index, 'account_id') }"
                         >
-                          <option value="" disabled>Pilih Akun</option>
-                          <optgroup v-for="group in groupedAccounts" :key="group.type" :label="group.type">
-                            <option v-for="account in group.accounts" :key="account.account_id" :value="account.account_id">
+                          <option value="">Select an account</option>
+                          <optgroup
+                            v-for="group in accountsByType"
+                            :key="group.type"
+                            :label="group.type"
+                          >
+                            <option
+                              v-for="account in group.accounts"
+                              :key="account.account_id"
+                              :value="account.account_id"
+                            >
                               {{ account.account_code }} - {{ account.name }}
                             </option>
                           </optgroup>
                         </select>
-                        <div v-if="getLineError(index, 'account_id')" class="invalid-feedback">
-                          {{ getLineError(index, 'account_id')[0] }}
-                        </div>
                       </td>
                       <td>
                         <input
                           type="number"
                           v-model="line.debit_amount"
                           class="form-control text-right"
+                          :class="{ 'is-invalid': hasLineError(index, 'debit_amount') }"
                           step="0.01"
                           min="0"
-                          @input="updateBalance()"
-                          :disabled="line.credit_amount > 0"
-                          :class="{ 'is-invalid': getLineError(index, 'debit_amount') }"
+                          @input="updateTotals"
+                          @focus="clearOtherAmount(line, 'credit_amount')"
+                          placeholder="0.00"
                         >
-                        <div v-if="getLineError(index, 'debit_amount')" class="invalid-feedback">
-                          {{ getLineError(index, 'debit_amount')[0] }}
-                        </div>
                       </td>
                       <td>
                         <input
                           type="number"
                           v-model="line.credit_amount"
                           class="form-control text-right"
+                          :class="{ 'is-invalid': hasLineError(index, 'credit_amount') }"
                           step="0.01"
                           min="0"
-                          @input="updateBalance()"
-                          :disabled="line.debit_amount > 0"
-                          :class="{ 'is-invalid': getLineError(index, 'credit_amount') }"
+                          @input="updateTotals"
+                          @focus="clearOtherAmount(line, 'debit_amount')"
+                          placeholder="0.00"
                         >
-                        <div v-if="getLineError(index, 'credit_amount')" class="invalid-feedback">
-                          {{ getLineError(index, 'credit_amount')[0] }}
-                        </div>
                       </td>
                       <td>
                         <input
                           type="text"
                           v-model="line.description"
                           class="form-control"
-                          :class="{ 'is-invalid': getLineError(index, 'description') }"
+                          placeholder="Line description"
                         >
-                        <div v-if="getLineError(index, 'description')" class="invalid-feedback">
-                          {{ getLineError(index, 'description')[0] }}
-                        </div>
                       </td>
-                      <td>
-                        <button type="button" class="btn-icon text-danger" @click="removeLine(index)" title="Hapus Baris">
+                      <td class="text-center">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-danger"
+                          @click="removeLine(index)"
+                          :disabled="journalEntry.lines.length <= 2"
+                        >
                           <i class="fas fa-trash"></i>
                         </button>
                       </td>
                     </tr>
+
+                    <!-- Totals row -->
+                    <tr class="bg-light">
+                      <td class="text-right font-weight-bold">Totals</td>
+                      <td class="text-right font-weight-bold">{{ formatAmount(totalDebit) }}</td>
+                      <td class="text-right font-weight-bold">{{ formatAmount(totalCredit) }}</td>
+                      <td colspan="2">
+                        <div v-if="!isBalanced" class="text-danger font-weight-bold">
+                          Out of balance: {{ formatAmount(Math.abs(totalDebit - totalCredit)) }}
+                        </div>
+                        <div v-else class="text-success font-weight-bold">
+                          Balanced
+                        </div>
+                      </td>
+                    </tr>
                   </tbody>
-                  <tfoot>
-                    <tr>
-                      <th class="text-right">Total</th>
-                      <th class="text-right">{{ formatCurrency(totalDebit) }}</th>
-                      <th class="text-right">{{ formatCurrency(totalCredit) }}</th>
-                      <th colspan="2"></th>
-                    </tr>
-                    <tr>
-                      <th class="text-right">Selisih</th>
-                      <th colspan="2" class="text-center" :class="{ 'text-danger': !isBalanced, 'text-success': isBalanced }">
-                        {{ isBalanced ? 'Seimbang' : formatCurrency(Math.abs(totalDebit - totalCredit)) }}
-                      </th>
-                      <th colspan="2"></th>
-                    </tr>
-                  </tfoot>
                 </table>
               </div>
 
-              <button type="button" class="btn btn-secondary" @click="addLine">
-                <i class="fas fa-plus"></i> Tambah Baris
-              </button>
+              <div v-if="lineErrors.length > 0" class="alert alert-danger mt-3">
+                <ul class="mb-0">
+                  <li v-for="(error, index) in lineErrors" :key="index">{{ error }}</li>
+                </ul>
+              </div>
             </div>
 
-            <div class="form-actions">
-              <button type="button" class="btn btn-secondary" @click="$router.go(-1)">
-                Batal
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="isSubmitting || !isBalanced">
-                <i v-if="isSubmitting" class="fas fa-spinner fa-spin"></i>
-                {{ isEditing ? 'Update Jurnal' : 'Simpan Jurnal' }}
-              </button>
+            <div class="form-group mt-4">
+              <div class="d-flex justify-content-between">
+                <router-link to="/accounting/journal-entries" class="btn btn-secondary">
+                  <i class="fas fa-arrow-left mr-1"></i> Cancel
+                </router-link>
+
+                <div>
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    :disabled="isSaving || !isBalanced || v$.$invalid"
+                  >
+                    <i class="fas fa-save mr-1"></i>
+                    {{ isSaving ? 'Saving...' : 'Save Journal Entry' }}
+                  </button>
+
+                  <button
+                    v-if="isBalanced && !v$.$invalid"
+                    type="button"
+                    class="btn btn-success ml-2"
+                    @click="saveAndPost"
+                    :disabled="isSaving"
+                  >
+                    <i class="fas fa-check mr-1"></i>
+                    {{ isSaving ? 'Processing...' : 'Save & Post' }}
+                  </button>
+                </div>
+              </div>
             </div>
           </form>
         </div>
@@ -261,379 +263,349 @@
   </template>
 
   <script>
+  import { ref, reactive, computed, onMounted, watch } from 'vue';
+  import { useRoute, useRouter } from 'vue-router';
+  import { useVuelidate } from '@vuelidate/core';
+  import { required, minLength, helpers } from '@vuelidate/validators';
   import axios from 'axios';
 
   export default {
     name: 'JournalEntryForm',
-    props: {
-      id: {
-        type: [Number, String],
-        required: false
-      }
-    },
-    data() {
-      return {
-        isLoading: true,
-        isSubmitting: false,
-        accounts: [],
-        periods: [],
-        form: {
-          journal_number: '',
-          entry_date: new Date().toISOString().split('T')[0],
-          reference_type: '',
-          reference_id: '',
-          description: '',
-          period_id: '',
-          status: 'Draft',
-          lines: [this.createEmptyLine()]
+    setup() {
+      const route = useRoute();
+      const router = useRouter();
+      const isEditing = computed(() => route.params.id !== undefined);
+
+      // State
+      const journalEntry = reactive({
+        journal_number: '',
+        entry_date: new Date().toISOString().substr(0, 10),
+        reference_type: '',
+        reference_id: null,
+        description: '',
+        period_id: '',
+        status: 'Draft',
+        lines: [
+          { account_id: '', debit_amount: null, credit_amount: null, description: '' },
+          { account_id: '', debit_amount: null, credit_amount: null, description: '' }
+        ]
+      });
+
+      const periods = ref([]);
+      const accounts = ref([]);
+      const lineErrors = ref([]);
+      const isLoading = ref(false);
+      const isSaving = ref(false);
+      const totalDebit = ref(0);
+      const totalCredit = ref(0);
+
+      // Validation rules
+      const rules = {
+        journal_number: {
+          required: helpers.withMessage('Journal number is required', required),
+          minLength: helpers.withMessage('Journal number must be at least 3 characters', minLength(3))
         },
-        errors: {},
-        totalDebit: 0,
-        totalCredit: 0
+        entry_date: { required: helpers.withMessage('Entry date is required', required) },
+        description: { required: helpers.withMessage('Description is required', required) },
+        period_id: { required: helpers.withMessage('Accounting period is required', required) }
       };
-    },
-    computed: {
-      isEditing() {
-        return !!this.id;
-      },
-      isBalanced() {
-        return Math.abs(this.totalDebit - this.totalCredit) < 0.01;
-      },
-      groupedAccounts() {
-        const groups = {};
 
-        this.accounts.forEach(account => {
-          if (!groups[account.account_type]) {
-            groups[account.account_type] = [];
+      const v$ = useVuelidate(rules, journalEntry);
+
+      // Computed properties
+      const isBalanced = computed(() => {
+        return Math.abs(totalDebit.value - totalCredit.value) < 0.01;
+      });
+
+      const accountsByType = computed(() => {
+        const groupedAccounts = accounts.value.reduce((groups, account) => {
+          const type = account.account_type;
+          if (!groups[type]) {
+            groups[type] = [];
           }
-          groups[account.account_type].push(account);
-        });
+          groups[type].push(account);
+          return groups;
+        }, {});
 
-        return Object.keys(groups).map(type => ({
+        return Object.keys(groupedAccounts).map(type => ({
           type,
-          accounts: groups[type].sort((a, b) => a.account_code.localeCompare(b.account_code))
+          accounts: groupedAccounts[type].sort((a, b) => a.account_code.localeCompare(b.account_code))
         }));
-      }
-    },
-    created() {
-      this.loadData();
-    },
-    methods: {
-      createEmptyLine() {
-        return {
-          account_id: '',
-          debit_amount: 0,
-          credit_amount: 0,
-          description: ''
-        };
-      },
-      async loadData() {
-        this.isLoading = true;
+      });
 
+      // Methods
+      const loadData = async () => {
+        isLoading.value = true;
         try {
-          const [accountsResponse, periodsResponse] = await Promise.all([
-            axios.get('/api/accounting/chart-of-accounts'),
-            axios.get('/api/accounting/accounting-periods')
-          ]);
+          // Load accounting periods
+          const periodsResponse = await axios.get('/api/accounting/accounting-periods');
+          periods.value = periodsResponse.data.data;
 
-          this.accounts = accountsResponse.data.data;
-          this.periods = periodsResponse.data.data;
-
-          // Get current period
-          const currentPeriodResponse = await axios.get('/api/accounting/accounting-periods/current');
-          if (currentPeriodResponse.data.data) {
-            this.form.period_id = currentPeriodResponse.data.data.period_id;
-          } else if (this.periods.length > 0) {
-            // If no current period, use the most recent one
-            this.form.period_id = this.periods[0].period_id;
+          // Set default period to current period if available
+          const currentPeriod = periods.value.find(p => p.status === 'Open');
+          if (currentPeriod && !journalEntry.period_id) {
+            journalEntry.period_id = currentPeriod.period_id;
           }
 
-          // If editing, load the journal entry
-          if (this.isEditing) {
-            const journalResponse = await axios.get(`/api/accounting/journal-entries/${this.id}`);
-            const journal = journalResponse.data.data;
+          // Load chart of accounts
+          const accountsResponse = await axios.get('/api/accounting/chart-of-accounts');
+          accounts.value = accountsResponse.data.data.filter(account => account.is_active);
 
-            this.form.journal_number = journal.journal_number;
-            this.form.entry_date = journal.entry_date;
-            this.form.reference_type = journal.reference_type || '';
-            this.form.reference_id = journal.reference_id || '';
-            this.form.description = journal.description || '';
-            this.form.period_id = journal.period_id;
-            this.form.status = journal.status;
+          // If editing, load journal entry data
+          if (isEditing.value) {
+            const response = await axios.get(`/api/accounting/journal-entries/${route.params.id}`);
+            const entry = response.data.data;
 
-            if (journal.journal_entry_lines && journal.journal_entry_lines.length > 0) {
-              this.form.lines = journal.journal_entry_lines.map(line => ({
+            // Populate form
+            journalEntry.journal_number = entry.journal_number;
+            journalEntry.entry_date = entry.entry_date;
+            journalEntry.reference_type = entry.reference_type || '';
+            journalEntry.reference_id = entry.reference_id;
+            journalEntry.description = entry.description;
+            journalEntry.period_id = entry.period_id;
+            journalEntry.status = entry.status;
+
+            // Populate lines
+            if (entry.journal_entry_lines && entry.journal_entry_lines.length > 0) {
+              journalEntry.lines = entry.journal_entry_lines.map(line => ({
                 line_id: line.line_id,
                 account_id: line.account_id,
-                debit_amount: line.debit_amount || 0,
-                credit_amount: line.credit_amount || 0,
+                debit_amount: parseFloat(line.debit_amount) || null,
+                credit_amount: parseFloat(line.credit_amount) || null,
                 description: line.description || ''
               }));
             }
-          } else {
-            // For new journal, generate journal number
-            this.form.journal_number = this.generateJournalNumber();
+
+            updateTotals();
           }
         } catch (error) {
-          this.$toast.error('Gagal memuat data', {
-            position: 'top-right',
-            duration: 3000
-          });
           console.error('Error loading data:', error);
+          // TODO: Show error notification
         } finally {
-          this.isLoading = false;
-          this.updateBalance();
+          isLoading.value = false;
         }
-      },
-      generateJournalNumber() {
-        const date = new Date();
-        const year = date.getFullYear().toString().slice(-2);
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      };
 
-        return `JRN${year}${month}${day}${random}`;
-      },
-      formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('id-ID', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
+      const addLine = () => {
+        journalEntry.lines.push({ account_id: '', debit_amount: null, credit_amount: null, description: '' });
+      };
+
+      const removeLine = (index) => {
+        if (journalEntry.lines.length > 2) {
+          journalEntry.lines.splice(index, 1);
+          updateTotals();
+        }
+      };
+
+      const clearOtherAmount = (line, fieldToClear) => {
+        if (fieldToClear === 'debit_amount' && line.debit_amount === null) {
+          line.debit_amount = null;
+        } else if (fieldToClear === 'credit_amount' && line.credit_amount === null) {
+          line.credit_amount = null;
+        }
+      };
+
+      const updateTotals = () => {
+        totalDebit.value = journalEntry.lines.reduce((sum, line) => {
+          return sum + (parseFloat(line.debit_amount) || 0);
+        }, 0);
+
+        totalCredit.value = journalEntry.lines.reduce((sum, line) => {
+          return sum + (parseFloat(line.credit_amount) || 0);
+        }, 0);
+
+        validateLines();
+      };
+
+      const validateLines = () => {
+        lineErrors.value = [];
+
+        // Check if there are at least two lines
+        if (journalEntry.lines.length < 2) {
+          lineErrors.value.push('Journal entry must have at least two lines');
+        }
+
+        // Validate each line
+        journalEntry.lines.forEach((line, index) => {
+          if (!line.account_id) {
+            lineErrors.value.push(`Line ${index + 1}: Account is required`);
+          }
+
+          if ((!line.debit_amount && !line.credit_amount) ||
+              (parseFloat(line.debit_amount) === 0 && parseFloat(line.credit_amount) === 0)) {
+            lineErrors.value.push(`Line ${index + 1}: Either debit or credit amount must be greater than zero`);
+          }
+
+          if (parseFloat(line.debit_amount) > 0 && parseFloat(line.credit_amount) > 0) {
+            lineErrors.value.push(`Line ${index + 1}: Cannot have both debit and credit amounts`);
+          }
         });
-      },
-      formatCurrency(value) {
+
+        // Check if debits equal credits
+        if (Math.abs(totalDebit.value - totalCredit.value) > 0.01) {
+          lineErrors.value.push(`Journal entry is out of balance by ${formatAmount(Math.abs(totalDebit.value - totalCredit.value))}`);
+        }
+      };
+
+      const hasLineError = (index, field) => {
+        return lineErrors.value.some(error => error.includes(`Line ${index + 1}`) && error.toLowerCase().includes(field));
+      };
+
+      const formatAmount = (amount) => {
         return new Intl.NumberFormat('id-ID', {
           style: 'currency',
           currency: 'IDR',
           minimumFractionDigits: 2
-        }).format(value);
-      },
-      updateBalance() {
-        this.totalDebit = this.form.lines.reduce((sum, line) => sum + parseFloat(line.debit_amount || 0), 0);
-        this.totalCredit = this.form.lines.reduce((sum, line) => sum + parseFloat(line.credit_amount || 0), 0);
-      },
-      addLine() {
-        this.form.lines.push(this.createEmptyLine());
-      },
-      removeLine(index) {
-        if (this.form.lines.length > 1) {
-          this.form.lines.splice(index, 1);
-          this.updateBalance();
-        } else {
-          this.$toast.warning('Jurnal harus memiliki minimal satu baris', {
-            position: 'top-right',
-            duration: 3000
-          });
-        }
-      },
-      getLineError(index, field) {
-        if (this.errors.lines && this.errors.lines[index]) {
-          return this.errors.lines[index][field];
-        }
-        return null;
-      },
-      async saveJournalEntry() {
-        if (!this.isBalanced) {
-          this.$toast.error('Jurnal tidak seimbang. Total debit harus sama dengan total kredit.', {
-            position: 'top-right',
-            duration: 3000
-          });
+        }).format(amount || 0);
+      };
+
+      const saveJournalEntry = async () => {
+        // Validate form
+        const isFormValid = await v$.value.$validate();
+        if (!isFormValid || !isBalanced.value || lineErrors.value.length > 0) {
           return;
         }
 
-        this.isSubmitting = true;
-        this.errors = {};
+        isSaving.value = true;
 
         try {
-          let response;
-
-          // Filter out empty lines
-          const validLines = this.form.lines.filter(line =>
-            line.account_id && (parseFloat(line.debit_amount) > 0 || parseFloat(line.credit_amount) > 0)
-          );
-
-          if (validLines.length < 1) {
-            this.$toast.error('Jurnal harus memiliki minimal satu baris dengan akun dan nilai yang valid.', {
-              position: 'top-right',
-              duration: 3000
-            });
-            this.isSubmitting = false;
-            return;
-          }
-
-          const formData = {
-            ...this.form,
-            lines: validLines
+          const payload = {
+            journal_number: journalEntry.journal_number,
+            entry_date: journalEntry.entry_date,
+            reference_type: journalEntry.reference_type || null,
+            reference_id: journalEntry.reference_id || null,
+            description: journalEntry.description,
+            period_id: journalEntry.period_id,
+            status: journalEntry.status,
+            lines: journalEntry.lines.map(line => ({
+              account_id: line.account_id,
+              debit_amount: parseFloat(line.debit_amount) || 0,
+              credit_amount: parseFloat(line.credit_amount) || 0,
+              description: line.description || null
+            }))
           };
 
-          if (this.isEditing) {
-            response = await axios.put(`/api/accounting/journal-entries/${this.id}`, formData);
-            this.$toast.success('Jurnal berhasil diperbarui', {
-              position: 'top-right',
-              duration: 3000
-            });
+          if (isEditing.value) {
+            await axios.put(`/api/accounting/journal-entries/${route.params.id}`, payload);
           } else {
-            response = await axios.post('/api/accounting/journal-entries', formData);
-            this.$toast.success('Jurnal berhasil dibuat', {
-              position: 'top-right',
-              duration: 3000
-            });
+            await axios.post('/api/accounting/journal-entries', payload);
           }
 
-          // Navigate to the journal detail page
-          this.$router.push(`/accounting/journal-entries/${response.data.data.journal_id}`);
+          // TODO: Show success notification
+          router.push('/accounting/journal-entries');
         } catch (error) {
           console.error('Error saving journal entry:', error);
-
-          if (error.response && error.response.data && error.response.data.errors) {
-            this.errors = error.response.data.errors;
-
-            this.$toast.error('Terdapat kesalahan pada data yang dimasukkan. Silakan periksa kembali.', {
-              position: 'top-right',
-              duration: 3000
-            });
-          } else {
-            this.$toast.error('Gagal menyimpan jurnal. Silakan coba lagi.', {
-              position: 'top-right',
-              duration: 3000
-            });
-          }
+          // TODO: Show error notification
         } finally {
-          this.isSubmitting = false;
+          isSaving.value = false;
         }
-      }
+      };
+
+      const saveAndPost = async () => {
+        // Validate form
+        const isFormValid = await v$.value.$validate();
+        if (!isFormValid || !isBalanced.value || lineErrors.value.length > 0) {
+          return;
+        }
+
+        isSaving.value = true;
+
+        try {
+          const payload = {
+            journal_number: journalEntry.journal_number,
+            entry_date: journalEntry.entry_date,
+            reference_type: journalEntry.reference_type || null,
+            reference_id: journalEntry.reference_id || null,
+            description: journalEntry.description,
+            period_id: journalEntry.period_id,
+            status: 'Posted', // Set status to Posted
+            lines: journalEntry.lines.map(line => ({
+              account_id: line.account_id,
+              debit_amount: parseFloat(line.debit_amount) || 0,
+              credit_amount: parseFloat(line.credit_amount) || 0,
+              description: line.description || null
+            }))
+          };
+
+          if (isEditing.value) {
+            await axios.put(`/api/accounting/journal-entries/${route.params.id}`, payload);
+            await axios.post(`/api/accounting/journal-entries/${route.params.id}/post`);
+          } else {
+            const response = await axios.post('/api/accounting/journal-entries', payload);
+            await axios.post(`/api/accounting/journal-entries/${response.data.data.journal_id}/post`);
+          }
+
+          // TODO: Show success notification
+          router.push('/accounting/journal-entries');
+        } catch (error) {
+          console.error('Error saving and posting journal entry:', error);
+          // TODO: Show error notification
+        } finally {
+          isSaving.value = false;
+        }
+      };
+
+      // Generate unique journal number
+      const generateJournalNumber = () => {
+        if (!isEditing.value && !journalEntry.journal_number) {
+          const today = new Date();
+          const year = today.getFullYear().toString().substr(-2);
+          const month = (today.getMonth() + 1).toString().padStart(2, '0');
+          const random = Math.floor(Math.random() * 9000 + 1000);
+          journalEntry.journal_number = `JV-${year}${month}-${random}`;
+        }
+      };
+
+      // Lifecycle hooks
+      onMounted(() => {
+        generateJournalNumber();
+        loadData();
+      });
+
+      watch(
+        () => journalEntry.lines,
+        () => {
+          updateTotals();
+        },
+        { deep: true }
+      );
+
+      return {
+        journalEntry,
+        periods,
+        accounts,
+        accountsByType,
+        isLoading,
+        isSaving,
+        isEditing,
+        totalDebit,
+        totalCredit,
+        isBalanced,
+        lineErrors,
+        v$,
+        addLine,
+        removeLine,
+        clearOtherAmount,
+        updateTotals,
+        hasLineError,
+        formatAmount,
+        saveJournalEntry,
+        saveAndPost
+      };
     }
   };
   </script>
 
   <style scoped>
-  .journal-entry-form-container {
-    padding: 1rem;
+  .journal-entry-form {
+    padding: 1rem 0;
   }
 
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .form-row {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .form-row .form-group {
-    flex: 1;
-  }
-
-  .form-group {
-    margin-bottom: 1rem;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-  }
-
-  .form-control {
-    width: 100%;
-    padding: 0.625rem;
-    font-size: 0.875rem;
-    border: 1px solid var(--gray-300);
-    border-radius: 0.375rem;
-    transition: border-color 0.2s;
-  }
-
-  .form-control:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-  }
-
-  .form-control.is-invalid {
-    border-color: var(--danger-color);
-  }
-
-  .invalid-feedback {
-    color: var(--danger-color);
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
-  }
-
-  .journal-lines {
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-  }
-
-  .journal-lines h3 {
-    margin-bottom: 1rem;
-  }
-
-  .journal-lines-table {
-    margin-bottom: 1rem;
-  }
-
-  .journal-lines-table th,
-  .journal-lines-table td {
-    padding: 0.75rem;
-    vertical-align: middle;
-  }
-
-  .btn-icon {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    transition: background-color 0.2s;
-  }
-
-  .btn-icon:hover {
+  .table th {
     background-color: var(--gray-100);
   }
 
-  .text-danger {
-    color: var(--danger-color);
-  }
-
-  .text-danger:hover {
-    color: var(--danger-light);
-  }
-
-  .text-success {
-    color: var(--success-color);
-  }
-
-  .text-right {
-    text-align: right;
-  }
-
-  .text-center {
-    text-align: center;
-  }
-
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-
-  .alert {
-    padding: 0.75rem 1.25rem;
-    border-radius: 0.375rem;
-    margin-bottom: 1rem;
-  }
-
-  .alert-danger {
-    background-color: var(--danger-bg);
-    color: var(--danger-color);
-    border: 1px solid rgba(220, 38, 38, 0.2);
+  .form-control:disabled {
+    background-color: var(--gray-100);
   }
   </style>
