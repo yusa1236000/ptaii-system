@@ -501,6 +501,15 @@
                     </router-link>
 
                     <router-link
+                        to="/accounting/bank-accounts"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                    <i class="fas fa-university"></i>
+                    <span v-if="!sidebarCollapsed">Bank Accounts</span>
+                    </router-link>
+
+                    <router-link
                         to="/accounting/periods"
                         class="menu-item"
                         active-class="active"
@@ -785,6 +794,16 @@ export default {
                     return "Sales Report";
                 case "Users":
                     return "User Management";
+                case "BankAccounts":
+                    return "Bank Accounts";
+                case "CreateBankAccount":
+                    return "Create Bank Account";
+                case "EditBankAccount":
+                    return "Edit Bank Account";
+    case "BankAccountDetail":
+      return "Bank Account Details";
+    case "BankAccountTransactions":
+      return "Bank Transactions";
                 default:
                     return "Dashboard";
             }

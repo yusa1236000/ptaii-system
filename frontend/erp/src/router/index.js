@@ -76,7 +76,7 @@ import RFQCompare from "../views/purchasing/RFQCompare.vue";
 //PO
 import PurchaseOrderList from "../views/purchasing/PurchaseOrderList.vue";
 import PurchaseOrderDetail from "../views/purchasing/PurchaseOrderDetail.vue";
-import PurchaseOrderForm from "../views/purchasing/PurchaseOrderForm.vue";
+import PurchaseOrderForm from "../views/components/purchasing/PurchaseOrderForm.vue";
 import CreatePOFromQuotation from "../views/purchasing/CreatePOFromQuotation.vue";
 import PurchaseOrderTrack from "../views/purchasing/PurchaseOrderTrack.vue";
 
@@ -974,6 +974,46 @@ const routes = [
                 path: "/accounting/fiscal-year-setup",
                 name: "FiscalYearSetup",
                 component: FiscalYearSetup,
+                meta: { requiresAuth: true },
+            },
+
+            // Bank Account Management Routes
+            {
+                path: "/accounting/bank-accounts",
+                name: "BankAccounts",
+                component: () =>
+                    import("../views/accounting/BankAccountsList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/bank-accounts/create",
+                name: "CreateBankAccount",
+                component: () =>
+                    import("../views/accounting/BankAccountForm.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/bank-accounts/:id",
+                name: "BankAccountDetail",
+                component: () =>
+                    import("../views/accounting/BankAccountDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/bank-accounts/:id/edit",
+                name: "EditBankAccount",
+                component: () =>
+                    import("../views/accounting/BankAccountForm.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/bank-accounts/:id/transactions",
+                name: "BankAccountTransactions",
+                component: () =>
+                    import("../views/accounting/BankAccountTransactions.vue"),
+                props: true,
                 meta: { requiresAuth: true },
             },
 
