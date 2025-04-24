@@ -501,7 +501,7 @@
                     </router-link>
 
                     <router-link
-                        to="/accounting/accounting-periods"
+                        to="/accounting/periods"
                         class="menu-item"
                         active-class="active"
                     >

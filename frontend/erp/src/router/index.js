@@ -108,6 +108,13 @@ import JournalEntryDetail from "../views/accounting/JournalEntryDetail.vue";
 import PostJournalEntry from "../views/accounting/PostJournalEntry.vue";
 import JournalBatchUpload from "../views/accounting/JournalBatchUpload.vue";
 
+// Accounting Period Manajement
+import AccountingPeriodsList from "@/views/accounting/AccountingPeriodsList.vue";
+import AccountingPeriodForm from "@/views/accounting/AccountingPeriodForm.vue";
+import AccountingPeriodDetail from "@/views/accounting/AccountingPeriodDetail.vue";
+import AccountingPeriodClose from "@/views/accounting/AccountingPeriodClose.vue";
+import FiscalYearSetup from "@/views/accounting/FiscalYearSetup.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -926,6 +933,47 @@ const routes = [
                 name: "PostJournalEntry",
                 component: PostJournalEntry,
                 props: true,
+                meta: { requiresAuth: true },
+            },
+
+            // Accounting Periods
+            {
+                path: "/accounting/periods",
+                name: "AccountingPeriods",
+                component: AccountingPeriodsList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/periods/create",
+                name: "CreateAccountingPeriod",
+                component: AccountingPeriodForm,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/periods/:id",
+                name: "AccountingPeriodDetail",
+                component: AccountingPeriodDetail,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/periods/:id/edit",
+                name: "EditAccountingPeriod",
+                component: AccountingPeriodForm,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/periods/:id/close",
+                name: "CloseAccountingPeriod",
+                component: AccountingPeriodClose,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/fiscal-year-setup",
+                name: "FiscalYearSetup",
+                component: FiscalYearSetup,
                 meta: { requiresAuth: true },
             },
 
