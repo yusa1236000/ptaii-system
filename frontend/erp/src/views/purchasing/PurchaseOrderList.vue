@@ -183,7 +183,7 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
+//import { useRouter } from "vue-router";
 import PurchaseOrderService from "@/services/PurchaseOrderService";
 import VendorService from "@/services/VendorService";
 import DataTable from "@/components/common/DataTable.vue";
@@ -200,7 +200,7 @@ export default {
         ConfirmationModal,
     },
     setup() {
-        const router = useRouter();
+        //const router = useRouter();
         const purchaseOrders = ref([]);
         const vendors = ref([]);
         const isLoading = ref(true);

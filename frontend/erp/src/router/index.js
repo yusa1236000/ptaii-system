@@ -87,6 +87,20 @@ import GoodsReceiptDetail from "../views/purchasing/GoodsReceiptDetail.vue";
 import ReceiptConfirmation from "../views/purchasing/ReceiptConfirmation.vue";
 import PendingReceiptsDashboard from "../views/purchasing/PendingReceiptsDashboard.vue";
 
+//Purchasing & Dashboard Reporting
+// import PurchasingDashboard from "../views/purchasing/PurchasingDashboard.vue";
+// import SpendAnalysisPage from "../views/purchasing/SpendAnalysisPage.vue";
+// import VendorPerformanceReport from "../views/purchasing/VendorPerformanceReport.vue";
+// import POStatusSummary from "../views/purchasing/POStatusSummary.vue";
+// import PriceTrendAnalysis from "../views/purchasing/PriceTrendAnalysis.vue";
+
+// Vendor Evaluation
+// import VendorEvaluationList from "../views/purchasing/VendorEvaluationList.vue";
+// import VendorEvaluationDetail from "../views/purchasing/VendorEvaluationDetail.vue";
+// import VendorEvaluationForm from "../views/purchasing/VendorEvaluationForm.vue";
+// import VendorPerformanceAnalysis from "../views/purchasing/VendorPerformanceAnalysis.vue";
+// import VendorEvaluationDashboard from "../views/purchasing/VendorEvaluationDashboard.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -443,6 +457,155 @@ const routes = [
                 props: true,
                 meta: { requiresAuth: true },
             },
+            //
+            {
+                path: "/purchasing/contracts",
+                name: "ContractList",
+                component: () => import("../views/purchasing/ContractList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/contracts/create",
+                name: "ContractCreate",
+                component: () =>
+                    import("../views/purchasing/ContractCreate.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/contracts/:id",
+                name: "ContractDetail",
+                component: () =>
+                    import("../views/purchasing/ContractDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/contracts/:id/edit",
+                name: "ContractEdit",
+                component: () => import("../views/purchasing/ContractEdit.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
+            //Purchasing & Dashboard Reporting
+            // {
+            //     path: "/purchasing/dashboard",
+            //     name: "PurchasingDashboard",
+            //     component: PurchasingDashboard,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/spend-analysis",
+            //     name: "SpendAnalysis",
+            //     component: SpendAnalysisPage,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/vendor-performance",
+            //     name: "VendorPerformance",
+            //     component: VendorPerformanceReport,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/po-status",
+            //     name: "POStatus",
+            //     component: POStatusSummary,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/price-trend",
+            //     name: "PriceTrend",
+            //     component: PriceTrendAnalysis,
+            //     meta: { requiresAuth: true },
+            // },
+
+            //End
+
+            // {
+            //     path: "/purchasing/contracts/expiry-dashboard",
+            //     name: "ContractExpiryDashboard",
+            //     component: () =>
+            //         import("../views/purchasing/ContractExpiryDashboard.vue"),
+            //     meta: { requiresAuth: true },
+            // },
+
+            //Vendor Evaluation
+            // {
+            //     path: "/purchasing/evaluations",
+            //     name: "VendorEvaluations",
+            //     component: VendorEvaluationList,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/evaluations/create",
+            //     name: "CreateVendorEvaluation",
+            //     component: VendorEvaluationForm,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/evaluations/:id",
+            //     name: "VendorEvaluationDetail",
+            //     component: VendorEvaluationDetail,
+            //     props: true,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/evaluations/:id/edit",
+            //     name: "EditVendorEvaluation",
+            //     component: VendorEvaluationForm,
+            //     props: true,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/vendors/:id/performance",
+            //     name: "VendorPerformanceAnalysis",
+            //     component: VendorPerformanceAnalysis,
+            //     props: true,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/evaluation-dashboard",
+            //     name: "VendorEvaluationDashboard",
+            //     component: VendorEvaluationDashboard,
+            //     meta: { requiresAuth: true },
+            // },
+
+            //VendorContractManajemen
+            // {
+            //     path: "/purchasing/contracts",
+            //     name: "ContractList",
+            //     component: () => import("../views/purchasing/ContractList.vue"),
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/contracts/create",
+            //     name: "ContractCreate",
+            //     component: () =>
+            //         import("../views/purchasing/ContractCreate.vue"),
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/contracts/:id",
+            //     name: "ContractDetail",
+            //     component: () =>
+            //         import("../views/purchasing/ContractDetail.vue"),
+            //     props: true,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/contracts/:id/edit",
+            //     name: "ContractEdit",
+            //     component: () => import("../views/purchasing/ContractEdit.vue"),
+            //     props: true,
+            //     meta: { requiresAuth: true },
+            // },
+            // {
+            //     path: "/purchasing/contracts/expiry-dashboard",
+            //     name: "ContractExpiryDashboard",
+            //     component: () =>
+            //         import("../views/purchasing/ContractExpiryDashboard.vue"),
+            //     meta: { requiresAuth: true },
+            // },
 
             //TambahanIyusyusa
             {
@@ -678,6 +841,46 @@ const routes = [
                 props: true,
                 meta: { requiresAuth: true },
             },
+
+            // Accounting Module Routes
+            {
+                path: "accounting/chart-of-accounts",
+                name: "ChartOfAccountsList",
+                component: () =>
+                    import("../views/accounting/ChartOfAccountsList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/chart-of-accounts/create",
+                name: "CreateChartOfAccount",
+                component: () =>
+                    import("../views/accounting/ChartOfAccountForm.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/chart-of-accounts/:accountId",
+                name: "ChartOfAccountDetail",
+                component: () =>
+                    import("../views/accounting/ChartOfAccountDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/chart-of-accounts/:accountId/edit",
+                name: "EditChartOfAccount",
+                component: () =>
+                    import("../views/accounting/ChartOfAccountForm.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/chart-of-accounts-structure",
+                name: "AccountStructureViewer",
+                component: () =>
+                    import("../views/accounting/AccountStructureViewer.vue"),
+                meta: { requiresAuth: true },
+            },
+
             // Admin Routes
             {
                 path: "admin/users",

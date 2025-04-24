@@ -179,6 +179,50 @@
                     class="submenu"
                 >
                     <router-link
+                        to="/purchasing/dashboard"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span v-if="!sidebarCollapsed">Dashboard</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/spend-analysis"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-chart-pie"></i>
+                        <span v-if="!sidebarCollapsed">Spend Analysis</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/vendor-performance"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-star"></i>
+                        <span v-if="!sidebarCollapsed">Vendor Performance</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/po-status"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-clipboard-check"></i>
+                        <span v-if="!sidebarCollapsed">PO Status</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/price-trend"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-chart-line"></i>
+                        <span v-if="!sidebarCollapsed">Price Trends</span>
+                    </router-link>
+                    <router-link
                         to="/purchasing/vendors"
                         class="menu-item"
                         active-class="active"
@@ -230,6 +274,43 @@
                     >
                         <i class="fas fa-file-invoice"></i>
                         <span v-if="!sidebarCollapsed">Vendor Invoices</span>
+                    </router-link>
+                    <router-link
+                        to="/purchasing/contracts"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-file-contract"></i>
+                        <span v-if="!sidebarCollapsed">Vendor Contracts</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/contracts/expiry-dashboard"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-chart-line"></i>
+                        <span v-if="!sidebarCollapsed"
+                            >Contract Expiry Dashboard</span
+                        >
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/evaluations"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-star"></i>
+                        <span v-if="!sidebarCollapsed">Vendor Evaluations</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/evaluation-dashboard"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-chart-bar"></i>
+                        <span v-if="!sidebarCollapsed">Evaluation Metrics</span>
                     </router-link>
                 </div>
 
@@ -362,6 +443,96 @@
                         <span v-if="!sidebarCollapsed">Bills of Materials</span>
                     </router-link>
                     <!-- Add other manufacturing menu items here -->
+                </div>
+
+                <!-- Accounting Section -->
+                <div class="menu-section">
+                    <div
+                        @click="toggleMenuSection('accounting')"
+                        class="section-header"
+                    >
+                        <div class="section-title-container">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <span v-if="!sidebarCollapsed" class="section-title"
+                                >Accounting</span
+                            >
+                        </div>
+                        <i
+                            v-if="!sidebarCollapsed"
+                            :class="
+                                menuSections.accounting
+                                    ? 'fas fa-chevron-down'
+                                    : 'fas fa-chevron-right'
+                            "
+                            class="section-icon"
+                        ></i>
+                    </div>
+                </div>
+
+                <div
+                    v-show="!sidebarCollapsed && menuSections.accounting"
+                    class="submenu"
+                >
+                    <router-link
+                        to="/accounting/chart-of-accounts"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-sitemap"></i>
+                        <span v-if="!sidebarCollapsed">Chart of Accounts</span>
+                    </router-link>
+
+                    <router-link
+                        to="/accounting/chart-of-accounts-structure"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-project-diagram"></i>
+                        <span v-if="!sidebarCollapsed">Account Structure</span>
+                    </router-link>
+
+                    <router-link
+                        to="/accounting/journal-entries"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-book"></i>
+                        <span v-if="!sidebarCollapsed">Journal Entries</span>
+                    </router-link>
+
+                    <router-link
+                        to="/accounting/accounting-periods"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-calendar-alt"></i>
+                        <span v-if="!sidebarCollapsed">Accounting Periods</span>
+                    </router-link>
+
+                    <router-link
+                        to="/accounting/financial-reports"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-chart-bar"></i>
+                        <span v-if="!sidebarCollapsed">Financial Reports</span>
+                    </router-link>
+                </div>
+
+                <div
+                    v-show="!sidebarCollapsed && menuSections.accounting"
+                    class="submenu"
+                >
+                    <router-link
+                        to="/accounting/chart-of-accounts"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-sitemap"></i>
+                        <span v-if="!sidebarCollapsed">Chart of Accounts</span>
+                    </router-link>
+
+                    <!-- Add more accounting menu items here -->
                 </div>
 
                 <!-- Reports Section -->
@@ -525,6 +696,7 @@ export default {
             sales: false,
             manufacturing: false,
             reports: false,
+            accounting: false,
             admin: false,
         });
 
@@ -553,6 +725,8 @@ export default {
                 menuSections.manufacturing = true;
             } else if (path.includes("/reports/")) {
                 menuSections.reports = true;
+            } else if (path.includes("/accounting/")) {
+                menuSections.accounting = true;
             } else if (path.includes("/admin/")) {
                 menuSections.admin = true;
             }
