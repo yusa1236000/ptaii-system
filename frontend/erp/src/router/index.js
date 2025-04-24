@@ -1017,6 +1017,56 @@ const routes = [
                 meta: { requiresAuth: true },
             },
 
+            //Accounting BankReconciliation
+            {
+                path: "/accounting/bank-reconciliations",
+                name: "BankReconciliations",
+                component: () =>
+                    import("../views/accounting/BankReconciliationsList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/bank-reconciliations/create",
+                name: "CreateBankReconciliation",
+                component: () =>
+                    import("../views/accounting/BankReconciliationForm.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/bank-reconciliations/:id",
+                name: "BankReconciliationDetail",
+                component: () =>
+                    import("../views/accounting/BankReconciliationDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/bank-reconciliations/:id/edit",
+                name: "EditBankReconciliation",
+                component: () =>
+                    import("../views/accounting/BankReconciliationForm.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/bank-reconciliations/:id/match",
+                name: "BankReconciliationMatch",
+                component: () =>
+                    import("../views/accounting/BankReconciliationMatch.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/bank-reconciliations/:id/finalize",
+                name: "BankReconciliationFinalize",
+                component: () =>
+                    import(
+                        "../views/accounting/BankReconciliationFinalize.vue"
+                    ),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
             // Admin Routes
             {
                 path: "admin/users",

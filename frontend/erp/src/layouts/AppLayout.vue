@@ -510,6 +510,15 @@
                     </router-link>
 
                     <router-link
+                        to="/accounting/bank-reconciliations"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-university"></i>
+                        <span v-if="!sidebarCollapsed">Bank Reconciliations</span>
+                    </router-link>
+
+                    <router-link
                         to="/accounting/periods"
                         class="menu-item"
                         active-class="active"
