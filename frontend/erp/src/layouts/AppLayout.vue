@@ -519,6 +519,15 @@
                     </router-link>
 
                     <router-link
+                        to="/accounting/fixed-assets"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-building"></i>
+                        <span v-if="!sidebarCollapsed">Fixed Assets</span>
+                    </router-link>
+
+                    <router-link
                         to="/accounting/periods"
                         class="menu-item"
                         active-class="active"

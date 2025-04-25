@@ -1067,6 +1067,45 @@ const routes = [
                 meta: { requiresAuth: true },
             },
 
+            //Fixed Asset Management
+            {
+                path: "/accounting/fixed-assets",
+                name: "FixedAssets",
+                component: () =>
+                    import("../views/accounting/FixedAssetsList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/fixed-assets/create",
+                name: "CreateFixedAsset",
+                component: () =>
+                    import("../views/accounting/FixedAssetForm.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/fixed-assets/:id",
+                name: "FixedAssetDetail",
+                component: () =>
+                    import("../views/accounting/FixedAssetDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/fixed-assets/:id/edit",
+                name: "EditFixedAsset",
+                component: () =>
+                    import("../views/accounting/FixedAssetForm.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/fixed-assets/report",
+                name: "FixedAssetReport",
+                component: () =>
+                    import("../views/accounting/FixedAssetReport.vue"),
+                meta: { requiresAuth: true },
+            },
+
             // Admin Routes
             {
                 path: "admin/users",
