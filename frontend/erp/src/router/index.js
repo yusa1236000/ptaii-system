@@ -1147,6 +1147,78 @@ const routes = [
                 meta: { requiresAuth: true },
             },
 
+            //Customer Receivable
+            {
+                path: "accounting/receivables",
+                name: "CustomerReceivables",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/ReceivablesList.vue"
+                    ),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/receivables/create",
+                name: "CreateReceivable",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/ReceivableForm.vue"
+                    ),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/receivables/:id",
+                name: "ReceivableDetail",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/ReceivableDetail.vue"
+                    ),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/receivables/:id/edit",
+                name: "EditReceivable",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/ReceivableForm.vue"
+                    ),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/receivables/:id/payment",
+                name: "ReceivablePayment",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/ReceivableDetail.vue"
+                    ),
+                props: (route) => ({
+                    ...route.params,
+                    showPaymentModal: true,
+                }),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/receivables/aging-report",
+                name: "ReceivableAgingReport",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/ReceivableAgingReport.vue"
+                    ),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "accounting/customers/:customerId/statement",
+                name: "CustomerStatement",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/CustomerStatement.vue"
+                    ),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
             // Admin Routes
             {
                 path: "admin/users",

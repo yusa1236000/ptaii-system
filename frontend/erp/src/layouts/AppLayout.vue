@@ -537,6 +537,15 @@
                     </router-link>
 
                     <router-link
+                        to="/accounting/receivables"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-dollar"></i>
+                        <span v-if="!sidebarCollapsed">Customer Receivable</span>
+                    </router-link>
+
+                    <router-link
                         to="/accounting/periods"
                         class="menu-item"
                         active-class="active"
@@ -559,15 +568,6 @@
                     v-show="!sidebarCollapsed && menuSections.accounting"
                     class="submenu"
                 >
-                    <router-link
-                        to="/accounting/chart-of-accounts"
-                        class="menu-item"
-                        active-class="active"
-                    >
-                        <i class="fas fa-sitemap"></i>
-                        <span v-if="!sidebarCollapsed">Chart of Accounts</span>
-                    </router-link>
-
                     <!-- Add more accounting menu items here -->
                 </div>
 
