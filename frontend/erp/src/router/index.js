@@ -115,6 +115,12 @@ import AccountingPeriodDetail from "@/views/accounting/AccountingPeriodDetail.vu
 import AccountingPeriodClose from "@/views/accounting/AccountingPeriodClose.vue";
 import FiscalYearSetup from "@/views/accounting/FiscalYearSetup.vue";
 
+//Accunting Asset Depreciation
+import AssetDepreciationList from "../views/accounting/AssetDepreciationList.vue";
+import CalculateDepreciation from "../views/accounting/CalculateDepreciation.vue";
+import DepreciationScheduleView from "../views/accounting/DepreciationScheduleView.vue";
+import DepreciationJournalView from "../views/accounting/DepreciationJournalView.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -1103,6 +1109,41 @@ const routes = [
                 name: "FixedAssetReport",
                 component: () =>
                     import("../views/accounting/FixedAssetReport.vue"),
+                meta: { requiresAuth: true },
+            },
+
+            //Asset Depreciation
+            {
+                path: "/accounting/depreciation",
+                name: "AssetDepreciations",
+                component: AssetDepreciationList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/depreciation/calculate",
+                name: "CalculateDepreciation",
+                component: CalculateDepreciation,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/depreciation/:id",
+                name: "DepreciationDetail",
+                component: DepreciationScheduleView,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/depreciation/:id/schedule",
+                name: "DepreciationSchedule",
+                component: DepreciationScheduleView,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/depreciation/:id/journal",
+                name: "DepreciationJournal",
+                component: DepreciationJournalView,
+                props: true,
                 meta: { requiresAuth: true },
             },
 

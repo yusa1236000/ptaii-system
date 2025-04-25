@@ -528,6 +528,15 @@
                     </router-link>
 
                     <router-link
+                        to="/accounting/depreciation"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-calculator"></i>
+                        <span v-if="!sidebarCollapsed">Asset Depreciation</span>
+                    </router-link>
+
+                    <router-link
                         to="/accounting/periods"
                         class="menu-item"
                         active-class="active"
