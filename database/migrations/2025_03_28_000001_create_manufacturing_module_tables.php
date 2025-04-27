@@ -9,23 +9,23 @@ return new class extends Migration
     public function up()
     {
         // Product Table
-        Schema::create('products', function (Blueprint $table) {
-            $table->id('product_id');
-            $table->string('product_code', 50)->unique();
-            $table->string('name', 100);
-            $table->text('description')->nullable();
-            $table->unsignedBigInteger('category_id');
-            $table->unsignedBigInteger('uom_id');
-            $table->timestamps();
+        // Schema::create('products', function (Blueprint $table) {
+        //     $table->id('product_id');
+        //     $table->string('product_code', 50)->unique();
+        //     $table->string('name', 100);
+        //     $table->text('description')->nullable();
+        //     $table->unsignedBigInteger('category_id');
+        //     $table->unsignedBigInteger('uom_id');
+        //     $table->timestamps();
             
-            $table->foreign('category_id')->references('category_id')->on('item_categories');
-            $table->foreign('uom_id')->references('uom_id')->on('unit_of_measures');
-        });
+        //     $table->foreign('category_id')->references('category_id')->on('item_categories');
+        //     $table->foreign('uom_id')->references('uom_id')->on('unit_of_measures');
+        // });
 
         // BOM Table
         Schema::create('boms', function (Blueprint $table) {
             $table->id('bom_id');
-            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('item_id');
             $table->string('bom_code', 50);
             $table->string('revision', 10);
             $table->date('effective_date');
@@ -34,7 +34,7 @@ return new class extends Migration
             $table->unsignedBigInteger('uom_id');
             $table->timestamps();
             
-            $table->foreign('product_id')->references('product_id')->on('products');
+            $table->foreign('item_id')->references('item_id')->on('items');
             $table->foreign('uom_id')->references('uom_id')->on('unit_of_measures');
         });
 
@@ -57,14 +57,14 @@ return new class extends Migration
         // Routing Table
         Schema::create('routings', function (Blueprint $table) {
             $table->id('routing_id');
-            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('item_id');
             $table->string('routing_code', 50);
             $table->string('revision', 10);
             $table->date('effective_date');
             $table->string('status', 50);
             $table->timestamps();
             
-            $table->foreign('product_id')->references('product_id')->on('products');
+            $table->foreign('item_id')->references('item_id')->on('items');
         });
 
         // Work Center Table
@@ -102,7 +102,7 @@ return new class extends Migration
             $table->id('wo_id');
             $table->string('wo_number', 50)->unique();
             $table->date('wo_date');
-            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('item_id');
             $table->unsignedBigInteger('bom_id');
             $table->unsignedBigInteger('routing_id');
             $table->float('planned_quantity');
@@ -111,7 +111,7 @@ return new class extends Migration
             $table->string('status', 50);
             $table->timestamps();
             
-            $table->foreign('product_id')->references('product_id')->on('products');
+            $table->foreign('item_id')->references('item_id')->on('items');
             $table->foreign('bom_id')->references('bom_id')->on('boms');
             $table->foreign('routing_id')->references('routing_id')->on('routings');
         });
@@ -220,6 +220,6 @@ return new class extends Migration
         Schema::dropIfExists('routings');
         Schema::dropIfExists('bom_lines');
         Schema::dropIfExists('boms');
-        Schema::dropIfExists('products');
+        // Schema::dropIfExists('products');
     }
 };

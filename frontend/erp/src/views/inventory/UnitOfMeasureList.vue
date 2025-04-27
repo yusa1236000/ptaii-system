@@ -341,7 +341,7 @@
           const response = await axios.get('/unit-of-measures');
           uoms.value = response.data.data.map(uom => ({
             ...uom,
-            items_count: uom.items ? uom.items.length : 0
+            items_count: uom.items_count || 0
           }));
         } catch (error) {
           console.error('Error fetching units of measure:', error);

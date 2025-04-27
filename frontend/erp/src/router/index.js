@@ -1219,6 +1219,64 @@ const routes = [
                 meta: { requiresAuth: true },
             },
 
+            // Receivable Payments Management Routes
+            {
+                path: "/accounting/receivable-payments",
+                name: "ReceivablePayments",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/ReceivablePaymentsList.vue"
+                    ),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/receivable-payments/create",
+                name: "CreateReceivablePayment",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/RecordPaymentForm.vue"
+                    ),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/receivable-payments/:id",
+                name: "ReceivablePaymentDetail",
+                component: () =>
+                    import("../views/accounting/receivables/PaymentDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/receivable-payments/:id/edit",
+                name: "EditReceivablePayment",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/RecordPaymentForm.vue"
+                    ),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/receivable-payments/:id/apply",
+                name: "ApplyReceivablePayment",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/PaymentApplicationPage.vue"
+                    ),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/customers/:id/payment-history",
+                name: "CustomerPaymentHistory",
+                component: () =>
+                    import(
+                        "../views/accounting/receivables/CustomerPaymentHistory.vue"
+                    ),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
             // Admin Routes
             {
                 path: "admin/users",

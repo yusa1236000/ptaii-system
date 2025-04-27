@@ -1,1110 +1,1127 @@
 <!-- src/views/inventory/WarehouseDetail.vue -->
 <template>
-    <div class="warehouse-detail">
-      <!-- Loading State -->
-      <div v-if="isLoading" class="loading-container">
-        <div class="loading-spinner">
-          <i class="fas fa-spinner fa-spin"></i>
-        </div>
-        <p>Loading warehouse details...</p>
-      </div>
-  
-      <!-- Error State -->
-      <div v-else-if="error" class="error-container">
-        <div class="error-icon">
-          <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <p>{{ error }}</p>
-        <div class="error-actions">
-          <button @click="fetchWarehouseDetails" class="btn btn-secondary">
-            <i class="fas fa-sync"></i> Try Again
-          </button>
-          <button @click="goBack" class="btn btn-primary">
-            <i class="fas fa-arrow-left"></i> Back to Warehouses
-          </button>
-        </div>
-      </div>
-  
-      <!-- Warehouse Details -->
-      <div v-else-if="warehouse" class="detail-container">
-        <!-- Header with Actions -->
-        <div class="detail-header">
-          <div class="header-breadcrumb">
-            <button @click="goBack" class="btn-link">
-              <i class="fas fa-arrow-left"></i> Warehouses
-            </button>
-            <span class="breadcrumb-separator">/</span>
-            <span class="breadcrumb-current">{{ warehouse.name }}</span>
-          </div>
+  <div class="warehouse-detail-page">
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-top">
+          <h2 class="page-title">
+            Warehouse: {{ warehouse?.name }}
+            <span v-if="warehouse?.code" class="warehouse-code">({{ warehouse.code }})</span>
+          </h2>
           <div class="header-actions">
-            <button @click="editWarehouse" class="btn btn-primary">
-              <i class="fas fa-edit"></i> Edit
+            <button class="btn-secondary" @click="editWarehouse" v-if="warehouse">
+              <i class="fas fa-edit mr-2"></i> Edit Details
             </button>
-            <button @click="confirmDelete" class="btn btn-danger">
-              <i class="fas fa-trash"></i> Delete
-            </button>
+            <router-link :to="`/warehouses/${warehouseId}/zones`" class="btn-primary">
+              <i class="fas fa-map mr-2"></i> Manage Zones
+            </router-link>
           </div>
         </div>
-  
-        <!-- Warehouse Overview -->
-        <div class="detail-card">
-          <div class="card-header">
-            <h2 class="card-title">Warehouse Details</h2>
-            <div class="warehouse-status" :class="{ 'inactive': !warehouse.is_active }">
+        
+        <div class="warehouse-status" v-if="warehouse">
+          <span 
+            class="status-badge" 
+            :class="warehouse.is_active ? 'status-active' : 'status-inactive'"
+          >
+            {{ warehouse.is_active ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+      </div>
+      
+      <div class="breadcrumbs">
+        <router-link to="/warehouses" class="breadcrumb-item">
+          <i class="fas fa-warehouse mr-1"></i> Warehouses
+        </router-link>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-item active">Details</span>
+      </div>
+    </div>
+
+    <div v-if="loading" class="loading-indicator">
+      <i class="fas fa-spinner fa-spin mr-2"></i> Loading warehouse details...
+    </div>
+
+    <div v-else-if="error" class="error-message">
+      <i class="fas fa-exclamation-triangle mr-2"></i>
+      {{ error }}
+    </div>
+
+    <div v-else-if="!warehouse" class="not-found">
+      <i class="fas fa-question-circle not-found-icon"></i>
+      <h3>Warehouse Not Found</h3>
+      <p>The warehouse you're looking for doesn't exist or has been deleted.</p>
+      <router-link to="/warehouses" class="btn-primary mt-4">
+        Return to Warehouses List
+      </router-link>
+    </div>
+
+    <div v-else class="warehouse-details-container">
+      <div class="details-card">
+        <div class="card-header">
+          <h3 class="card-title">Details</h3>
+        </div>
+        <div class="card-body">
+          <div class="detail-item">
+            <span class="detail-label">Warehouse ID:</span>
+            <span class="detail-value">{{ warehouse.warehouse_id }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Code:</span>
+            <span class="detail-value">{{ warehouse.code }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Address:</span>
+            <span class="detail-value">
+              {{ warehouse.address || 'No address specified' }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Status:</span>
+            <span 
+              class="status-badge detail-value" 
+              :class="warehouse.is_active ? 'status-active' : 'status-inactive'"
+            >
               {{ warehouse.is_active ? 'Active' : 'Inactive' }}
-            </div>
+            </span>
           </div>
-          <div class="card-body">
-            <div class="detail-grid">
-              <div class="detail-item">
-                <h3 class="detail-label">Warehouse ID</h3>
-                <p class="detail-value">{{ warehouse.warehouse_id }}</p>
-              </div>
-              <div class="detail-item">
-                <h3 class="detail-label">Code</h3>
-                <p class="detail-value">{{ warehouse.code }}</p>
-              </div>
-              <div class="detail-item">
-                <h3 class="detail-label">Name</h3>
-                <p class="detail-value">{{ warehouse.name }}</p>
-              </div>
-              <div class="detail-item">
-                <h3 class="detail-label">Status</h3>
-                <p class="detail-value">{{ warehouse.is_active ? 'Active' : 'Inactive' }}</p>
-              </div>
-              <div class="detail-item full-width">
-                <h3 class="detail-label">Address</h3>
-                <p class="detail-value address-value">
-                  {{ warehouse.address || 'No address provided' }}
-                </p>
-              </div>
-            </div>
+          <div class="detail-item">
+            <span class="detail-label">Created At:</span>
+            <span class="detail-value">{{ formatDate(warehouse.created_at) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Updated At:</span>
+            <span class="detail-value">{{ formatDate(warehouse.updated_at) }}</span>
           </div>
         </div>
-  
-        <!-- Warehouse Zones -->
-        <div class="detail-card">
-          <div class="card-header">
-            <h2 class="card-title">Zones</h2>
-            <button @click="openAddZoneModal" class="btn btn-sm btn-primary">
-              <i class="fas fa-plus"></i> Add Zone
-            </button>
-          </div>
-          <div class="card-body">
-            <div v-if="!warehouse.zones || warehouse.zones.length === 0" class="empty-state-small">
-              <div class="empty-icon-small">
+      </div>
+
+      <div class="details-card">
+        <div class="card-header">
+          <h3 class="card-title">Warehouse Structure</h3>
+          <router-link :to="`/warehouses/${warehouseId}/zones`" class="btn-text">
+            <i class="fas fa-external-link-alt mr-1"></i> Manage Zones
+          </router-link>
+        </div>
+        <div class="card-body">
+          <div class="structure-stats">
+            <div class="stat-card">
+              <div class="stat-icon">
                 <i class="fas fa-map"></i>
               </div>
-              <p>No zones found for this warehouse.</p>
-              <button @click="openAddZoneModal" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus"></i> Add Zone
-              </button>
-            </div>
-            <div v-else class="zones-container">
-              <div v-for="zone in warehouse.zones" :key="zone.zone_id" class="zone-card">
-                <div class="zone-header">
-                  <h3 class="zone-name">{{ zone.name }}</h3>
-                  <div class="zone-actions">
-                    <button @click="editZone(zone)" class="action-btn-sm" title="Edit Zone">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button @click="deleteZone(zone)" class="action-btn-sm" title="Delete Zone">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </div>
-                <div class="zone-body">
-                  <div class="zone-code">
-                    <span class="zone-label">Code:</span> {{ zone.code }}
-                  </div>
-                  <div class="zone-description" v-if="zone.description">
-                    <span class="zone-label">Description:</span> {{ zone.description }}
-                  </div>
-                  <div class="zone-locations">
-                    <span class="zone-label">Locations:</span> 
-                    {{ zone.locations ? zone.locations.length : 0 }}
-                  </div>
-                </div>
-                <div class="zone-footer">
-                  <button @click="viewZone(zone)" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-eye"></i> View Locations
-                  </button>
-                  <button @click="addLocation(zone)" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus"></i> Add Location
-                  </button>
-                </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ zonesCount }}</div>
+                <div class="stat-label">Zones</div>
               </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-map-marker-alt"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ locationsCount }}</div>
+                <div class="stat-label">Locations</div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="zonesCount === 0" class="empty-zones-message">
+            <p>This warehouse doesn't have any zones yet.</p>
+            <router-link :to="`/warehouses/${warehouseId}/zones`" class="btn-primary btn-sm mt-2">
+              <i class="fas fa-plus-circle mr-1"></i> Add Zones
+            </router-link>
+          </div>
+          <div v-else class="zones-preview">
+            <h4 class="preview-title">Zones</h4>
+            <div class="zones-grid">
+              <router-link 
+                v-for="zone in zones.slice(0, 4)" 
+                :key="zone.zone_id" 
+                :to="`/warehouses/${warehouseId}/zones/${zone.zone_id}`"
+                class="zone-card"
+              >
+                <div class="zone-name">{{ zone.name }}</div>
+                <div class="zone-code">{{ zone.code }}</div>
+                <div class="zone-locations">
+                  {{ zone.locations ? zone.locations.length : 0 }} Locations
+                </div>
+              </router-link>
+              
+              <router-link 
+                v-if="zones.length > 4" 
+                :to="`/warehouses/${warehouseId}`"
+                class="view-all-card"
+              >
+                <div class="view-all-content">
+                  <i class="fas fa-ellipsis-h"></i>
+                  <div>View All Zones</div>
+                </div>
+              </router-link>
             </div>
           </div>
         </div>
-  
-        <!-- Recent Transactions -->
-        <div class="detail-card">
-          <div class="card-header">
-            <h2 class="card-title">Recent Transactions</h2>
-            <button @click="viewAllTransactions" class="btn btn-sm btn-secondary">
-              <i class="fas fa-list"></i> View All
+      </div>
+
+      <div class="details-card">
+        <div class="card-header">
+          <h3 class="card-title">Inventory Overview</h3>
+          <div class="header-actions">
+            <button class="btn-text" @click="refreshInventory">
+              <i class="fas fa-sync-alt mr-1"></i> Refresh
             </button>
           </div>
-          <div class="card-body">
-            <div v-if="isLoadingTransactions" class="loading-small">
-              <i class="fas fa-spinner fa-spin"></i> Loading transactions...
-            </div>
-            <div v-else-if="!recentTransactions || recentTransactions.length === 0" class="empty-state-small">
-              <div class="empty-icon-small">
-                <i class="fas fa-exchange-alt"></i>
+        </div>
+        <div class="card-body">
+          <div v-if="inventoryLoading" class="loading-indicator">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Loading inventory...
+          </div>
+          
+          <div v-else-if="inventoryError" class="error-message">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            {{ inventoryError }}
+          </div>
+          
+          <div v-else-if="inventoryItems.length === 0" class="empty-inventory-message">
+            <p>No inventory items found in this warehouse.</p>
+          </div>
+          
+          <div v-else class="inventory-overview">
+            <div class="inventory-stats">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-cubes"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ inventoryItems.length }}</div>
+                  <div class="stat-label">Unique Items</div>
+                </div>
               </div>
-              <p>No recent transactions found for this warehouse.</p>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ lowStockCount }}</div>
+                  <div class="stat-label">Low Stock Items</div>
+                </div>
+              </div>
             </div>
-            <div v-else class="transactions-table">
-              <table>
+            
+            <h4 class="preview-title">Top Items by Quantity</h4>
+            <div class="inventory-table-container">
+              <table class="inventory-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Item</th>
-                    <th>Type</th>
-                    <th>Quantity</th>
-                    <th>Reference</th>
+                    <th>Item Code</th>
+                    <th>Name</th>
+                    <th class="text-right">Quantity</th>
+                    <th>UOM</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="transaction in recentTransactions" :key="transaction.transaction_id">
-                    <td>{{ formatDate(transaction.transaction_date) }}</td>
-                    <td>{{ transaction.item ? transaction.item.name : 'Unknown Item' }}</td>
-                    <td>
-                      <span class="transaction-badge" :class="getTransactionTypeClass(transaction.transaction_type)">
-                        {{ transaction.transaction_type }}
+                  <tr v-for="item in topItems" :key="item.item_id">
+                    <td>{{ item.item_code }}</td>
+                    <td>{{ item.name }}</td>
+                    <td class="text-right">
+                      <span :class="getQuantityClass(item.stock)">
+                        {{ item.stock }}
                       </span>
                     </td>
-                    <td :class="getQuantityClass(transaction.transaction_type)">
-                      {{ transaction.quantity }}
-                    </td>
-                    <td>{{ transaction.reference_document || '-' }}</td>
+                    <td>{{ item.uom }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
+            
+            <div class="view-all-inventory">
+              <button class="btn-text" @click="showInventoryModal = true">
+                <i class="fas fa-search mr-1"></i> View All Inventory
+              </button>
+            </div>
           </div>
         </div>
       </div>
-  
-      <!-- Zone Form Modal -->
-      <div v-if="showZoneModal" class="modal-overlay">
-        <div class="modal-container">
-          <div class="modal-header">
-            <h2>{{ isEditingZone ? 'Edit Zone' : 'Add New Zone' }}</h2>
-            <button class="close-btn" @click="closeZoneModal">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="saveZone" class="form">
-              <div class="form-group">
-                <label for="zone-name">Zone Name*</label>
-                <input 
-                  type="text" 
-                  id="zone-name" 
-                  v-model="zoneForm.name" 
-                  required
-                  :class="{ 'is-invalid': validationErrors.name }"
-                />
-                <div v-if="validationErrors.name" class="invalid-feedback">
-                  {{ validationErrors.name }}
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="zone-code">Zone Code*</label>
-                <input 
-                  type="text" 
-                  id="zone-code" 
-                  v-model="zoneForm.code" 
-                  required
-                  :class="{ 'is-invalid': validationErrors.code }"
-                />
-                <div v-if="validationErrors.code" class="invalid-feedback">
-                  {{ validationErrors.code }}
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="zone-description">Description</label>
-                <textarea 
-                  id="zone-description" 
-                  v-model="zoneForm.description" 
-                  rows="3"
-                  :class="{ 'is-invalid': validationErrors.description }"
-                ></textarea>
-                <div v-if="validationErrors.description" class="invalid-feedback">
-                  {{ validationErrors.description }}
-                </div>
-              </div>
-              
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary" @click="closeZoneModal">
-                  Cancel
-                </button>
-                <button type="submit" class="btn btn-primary" :disabled="isSaving">
-                  <i v-if="isSaving" class="fas fa-spinner fa-spin"></i>
-                  {{ isEditingZone ? 'Update Zone' : 'Add Zone' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-  
-      <!-- Delete Confirmation Modal -->
-      <ConfirmationModal
-        v-if="showDeleteModal"
-        title="Confirm Delete"
-        :message="`Are you sure you want to delete <strong>${warehouse.name}</strong>?<br>This action cannot be undone.`"
-        confirmButtonText="Delete"
-        confirmButtonClass="btn btn-danger"
-        @confirm="deleteWarehouse"
-        @close="closeDeleteModal"
-      />
     </div>
-  </template>
-  
-  <script>
-  import { ref, reactive, onMounted } from 'vue';
-  import { useRoute, useRouter } from 'vue-router';
-  import WarehouseService from '@/services/WarehouseService';
-  import ConfirmationModal from '@/components/common/ConfirmationModal.vue';
-  
-  export default {
-    name: 'WarehouseDetail',
-    components: {
-      ConfirmationModal
-    },
-    setup() {
-      const route = useRoute();
-      const router = useRouter();
-      
-      // Data
-      const warehouse = ref(null);
-      const isLoading = ref(true);
-      const error = ref(null);
-      const recentTransactions = ref([]);
-      const isLoadingTransactions = ref(false);
-  
-      // Zone Modal
-      const showZoneModal = ref(false);
-      const isEditingZone = ref(false);
-      const isSaving = ref(false);
-      const zoneForm = reactive({
-        zone_id: null,
-        warehouse_id: null,
-        name: '',
-        code: '',
-        description: ''
+    
+    <!-- Edit Warehouse Modal -->
+    <div v-if="showEditModal" class="modal-backdrop">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Warehouse</h3>
+          <button class="btn-close" @click="showEditModal = false">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="saveWarehouse">
+            <div class="form-group">
+              <label for="warehouseName">Warehouse Name</label>
+              <input
+                id="warehouseName"
+                v-model="warehouseForm.name"
+                type="text"
+                class="form-control"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="warehouseCode">Warehouse Code</label>
+              <input
+                id="warehouseCode"
+                v-model="warehouseForm.code"
+                type="text"
+                class="form-control"
+                required
+              />
+              <small class="form-text text-muted">
+                A unique code to identify this warehouse
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label for="warehouseAddress">Address</label>
+              <textarea
+                id="warehouseAddress"
+                v-model="warehouseForm.address"
+                class="form-control"
+                rows="3"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  v-model="warehouseForm.is_active"
+                /> 
+                Active
+              </label>
+              <small class="form-text text-muted">
+                Inactive warehouses won't be available for new transactions
+              </small>
+            </div>
+
+            <div class="form-group form-actions">
+              <button type="button" class="btn-secondary" @click="showEditModal = false">
+                Cancel
+              </button>
+              <button type="submit" class="btn-primary" :disabled="isSubmitting">
+                <i v-if="isSubmitting" class="fas fa-spinner fa-spin mr-2"></i>
+                Update Warehouse
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Inventory Modal -->
+    <div v-if="showInventoryModal" class="modal-backdrop">
+      <div class="modal-content modal-lg">
+        <div class="modal-header">
+          <h3>Warehouse Inventory</h3>
+          <button class="btn-close" @click="showInventoryModal = false">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="inventory-search">
+            <div class="search-input">
+              <i class="fas fa-search search-icon"></i>
+              <input 
+                type="text" 
+                v-model="inventorySearchQuery" 
+                placeholder="Search items..." 
+                class="form-control search-control"
+              />
+            </div>
+          </div>
+          
+          <div class="inventory-table-container">
+            <table class="inventory-table">
+              <thead>
+                <tr>
+                  <th>Item Code</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th class="text-right">Quantity</th>
+                  <th>UOM</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in filteredInventoryItems" :key="item.item_id">
+                  <td>{{ item.item_code }}</td>
+                  <td>{{ item.name }}</td>
+                  <td>{{ item.category || 'Uncategorized' }}</td>
+                  <td class="text-right">
+                    <span :class="getQuantityClass(item.stock)">
+                      {{ item.stock }}
+                    </span>
+                  </td>
+                  <td>{{ item.uom }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import axios from 'axios';
+
+export default {
+  name: 'WarehouseDetail',
+  setup() {
+    const route = useRoute();
+    const warehouseId = computed(() => route.params.id);
+    
+    const warehouse = ref(null);
+    const zones = ref([]);
+    const loading = ref(true);
+    const error = ref(null);
+    
+    // Computed properties for warehouse structure
+    const zonesCount = computed(() => zones.value.length);
+    const locationsCount = computed(() => {
+      let count = 0;
+      zones.value.forEach(zone => {
+        if (zone.locations) {
+          count += zone.locations.length;
+        }
       });
-      const validationErrors = reactive({});
+      return count;
+    });
+    
+    // Inventory state
+    const inventoryItems = ref([]);
+    const inventoryLoading = ref(false);
+    const inventoryError = ref(null);
+    const inventorySearchQuery = ref('');
+    const showInventoryModal = ref(false);
+    
+    // Edit warehouse modal state
+    const showEditModal = ref(false);
+    const isSubmitting = ref(false);
+    const warehouseForm = reactive({
+      name: '',
+      code: '',
+      address: '',
+      is_active: true
+    });
+    
+    // Computed properties for inventory
+    const lowStockCount = computed(() => {
+      return inventoryItems.value.filter(item => {
+        // Assuming items have a minimum_stock property to check against
+        return item.stock <= 5; // For demonstration - this would be compared with item.minimum_stock in a real application
+      }).length;
+    });
+    
+    const topItems = computed(() => {
+      return [...inventoryItems.value]
+        .sort((a, b) => b.stock - a.stock)
+        .slice(0, 5);
+    });
+    
+    const filteredInventoryItems = computed(() => {
+      if (!inventorySearchQuery.value) return inventoryItems.value;
       
-      // Delete Modal
-      const showDeleteModal = ref(false);
-  
-      // Fetch warehouse details
-      const fetchWarehouseDetails = async () => {
-        const warehouseId = parseInt(route.params.id);
-        isLoading.value = true;
-        error.value = null;
+      const query = inventorySearchQuery.value.toLowerCase();
+      return inventoryItems.value.filter(item => 
+        item.item_code.toLowerCase().includes(query) ||
+        item.name.toLowerCase().includes(query) ||
+        (item.category && item.category.toLowerCase().includes(query))
+      );
+    });
+    
+    const fetchWarehouseData = async () => {
+      loading.value = true;
+      error.value = null;
+      
+      try {
+        const response = await axios.get(`/warehouses/${warehouseId.value}`);
+        warehouse.value = response.data.data;
         
-        try {
-          const response = await WarehouseService.getWarehouseById(warehouseId);
-          warehouse.value = response.data;
-          
-          // Fetch recent transactions for this warehouse
-          fetchRecentTransactions();
-        } catch (err) {
-          console.error('Error fetching warehouse details:', err);
-          error.value = 'Failed to load warehouse details. Please try again.';
-        } finally {
-          isLoading.value = false;
+        if (warehouse.value.zones) {
+          zones.value = warehouse.value.zones;
+        } else {
+          // Fetch zones separately if not included in warehouse response
+          await fetchWarehouseZones();
         }
-      };
+      } catch (err) {
+        console.error('Error fetching warehouse:', err);
+        error.value = 'Failed to load warehouse details. Please try again.';
+      } finally {
+        loading.value = false;
+      }
+    };
+    
+    const fetchWarehouseZones = async () => {
+      try {
+        const response = await axios.get(`/warehouses/${warehouseId.value}/zones`);
+        zones.value = response.data.data;
+      } catch (err) {
+        console.error('Error fetching zones:', err);
+      }
+    };
+    
+    const fetchWarehouseInventory = async () => {
+      inventoryLoading.value = true;
+      inventoryError.value = null;
       
-      // Fetch recent transactions
-      const fetchRecentTransactions = async () => {
-        if (!warehouse.value) return;
-        
-        isLoadingTransactions.value = true;
-        
-        try {
-          // Limited to 5 most recent transactions
-          const response = await WarehouseService.getWarehouseTransactions(warehouse.value.warehouse_id, { limit: 5 });
-          recentTransactions.value = response.data || [];
-        } catch (err) {
-          console.error('Error fetching transactions:', err);
-          recentTransactions.value = [];
-        } finally {
-          isLoadingTransactions.value = false;
-        }
-      };
-  
-      // Format date
-      const formatDate = (dateString) => {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-      };
+      try {
+        const response = await axios.get(`/warehouses/${warehouseId.value}/inventory`);
+        inventoryItems.value = response.data.data.inventory;
+      } catch (err) {
+        console.error('Error fetching inventory:', err);
+        inventoryError.value = 'Failed to load inventory data. Please try again.';
+      } finally {
+        inventoryLoading.value = false;
+      }
+    };
+    
+    const refreshInventory = () => {
+      fetchWarehouseInventory();
+    };
+    
+    const editWarehouse = () => {
+      warehouseForm.name = warehouse.value.name;
+      warehouseForm.code = warehouse.value.code;
+      warehouseForm.address = warehouse.value.address || '';
+      warehouseForm.is_active = warehouse.value.is_active;
+      showEditModal.value = true;
+    };
+    
+    const saveWarehouse = async () => {
+      isSubmitting.value = true;
       
-      // Get transaction type class
-      const getTransactionTypeClass = (type) => {
-        if (['IN', 'RECEIPT', 'RETURN', 'ADJUSTMENT_IN'].includes(type)) {
-          return 'type-in';
-        } else if (['OUT', 'ISSUE', 'SALE', 'ADJUSTMENT_OUT'].includes(type)) {
-          return 'type-out';
-        }
-        return '';
-      };
+      try {
+        const response = await axios.put(`/warehouses/${warehouseId.value}`, warehouseForm);
+        warehouse.value = response.data.data;
+        showEditModal.value = false;
+      } catch (err) {
+        console.error('Error updating warehouse:', err);
+        error.value = err.response?.data?.message || 'Failed to update warehouse. Please try again.';
+      } finally {
+        isSubmitting.value = false;
+      }
+    };
+    
+    const getQuantityClass = (quantity) => {
+      if (quantity <= 0) return 'quantity-empty';
+      if (quantity < 5) return 'quantity-low';
+      return 'quantity-normal';
+    };
+    
+    const formatDate = (dateString) => {
+      if (!dateString) return 'N/A';
       
-      // Get quantity class
-      const getQuantityClass = (type) => {
-        if (['IN', 'RECEIPT', 'RETURN', 'ADJUSTMENT_IN'].includes(type)) {
-          return 'quantity-in';
-        } else if (['OUT', 'ISSUE', 'SALE', 'ADJUSTMENT_OUT'].includes(type)) {
-          return 'quantity-out';
-        }
-        return '';
-      };
-  
-      // Go back to warehouses
-      const goBack = () => {
-        router.push('/warehouses');
-      };
-      
-      // Edit warehouse
-      const editWarehouse = () => {
-        // Navigate to edit page or open modal
-        router.push(`/warehouses/${warehouse.value.warehouse_id}/edit`);
-      };
-      
-      // Confirm delete warehouse
-      const confirmDelete = () => {
-        showDeleteModal.value = true;
-      };
-      
-      // Close delete modal
-      const closeDeleteModal = () => {
-        showDeleteModal.value = false;
-      };
-      
-      // Delete warehouse
-      const deleteWarehouse = async () => {
-        try {
-          await WarehouseService.deleteWarehouse(warehouse.value.warehouse_id);
-          
-          // Show success and redirect
-          alert('Warehouse deleted successfully!');
-          router.push('/warehouses');
-        } catch (err) {
-          console.error('Error deleting warehouse:', err);
-          
-          // Handle specific errors
-          if (err.response && err.response.status === 422) {
-            alert('This warehouse cannot be deleted because it has zones or transactions associated with it.');
-          } else {
-            alert('An error occurred while deleting the warehouse. Please try again.');
-          }
-          
-          closeDeleteModal();
-        }
-      };
-      
-      // Open add zone modal
-      const openAddZoneModal = () => {
-        isEditingZone.value = false;
-        resetZoneForm();
-        validationErrors.value = {};
-        zoneForm.warehouse_id = warehouse.value.warehouse_id;
-        showZoneModal.value = true;
-      };
-      
-      // Edit zone
-      const editZone = (zone) => {
-        isEditingZone.value = true;
-        resetZoneForm();
-        
-        // Populate form data
-        zoneForm.zone_id = zone.zone_id;
-        zoneForm.warehouse_id = warehouse.value.warehouse_id;
-        zoneForm.name = zone.name;
-        zoneForm.code = zone.code;
-        zoneForm.description = zone.description || '';
-        
-        validationErrors.value = {};
-        showZoneModal.value = true;
-      };
-      
-      // Reset zone form
-      const resetZoneForm = () => {
-        zoneForm.zone_id = null;
-        zoneForm.warehouse_id = null;
-        zoneForm.name = '';
-        zoneForm.code = '';
-        zoneForm.description = '';
-      };
-      
-      // Close zone modal
-      const closeZoneModal = () => {
-        showZoneModal.value = false;
-      };
-      
-      // Save zone
-      const saveZone = async () => {
-        isSaving.value = true;
-        validationErrors.value = {};
-        
-        try {
-          if (isEditingZone.value) {
-            // Update existing zone
-            // In a real implementation, you would use a zones API endpoint
-            // await WarehouseService.updateZone(zoneForm.zone_id, zoneForm);
-            
-            alert('Zone updated successfully!');
-            
-            // Update local state
-            if (warehouse.value.zones) {
-              const index = warehouse.value.zones.findIndex(z => z.zone_id === zoneForm.zone_id);
-              if (index !== -1) {
-                warehouse.value.zones[index] = {
-                  ...warehouse.value.zones[index],
-                  name: zoneForm.name,
-                  code: zoneForm.code,
-                  description: zoneForm.description
-                };
-              }
-            }
-          } else {
-            // Create new zone
-            // In a real implementation, you would use a zones API endpoint
-            // const response = await WarehouseService.createZone(zoneForm);
-            
-            // Simulate response for demo
-            const newZone = {
-              zone_id: Date.now(), // Temporary ID for demo
-              warehouse_id: zoneForm.warehouse_id,
-              name: zoneForm.name,
-              code: zoneForm.code,
-              description: zoneForm.description,
-              locations: []
-            };
-            
-            // Add to local state
-            if (!warehouse.value.zones) {
-              warehouse.value.zones = [];
-            }
-            
-            warehouse.value.zones.push(newZone);
-            alert('Zone added successfully!');
-          }
-          
-          // Close modal
-          closeZoneModal();
-        } catch (err) {
-          console.error('Error saving zone:', err);
-          
-          // Handle validation errors
-          if (err.response && err.response.status === 422) {
-            validationErrors.value = err.validationErrors || {};
-          } else {
-            alert('An error occurred while saving the zone. Please try again.');
-          }
-        } finally {
-          isSaving.value = false;
-        }
-      };
-      
-      // Delete zone
-      const deleteZone = async (zone) => {
-        if (confirm(`Are you sure you want to delete ${zone.name}?`)) {
-          try {
-            // In a real implementation, you would use a zones API endpoint
-            // await WarehouseService.deleteZone(zone.zone_id);
-            
-            // Update local state
-            if (warehouse.value.zones) {
-              warehouse.value.zones = warehouse.value.zones.filter(z => z.zone_id !== zone.zone_id);
-            }
-            
-            alert('Zone deleted successfully!');
-          } catch (err) {
-            console.error('Error deleting zone:', err);
-            alert('An error occurred while deleting the zone. Please try again.');
-          }
-        }
-      };
-      
-      // View zone details
-      const viewZone = (zone) => {
-        // Navigate to zone details
-        router.push(`/warehouses/${warehouse.value.warehouse_id}/zones/${zone.zone_id}`);
-      };
-      
-      // Add location to zone
-      const addLocation = (zone) => {
-        // Navigate to add location page or open modal
-        router.push(`/warehouses/${warehouse.value.warehouse_id}/zones/${zone.zone_id}/locations/add`);
-      };
-      
-      // View all transactions
-      const viewAllTransactions = () => {
-        router.push(`/stock-transactions?warehouse_id=${warehouse.value.warehouse_id}`);
-      };
-      
-      // Lifecycle hooks
-      onMounted(() => {
-        fetchWarehouseDetails();
-      });
-      
-      return {
-        // Data
-        warehouse,
-        isLoading,
-        error,
-        recentTransactions,
-        isLoadingTransactions,
-        showZoneModal,
-        isEditingZone,
-        isSaving,
-        zoneForm,
-        validationErrors,
-        showDeleteModal,
-        
-        // Methods
-        fetchWarehouseDetails,
-        formatDate,
-        getTransactionTypeClass,
-        getQuantityClass,
-        goBack,
-        editWarehouse,
-        confirmDelete,
-        closeDeleteModal,
-        deleteWarehouse,
-        openAddZoneModal,
-        editZone,
-        closeZoneModal,
-        saveZone,
-        deleteZone,
-        viewZone,
-        addLocation,
-        viewAllTransactions
-      };
-    }
-  };
-  </script>
-  
-  <style scoped>
-  .warehouse-detail {
-    padding: 1rem;
-    max-width: 1200px;
-    margin: 0 auto;
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    };
+    
+    onMounted(async () => {
+      await fetchWarehouseData();
+      await fetchWarehouseInventory();
+    });
+    
+    return {
+      warehouseId,
+      warehouse,
+      zones,
+      loading,
+      error,
+      zonesCount,
+      locationsCount,
+      inventoryItems,
+      inventoryLoading,
+      inventoryError,
+      inventorySearchQuery,
+      showInventoryModal,
+      showEditModal,
+      isSubmitting,
+      warehouseForm,
+      lowStockCount,
+      topItems,
+      filteredInventoryItems,
+      fetchWarehouseData,
+      refreshInventory,
+      editWarehouse,
+      saveWarehouse,
+      getQuantityClass,
+      formatDate
+    };
   }
-  
-  /* Loading and error states */
-  .loading-container,
-  .error-container {
-    display: flex;
+};
+</script>
+
+<style scoped>
+.warehouse-detail-page {
+  padding: 1rem;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  margin-bottom: 1rem;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--gray-800);
+}
+
+.warehouse-code {
+  font-size: 1rem;
+  color: var(--gray-600);
+  font-weight: normal;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.warehouse-status {
+  margin-top: 0.5rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+.status-active {
+  background-color: rgba(5, 150, 105, 0.1);
+  color: var(--success-color);
+}
+
+.status-inactive {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: var(--danger-color);
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.breadcrumb-item {
+  color: var(--primary-color);
+}
+
+.breadcrumb-item.active {
+  color: var(--gray-600);
+}
+
+.breadcrumb-separator {
+  margin: 0 0.5rem;
+  color: var(--gray-400);
+}
+
+.loading-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  color: var(--gray-500);
+}
+
+.error-message {
+  padding: 1rem;
+  background-color: rgba(220, 38, 38, 0.1);
+  color: var(--danger-color);
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.not-found-icon {
+  font-size: 3rem;
+  color: var(--gray-400);
+  margin-bottom: 1rem;
+}
+
+.warehouse-details-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.details-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--gray-50);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+.detail-item {
+  margin-bottom: 0.75rem;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1rem;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.detail-value {
+  color: var(--gray-800);
+}
+
+.structure-stats,
+.inventory-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  flex: 1;
+  background-color: var(--gray-50);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.empty-zones-message,
+.empty-inventory-message {
+  padding: 1.5rem;
+  background-color: var(--gray-50);
+  border-radius: 0.5rem;
+  text-align: center;
+  color: var(--gray-600);
+}
+
+.preview-title {
+  margin: 1rem 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.zones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.zone-card {
+  background-color: var(--gray-50);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  border: 1px solid var(--gray-200);
+  color: var(--gray-800);
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.zone-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-color: var(--primary-color);
+  text-decoration: none;
+}
+
+.zone-name {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.zone-code {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-bottom: 0.5rem;
+}
+
+.zone-locations {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+}
+
+.view-all-card {
+  background-color: var(--gray-100);
+  border-radius: 0.375rem;
+  border: 1px dashed var(--gray-300);
+  color: var(--gray-600);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.view-all-card:hover {
+  background-color: var(--gray-200);
+  color: var(--gray-800);
+  text-decoration: none;
+}
+
+.view-all-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inventory-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--gray-200);
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inventory-table th,
+.inventory-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.inventory-table th {
+  background-color: var(--gray-50);
+  color: var(--gray-600);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.inventory-table td {
+  border-top: 1px solid var(--gray-200);
+}
+
+.inventory-table tr:hover {
+  background-color: var(--gray-50);
+}
+
+.quantity-empty {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+.quantity-low {
+  color: var(--warning-color);
+  font-weight: 600;
+}
+
+.quantity-normal {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.view-all-inventory {
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.inventory-search {
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+}
+
+.search-control {
+  padding-left: 2.25rem;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  text-decoration: none;
+}
+
+.btn-secondary {
+  background-color: var(--gray-200);
+  color: var(--gray-800);
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-secondary:hover {
+  background-color: var(--gray-300);
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-text:hover {
+  background-color: var(--gray-100);
+  text-decoration: none;
+}
+
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 95%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-lg {
+  max-width: 800px;
+}
+
+.modal-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  color: var(--gray-500);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0.25rem;
+}
+
+.btn-close:hover {
+  color: var(--gray-800);
+}
+
+.modal-body {
+  padding: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--gray-900);
+  background-color: white;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.375rem;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.form-text {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .header-top {
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 0;
-    text-align: center;
   }
-  
-  .loading-spinner {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: var(--gray-500);
-  }
-  
-  .error-icon {
-    font-size: 3rem;
-    color: var(--danger-color);
-    margin-bottom: 1rem;
-  }
-  
-  .error-container p {
-    font-size: 1.125rem;
-    color: var(--gray-700);
-    margin-bottom: 1.5rem;
-  }
-  
-  .error-actions {
-    display: flex;
-    gap: 1rem;
-  }
-  
-  /* Detail container */
-  .detail-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-  
-  /* Header */
-  .detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-  
-  .header-breadcrumb {
-    display: flex;
-    align-items: center;
-    font-size: 0.875rem;
-  }
-  
-  .btn-link {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0;
-  }
-  
-  .breadcrumb-separator {
-    margin: 0 0.5rem;
-    color: var(--gray-400);
-  }
-  
-  .breadcrumb-current {
-    font-weight: 600;
-    color: var(--gray-800);
-  }
-  
+
   .header-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  /* Cards */
-  .detail-card {
-    background-color: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
-  
-  .card-header {
-    padding: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--gray-200);
-    background-color: var(--gray-50);
-  }
-  
-  .card-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--gray-800);
-  }
-  
-  .card-body {
-    padding: 1.5rem;
-  }
-  
-  /* Detail grid */
-  .detail-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-  }
-  
-  .detail-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .detail-item.full-width {
-    grid-column: span 2;
-  }
-  
-  .detail-label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--gray-500);
-    margin: 0;
-  }
-  
-  .detail-value {
-    font-size: 1rem;
-    color: var(--gray-800);
-    margin: 0;
-  }
-  
-  .address-value {
-    white-space: pre-line;
-  }
-  
-  /* Warehouse status */
-  .warehouse-status {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background-color: #d1fae5;
-    color: #059669;
-  }
-  
-  .warehouse-status.inactive {
-    background-color: var(--gray-100);
-    color: var(--gray-600);
-  }
-  
-  /* Zones */
-  .zones-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-  }
-  
-  .zone-card {
-    border: 1px solid var(--gray-200);
-    border-radius: 0.375rem;
-    overflow: hidden;
-  }
-  
-  .zone-header {
-    padding: 0.75rem 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-  }
-  
-  .zone-name {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--gray-800);
-  }
-  
-  .zone-actions {
-    display: flex;
-    gap: 0.25rem;
-  }
-  
-  .action-btn-sm {
-    background: none;
-    border: none;
-    color: var(--gray-500);
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-  }
-  
-  .action-btn-sm:hover {
-    background-color: var(--gray-200);
-    color: var(--gray-800);
-  }
-  
-  .zone-body {
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .zone-code,
-  .zone-description,
-  .zone-locations {
-    font-size: 0.875rem;
-    color: var(--gray-700);
-  }
-  
-  .zone-label {
-    font-weight: 500;
-    color: var(--gray-600);
-  }
-  
-  .zone-footer {
-    padding: 0.75rem 1rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    border-top: 1px solid var(--gray-200);
-    background-color: var(--gray-50);
-  }
-  
-  /* Small button variant */
-  .btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-  }
-  
-  /* Empty states */
-  .empty-state-small {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 0;
-    text-align: center;
-  }
-  
-  .empty-icon-small {
-    font-size: 2rem;
-    color: var(--gray-300);
-    margin-bottom: 0.5rem;
-  }
-  
-  .empty-state-small p {
-    color: var(--gray-500);
-    margin-bottom: 1rem;
-  }
-  
-  /* Loading small */
-  .loading-small {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem 0;
-    color: var(--gray-500);
-    font-size: 0.875rem;
-  }
-  
-  .loading-small i {
-    margin-right: 0.5rem;
-  }
-  
-  /* Transactions table */
-  .transactions-table {
-    overflow-x: auto;
-  }
-  
-  .transactions-table table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  .transactions-table th {
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 500;
-    color: var(--gray-600);
-    border-bottom: 1px solid var(--gray-200);
-    background-color: var(--gray-50);
-  }
-  
-  .transactions-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--gray-100);
-  }
-  
-  .transaction-badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-  
-  .transaction-badge.type-in {
-    background-color: #d1fae5;
-    color: #059669;
-  }
-  
-  .transaction-badge.type-out {
-    background-color: #fee2e2;
-    color: #dc2626;
-  }
-  
-  .quantity-in {
-    color: #059669;
-    font-weight: 500;
-  }
-  
-  .quantity-out {
-    color: #dc2626;
-    font-weight: 500;
-  }
-  
-  /* Modal styles */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-  }
-  
-  .modal-container {
-    background-color: white;
-    border-radius: 0.5rem;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--gray-200);
-  }
-  
-  .modal-header h2 {
-    font-size: 1.25rem;
-    margin: 0;
-    color: var(--gray-800);
-  }
-  
-  .close-btn {
-    background: none;
-    border: none;
-    color: var(--gray-500);
-    cursor: pointer;
-    font-size: 1.25rem;
-  }
-  
-  .modal-body {
-    padding: 1.5rem;
-  }
-  
-  /* Form */
-  .form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .form-group label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--gray-700);
-  }
-  
-  .form-group input,
-  .form-group textarea,
-  .form-group select {
-    padding: 0.625rem;
-    border: 1px solid var(--gray-300);
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-  }
-  
-  .form-group input:disabled {
-    background-color: var(--gray-100);
-    cursor: not-allowed;
-  }
-  
-  .form-group textarea {
-    resize: vertical;
-    min-height: 80px;
-  }
-  
-  .form-group .is-invalid {
-    border-color: var(--danger-color);
-  }
-  
-  .invalid-feedback {
-    font-size: 0.75rem;
-    color: var(--danger-color);
-  }
-  
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
     margin-top: 1rem;
   }
-  
-  /* Buttons */
-  .btn {
-    padding: 0.625rem 1rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-    border: none;
+
+  .warehouse-details-container {
+    grid-template-columns: 1fr;
   }
-  
-  .btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-  }
-  
-  .btn-primary:hover {
-    background-color: var(--primary-dark);
-  }
-  
-  .btn-secondary {
-    background-color: var(--gray-200);
-    color: var(--gray-700);
-  }
-  
-  .btn-secondary:hover {
-    background-color: var(--gray-300);
-  }
-  
-  .btn-danger {
-    background-color: var(--danger-color);
-    color: white;
-  }
-  
-  .btn-danger:hover {
-    background-color: #b91c1c;
-  }
-  
-  .btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-  
-  /* Responsive */
-  @media (max-width: 768px) {
-    .detail-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .zones-container {
-      grid-template-columns: 1fr;
-    }
-    
-    .detail-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-    
-    .header-actions {
-      align-self: flex-end;
-    }
-  }
-  </style>
+}
+</style>

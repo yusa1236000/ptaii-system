@@ -546,6 +546,15 @@
                     </router-link>
 
                     <router-link
+                        to="/accounting/receivable-payments"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span v-if="!sidebarCollapsed">Customer Payments</span>
+                    </router-link>
+
+                    <router-link
                         to="/accounting/periods"
                         class="menu-item"
                         active-class="active"

@@ -195,7 +195,7 @@ export default {
   },
   setup() {
     // Debug mode - set to true for development, false for production
-    const debug = ref(true);
+    const debug = ref(false);
     const debugInfo = reactive({
       apiBaseUrl: '',
       lastApiCall: '',

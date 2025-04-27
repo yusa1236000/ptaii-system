@@ -68,6 +68,41 @@
         </div>
       </div>
 
+      <!-- Physical Properties Card -->
+      <div class="detail-card">
+        <div class="card-header">
+          <h2 class="card-title">Physical Properties</h2>
+        </div>
+        <div class="card-body">
+          <div class="detail-grid">
+            <div class="detail-row">
+              <div class="detail-label">Length</div>
+              <div class="detail-value">{{ item.length || '-' }}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Width</div>
+              <div class="detail-value">{{ item.width || '-' }}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Thickness</div>
+              <div class="detail-value">{{ item.thickness || '-' }}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Weight</div>
+              <div class="detail-value">{{ item.weight || '-' }}</div>
+            </div>
+            <div class="detail-row" v-if="item.document_path">
+              <div class="detail-label">Technical Document</div>
+              <div class="detail-value">
+                <a :href="item.document_url" target="_blank" class="btn btn-sm btn-primary">
+                  <i class="fas fa-file-pdf"></i> View Document
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Stock Info Card -->
       <div class="detail-card">
         <div class="card-header">
@@ -102,6 +137,41 @@
         </div>
       </div>
 
+      <!-- Pricing Info Card -->
+      <div class="detail-card">
+        <div class="card-header">
+          <h2 class="card-title">Pricing Information</h2>
+        </div>
+        <div class="card-body">
+          <div class="stock-summary">
+            <div class="stock-stat">
+              <div class="stat-label">Cost Price</div>
+              <div class="stat-value">{{ item.cost_price || '-' }}</div>
+            </div>
+            <div class="stock-stat">
+              <div class="stat-label">Sale Price</div>
+              <div class="stat-value">{{ item.sale_price || '-' }}</div>
+            </div>
+            <div class="stock-stat">
+              <div class="stat-label">Purchasable</div>
+              <div class="stat-value">
+                <span :class="item.is_purchasable ? 'badge-success' : 'badge-secondary'" class="badge">
+                  {{ item.is_purchasable ? 'Yes' : 'No' }}
+                </span>
+              </div>
+            </div>
+            <div class="stock-stat">
+              <div class="stat-label">Sellable</div>
+              <div class="stat-value">
+                <span :class="item.is_sellable ? 'badge-success' : 'badge-secondary'" class="badge">
+                  {{ item.is_sellable ? 'Yes' : 'No' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Batches Card -->
       <div class="detail-card" v-if="item.batches && item.batches.length > 0">
         <div class="card-header">
@@ -124,6 +194,41 @@
                   <td>{{ formatDate(batch.expiry_date) }}</td>
                   <td>{{ formatDate(batch.manufacturing_date) }}</td>
                   <td>{{ batch.lot_number || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOM Components Card -->
+      <div class="detail-card" v-if="bomComponents.length > 0">
+        <div class="card-header">
+          <h2 class="card-title">BOM Components</h2>
+        </div>
+        <div class="card-body">
+          <div class="card-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Component Code</th>
+                  <th>Component Name</th>
+                  <th>Quantity</th>
+                  <th>UOM</th>
+                  <th>Critical</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="component in bomComponents" :key="component.component_id">
+                  <td>{{ component.component_code }}</td>
+                  <td>{{ component.component_name }}</td>
+                  <td>{{ component.quantity }}</td>
+                  <td>{{ component.uom || '-' }}</td>
+                  <td>
+                    <span :class="component.is_critical ? 'badge-warning' : 'badge-secondary'" class="badge">
+                      {{ component.is_critical ? 'Yes' : 'No' }}
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -203,7 +308,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import ItemService from '@/services/ItemService.js';
 import ItemFormModal from '@/components/inventory/ItemFormModal.vue';
@@ -231,7 +336,8 @@ export default {
     const isLoadingTransactions = ref(true);
     const showEditModal = ref(false);
     const showDeleteModal = ref(false);
-    const itemForm = reactive({
+    const bomComponents = ref([]);
+    const itemForm = ref({
       item_id: null,
       item_code: '',
       name: '',
@@ -239,7 +345,15 @@ export default {
       category_id: '',
       uom_id: '',
       minimum_stock: 0,
-      maximum_stock: 0
+      maximum_stock: 0,
+      is_purchasable: false,
+      is_sellable: false,
+      cost_price: 0,
+      sale_price: 0,
+      length: '',
+      width: '',
+      thickness: '',
+      weight: ''
     });
 
     const canDelete = computed(() => {
@@ -256,10 +370,11 @@ export default {
       isLoading.value = true;
       try {
         const response = await ItemService.getItemById(props.id);
-        item.value = response.data;
+        item.value = response.data.data;
+        bomComponents.value = response.data.bom_components || [];
         
         // Populate form for potential edit
-        Object.assign(itemForm, {
+        Object.assign(itemForm.value, {
           item_id: item.value.item_id,
           item_code: item.value.item_code,
           name: item.value.name,
@@ -267,7 +382,15 @@ export default {
           category_id: item.value.category_id || '',
           uom_id: item.value.uom_id || '',
           minimum_stock: item.value.minimum_stock,
-          maximum_stock: item.value.maximum_stock
+          maximum_stock: item.value.maximum_stock,
+          is_purchasable: item.value.is_purchasable || false,
+          is_sellable: item.value.is_sellable || false,
+          cost_price: item.value.cost_price || 0,
+          sale_price: item.value.sale_price || 0,
+          length: item.value.length || '',
+          width: item.value.width || '',
+          thickness: item.value.thickness || '',
+          weight: item.value.weight || ''
         });
       } catch (error) {
         console.error('Error fetching item:', error);
@@ -342,18 +465,18 @@ export default {
     };
 
     const getTransactionTypeClass = (type) => {
-      if (['IN', 'RECEIPT', 'RETURN', 'ADJUSTMENT_IN'].includes(type)) {
+      if (['IN', 'RECEIPT', 'RETURN', 'ADJUSTMENT_IN', 'receive', 'return', 'adjustment'].includes(type)) {
         return 'type-in';
-      } else if (['OUT', 'ISSUE', 'SALE', 'ADJUSTMENT_OUT'].includes(type)) {
+      } else if (['OUT', 'ISSUE', 'SALE', 'ADJUSTMENT_OUT', 'issue', 'transfer', 'sale'].includes(type)) {
         return 'type-out';
       }
       return '';
     };
 
     const getQuantityClass = (type) => {
-      if (['IN', 'RECEIPT', 'RETURN', 'ADJUSTMENT_IN'].includes(type)) {
+      if (['IN', 'RECEIPT', 'RETURN', 'ADJUSTMENT_IN', 'receive', 'return'].includes(type)) {
         return 'quantity-in';
-      } else if (['OUT', 'ISSUE', 'SALE', 'ADJUSTMENT_OUT'].includes(type)) {
+      } else if (['OUT', 'ISSUE', 'SALE', 'ADJUSTMENT_OUT', 'issue', 'transfer', 'sale'].includes(type)) {
         return 'quantity-out';
       }
       return '';
@@ -439,6 +562,7 @@ export default {
       showDeleteModal,
       itemForm,
       canDelete,
+      bomComponents,
       formatDate,
       getStockStatus,
       getStockStatusClass,
@@ -730,6 +854,29 @@ export default {
 .error-message p {
   margin: 0 0 1.5rem 0;
   color: #64748b;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-success {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.badge-secondary {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #d97706;
 }
 
 @media (max-width: 768px) {

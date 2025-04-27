@@ -1,0 +1,374 @@
+<!-- src/views/inventory/ItemBatchesList.vue -->
+<template>
+    <div class="batches-list">
+      <div class="page-header">
+        <h1 class="text-xl font-semibold">Item Batches</h1>
+        <div class="flex items-center space-x-2">
+          <router-link 
+            :to="{ name: 'ItemDetail', params: { id: itemId } }" 
+            class="btn-secondary"
+          >
+            <i class="fas fa-arrow-left mr-2"></i>Back to Item
+          </router-link>
+          <router-link 
+            :to="{ name: 'CreateItemBatch', params: { itemId: itemId } }" 
+            class="btn-primary"
+          >
+            <i class="fas fa-plus mr-2"></i>Add Batch
+          </router-link>
+        </div>
+      </div>
+  
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">{{ item ? item.name : 'Loading...' }} <span class="text-sm text-gray-500">({{ item ? item.item_code : '' }})</span></h2>
+        </div>
+        <div class="card-body">
+          <div v-if="loading" class="flex justify-center py-8">
+            <div class="spinner"></div>
+          </div>
+  
+          <div v-else-if="error" class="alert alert-danger">
+            {{ error }}
+          </div>
+  
+          <div v-else-if="batches.length === 0" class="alert alert-info">
+            No batches found for this item. Create a new batch to get started.
+          </div>
+  
+          <div v-else class="overflow-x-auto">
+            <table class="table-auto w-full">
+              <thead>
+                <tr>
+                  <th class="px-4 py-2 text-left">Batch Number</th>
+                  <th class="px-4 py-2 text-left">Lot Number</th>
+                  <th class="px-4 py-2 text-left">Manufacturing Date</th>
+                  <th class="px-4 py-2 text-left">Expiry Date</th>
+                  <th class="px-4 py-2 text-left">Status</th>
+                  <th class="px-4 py-2 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="batch in batches" :key="batch.batch_id" class="border-t border-gray-200">
+                  <td class="px-4 py-3">{{ batch.batch_number }}</td>
+                  <td class="px-4 py-3">{{ batch.lot_number || 'N/A' }}</td>
+                  <td class="px-4 py-3">{{ formatDate(batch.manufacturing_date) }}</td>
+                  <td class="px-4 py-3">
+                    <span :class="getExpiryDateClass(batch)">
+                      {{ formatDate(batch.expiry_date) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span :class="getStatusBadgeClass(batch)">
+                      {{ getBatchStatus(batch) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <div class="flex justify-center space-x-2">
+                      <router-link 
+                        :to="{ name: 'BatchDetail', params: { itemId: itemId, id: batch.batch_id } }" 
+                        class="btn-icon btn-info" 
+                        title="View"
+                      >
+                        <i class="fas fa-eye"></i>
+                      </router-link>
+                      <router-link 
+                        :to="{ name: 'EditItemBatch', params: { itemId: itemId, id: batch.batch_id } }" 
+                        class="btn-icon btn-warning" 
+                        title="Edit"
+                      >
+                        <i class="fas fa-edit"></i>
+                      </router-link>
+                      <button 
+                        @click="confirmDelete(batch)" 
+                        class="btn-icon btn-danger" 
+                        title="Delete"
+                        :disabled="hasTransactions(batch)"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Delete Confirmation Modal -->
+      <div v-if="showDeleteModal" class="modal-backdrop">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">Confirm Delete</h3>
+            <button @click="showDeleteModal = false" class="modal-close">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete batch <strong>{{ selectedBatch?.batch_number }}</strong>?</p>
+            <p class="text-sm text-gray-600 mt-2">This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button @click="showDeleteModal = false" class="btn-secondary">
+              Cancel
+            </button>
+            <button @click="deleteBatch" class="btn-danger">
+              <i class="fas fa-trash mr-2"></i>Delete Batch
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  import { ref, computed, onMounted } from 'vue';
+  import { useRoute } from 'vue-router';
+  import axios from 'axios';
+  
+  export default {
+    name: 'ItemBatchesList',
+    setup() {
+      const route = useRoute();
+      const itemId = computed(() => route.params.itemId);
+      
+      const batches = ref([]);
+      const item = ref(null);
+      const loading = ref(true);
+      const error = ref(null);
+      const showDeleteModal = ref(false);
+      const selectedBatch = ref(null);
+  
+      const fetchItemDetails = async () => {
+        try {
+          const response = await axios.get(`/api/items/${itemId.value}`);
+          item.value = response.data.data;
+        } catch (err) {
+          console.error('Error fetching item details:', err);
+          error.value = 'Failed to load item details. Please try again.';
+        }
+      };
+  
+      const fetchBatches = async () => {
+        try {
+          loading.value = true;
+          error.value = null;
+          const response = await axios.get(`/api/items/${itemId.value}/batches`);
+          batches.value = response.data.data;
+        } catch (err) {
+          console.error('Error fetching batches:', err);
+          error.value = 'Failed to load batches. Please try again.';
+        } finally {
+          loading.value = false;
+        }
+      };
+  
+      const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString();
+      };
+  
+      const getExpiryDateClass = (batch) => {
+        if (!batch.expiry_date) return '';
+        
+        const today = new Date();
+        const expiryDate = new Date(batch.expiry_date);
+        const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilExpiry < 0) return 'text-red-600 font-semibold';
+        if (daysUntilExpiry < 30) return 'text-yellow-600 font-semibold';
+        return '';
+      };
+  
+      const getBatchStatus = (batch) => {
+        if (!batch.expiry_date) return 'No Expiry';
+        
+        const today = new Date();
+        const expiryDate = new Date(batch.expiry_date);
+        
+        if (expiryDate < today) return 'Expired';
+        
+        const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+        if (daysUntilExpiry <= 30) return `Expires in ${daysUntilExpiry} days`;
+        
+        return 'Valid';
+      };
+  
+      const getStatusBadgeClass = (batch) => {
+        if (!batch.expiry_date) return 'badge badge-secondary';
+        
+        const today = new Date();
+        const expiryDate = new Date(batch.expiry_date);
+        
+        if (expiryDate < today) return 'badge badge-danger';
+        
+        const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+        if (daysUntilExpiry <= 30) return 'badge badge-warning';
+        
+        return 'badge badge-success';
+      };
+  
+      const hasTransactions = (batch) => {
+        // You would ideally check this from the API
+        // For now, assume no transactions for simplicity
+        return false;
+      };
+  
+      const confirmDelete = (batch) => {
+        selectedBatch.value = batch;
+        showDeleteModal.value = true;
+      };
+  
+      const deleteBatch = async () => {
+        if (!selectedBatch.value) return;
+        
+        try {
+          await axios.delete(`/api/items/${itemId.value}/batches/${selectedBatch.value.batch_id}`);
+          await fetchBatches();
+          showDeleteModal.value = false;
+          selectedBatch.value = null;
+        } catch (err) {
+          console.error('Error deleting batch:', err);
+          error.value = 'Failed to delete batch. Please try again.';
+        }
+      };
+  
+      onMounted(async () => {
+        await Promise.all([fetchItemDetails(), fetchBatches()]);
+      });
+  
+      return {
+        itemId,
+        batches,
+        item,
+        loading,
+        error,
+        showDeleteModal,
+        selectedBatch,
+        formatDate,
+        getExpiryDateClass,
+        getBatchStatus,
+        getStatusBadgeClass,
+        hasTransactions,
+        confirmDelete,
+        deleteBatch
+      };
+    }
+  };
+  </script>
+  
+<style>
+  .page-header {
+    @apply flex justify-between items-center mb-6;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden;
+  }
+  
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200;
+  }
+  
+  .card-title {
+    @apply text-lg font-semibold text-gray-800;
+  }
+  
+  .card-body {
+    @apply p-6;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md inline-flex items-center;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md inline-flex items-center;
+  }
+  
+  .btn-icon {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-full;
+  }
+  
+  .btn-info {
+    @apply bg-blue-100 hover:bg-blue-200 text-blue-600;
+  }
+  
+  .btn-warning {
+    @apply bg-yellow-100 hover:bg-yellow-200 text-yellow-600;
+  }
+  
+  .btn-danger {
+    @apply bg-red-100 hover:bg-red-200 text-red-600;
+  }
+  
+  .btn-danger[disabled] {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  
+  .badge {
+    @apply text-xs font-semibold px-2 py-1 rounded-full;
+  }
+  
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .badge-danger {
+    @apply bg-red-100 text-red-800;
+  }
+  
+  .badge-secondary {
+    @apply bg-gray-100 text-gray-800;
+  }
+  
+  .spinner {
+    @apply w-8 h-8 border-4 border-blue-200 rounded-full animate-spin;
+    border-top-color: theme('colors.blue.600');
+  }
+  
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+  }
+  
+  .modal-content {
+    @apply bg-white rounded-lg shadow-xl w-full max-w-md mx-4;
+  }
+  
+  .modal-header {
+    @apply px-6 py-4 border-b border-gray-200 flex justify-between items-center;
+  }
+  
+  .modal-title {
+    @apply text-lg font-semibold text-gray-800;
+  }
+  
+  .modal-close {
+    @apply text-gray-500 hover:text-gray-700;
+  }
+  
+  .modal-body {
+    @apply px-6 py-4;
+  }
+  
+  .modal-footer {
+    @apply px-6 py-4 border-t border-gray-200 flex justify-end space-x-2;
+  }
+  
+  .alert {
+    @apply p-4 rounded-md;
+  }
+  
+  .alert-danger {
+    @apply bg-red-100 text-red-800;
+  }
+  
+  .alert-info {
+    @apply bg-blue-100 text-blue-800;
+  }
+  </style>

@@ -140,6 +140,7 @@
       v-if="showDetailModal"
       :item="selectedItem"
       @close="closeDetailModal"
+      @edit="editItemFromDetail"
     />
   </div>
 </template>
@@ -187,13 +188,22 @@ export default {
     const showDetailModal = ref(false);
     const isEditMode = ref(false);
     const itemForm = ref({
+      item_id: '',
       item_code: '',
       name: '',
       description: '',
       category_id: '',
       uom_id: '',
       minimum_stock: 0,
-      maximum_stock: 0
+      maximum_stock: 0,
+      length: '',
+      width: '',
+      thickness: '',
+      weight: '',
+      is_purchasable: false,
+      is_sellable: false,
+      cost_price: 0,
+      sale_price: 0
     });
     const itemToDelete = ref({});
     const selectedItem = ref(null);
@@ -283,6 +293,13 @@ export default {
       try {
         const response = await api.get('/items');
         items.value = response.data.data;
+        // Map unitOfMeasure to each item after fetching unitOfMeasures
+        if (unitOfMeasures.value.length > 0) {
+          items.value = items.value.map(item => {
+            const uom = unitOfMeasures.value.find(u => u.uom_id === item.uom_id);
+            return { ...item, unitOfMeasure: uom || null };
+          });
+        }
       } catch (error) {
         console.error('Error fetching items:', error);
       } finally {
@@ -303,6 +320,13 @@ export default {
       try {
         const response = await api.get('/unit-of-measures');
         unitOfMeasures.value = response.data.data;
+        // Map unitOfMeasure to each item after fetching unitOfMeasures
+        if (items.value.length > 0) {
+          items.value = items.value.map(item => {
+            const uom = unitOfMeasures.value.find(u => u.uom_id === item.uom_id);
+            return { ...item, unitOfMeasure: uom || null };
+          });
+        }
       } catch (error) {
         console.error('Error fetching unit of measures:', error);
       }
@@ -358,7 +382,15 @@ export default {
         category_id: '',
         uom_id: '',
         minimum_stock: 0,
-        maximum_stock: 0
+        maximum_stock: 0,
+        length: '',
+        width: '',
+        thickness: '',
+        weight: '',
+        is_purchasable: false,
+        is_sellable: false,
+        cost_price: 0,
+        sale_price: 0
       };
       showItemModal.value = true;
     };
@@ -373,9 +405,22 @@ export default {
         category_id: item.category_id || '',
         uom_id: item.uom_id || '',
         minimum_stock: item.minimum_stock,
-        maximum_stock: item.maximum_stock
+        maximum_stock: item.maximum_stock,
+        length: item.length || '',
+        width: item.width || '',
+        thickness: item.thickness || '',
+        weight: item.weight || '',
+        is_purchasable: item.is_purchasable || false,
+        is_sellable: item.is_sellable || false,
+        cost_price: item.cost_price || 0,
+        sale_price: item.sale_price || 0
       };
       showItemModal.value = true;
+    };
+    
+    const editItemFromDetail = (item) => {
+      closeDetailModal();
+      editItem(item);
     };
     
     const viewItem = (item) => {
@@ -395,21 +440,27 @@ export default {
     const saveItem = async (formData) => {
       try {
         if (isEditMode.value) {
-          await api.put(`/items/${formData.item_id}`, formData);
+          const itemId = formData.get('item_id');
+          await api.post(`/items/${itemId}?_method=PUT`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
           
-          // Update item in the list
-          const index = items.value.findIndex(item => item.item_id === formData.item_id);
-          if (index !== -1) {
-            items.value[index] = { ...items.value[index], ...formData };
-          }
+          // Refresh items list
+          await fetchItems();
           
           // Show success message
           alert('Item updated successfully!');
         } else {
-          const response = await api.post('/items', formData);
+          await api.post('/items', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
           
-          // Add new item to the list
-          items.value.push(response.data.data);
+          // Refresh items list
+          await fetchItems();
           
           // Show success message
           alert('Item added successfully!');
@@ -420,8 +471,8 @@ export default {
       } catch (error) {
         console.error('Error saving item:', error);
         
-        if (error.validationErrors) {
-          alert('Please check the form for errors: ' + Object.values(error.validationErrors).join(', '));
+        if (error.response && error.response.data && error.response.data.errors) {
+          alert('Please check the form for errors: ' + Object.values(error.response.data.errors).join(', '));
         } else {
           alert('An error occurred while saving the item. Please try again.');
         }
@@ -506,6 +557,7 @@ export default {
       goToPage,
       openAddItemModal,
       editItem,
+      editItemFromDetail,
       viewItem,
       closeItemModal,
       closeDetailModal,
@@ -551,6 +603,11 @@ export default {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #f1f5f9;
   color: #1e293b;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.875rem;
 }
 
 .data-table tr:hover td {
@@ -645,12 +702,6 @@ export default {
   margin: 0 0 0.5rem 0;
   color: #1e293b;
 }
-
-.empty-state p {
-  margin: 0;
-  font-size: 0.875rem;
-}
-
 @media (max-width: 768px) {
   .data-table {
     font-size: 0.75rem;
