@@ -564,6 +564,15 @@
                     </router-link>
 
                     <router-link
+                        to="/accounting/payable-payments"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-calendar-alt"></i>
+                        <span v-if="!sidebarCollapsed">Payable Payments</span>
+                    </router-link>
+
+                    <router-link
                         to="/accounting/financial-reports"
                         class="menu-item"
                         active-class="active"

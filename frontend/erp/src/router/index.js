@@ -1277,6 +1277,46 @@ const routes = [
                 meta: { requiresAuth: true },
             },
 
+            //Payble Payments
+            {
+                path: "/accounting/payable-payments",
+                name: "PayablePaymentsList",
+                component: () =>
+                    import("../views/accounting/PayablePaymentsList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/payable-payments/create",
+                name: "CreatePayablePayment",
+                component: () =>
+                    import("../views/accounting/RecordPaymentForm.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/payable-payments/:id",
+                name: "PayablePaymentDetail",
+                component: () =>
+                    import("../views/accounting/PayablePaymentDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/payable-payments/apply/:id",
+                name: "PaymentApplication",
+                component: () =>
+                    import("../views/accounting/PaymentApplication.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/vendor-payments/:id",
+                name: "VendorPaymentHistory",
+                component: () =>
+                    import("../views/accounting/VendorPaymentHistory.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
             // Admin Routes
             {
                 path: "admin/users",
