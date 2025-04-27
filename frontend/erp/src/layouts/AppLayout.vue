@@ -95,6 +95,54 @@
                     </router-link>
                 </div>
 
+                <!-- Material Planning Section -->
+                <div class="menu-section">
+                <div @click="toggleMenuSection('planning')" class="section-header">
+                    <div class="section-title-container">
+                    <i class="fas fa-tasks"></i>
+                    <span v-if="!sidebarCollapsed" class="section-title">Material Planning</span>
+                    </div>
+                    <i
+                    v-if="!sidebarCollapsed"
+                    :class="
+                        menuSections.planning
+                        ? 'fas fa-chevron-down'
+                        : 'fas fa-chevron-right'
+                    "
+                    class="section-icon"
+                    ></i>
+                </div>
+                </div>
+
+                <div v-show="!sidebarCollapsed && menuSections.planning" class="submenu">
+                <router-link
+                    to="/planning/material-plans"
+                    class="menu-item"
+                    active-class="active"
+                >
+                    <i class="fas fa-list"></i>
+                    <span v-if="!sidebarCollapsed">Material Plans</span>
+                </router-link>
+
+                <router-link
+                    to="/planning/generate-plans"
+                    class="menu-item"
+                    active-class="active"
+                >
+                    <i class="fas fa-cog"></i>
+                    <span v-if="!sidebarCollapsed">Generate Plans</span>
+                </router-link>
+
+                <router-link
+                    to="/planning/generate-requisitions"
+                    class="menu-item"
+                    active-class="active"
+                >
+                    <i class="fas fa-file-alt"></i>
+                    <span v-if="!sidebarCollapsed">Generate Requisitions</span>
+                </router-link>
+                </div>
+
                 <!-- Stock Operations Section -->
                 <div class="menu-section">
                     <div

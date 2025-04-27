@@ -121,6 +121,11 @@ import CalculateDepreciation from "../views/accounting/CalculateDepreciation.vue
 import DepreciationScheduleView from "../views/accounting/DepreciationScheduleView.vue";
 import DepreciationJournalView from "../views/accounting/DepreciationJournalView.vue";
 
+//Material Planning
+import MaterialPlansGeneration from "../views/planning/MaterialPlansGeneration.vue";
+import MaterialPlansList from "../views/planning/MaterialPlansList.vue";
+import PurchaseRequisitionGeneration from "../views/planning/PurchaseRequisitionGeneration.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -1314,6 +1319,26 @@ const routes = [
                 component: () =>
                     import("../views/accounting/VendorPaymentHistory.vue"),
                 props: true,
+                meta: { requiresAuth: true },
+            },
+
+            //Material Planning
+            {
+                path: "/planning/generate-plans",
+                name: "MaterialPlansGeneration",
+                component: MaterialPlansGeneration,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/planning/material-plans",
+                name: "MaterialPlansList",
+                component: MaterialPlansList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/planning/generate-requisitions",
+                name: "PurchaseRequisitionGeneration",
+                component: PurchaseRequisitionGeneration,
                 meta: { requiresAuth: true },
             },
 
