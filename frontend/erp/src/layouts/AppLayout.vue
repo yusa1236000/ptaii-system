@@ -226,7 +226,7 @@
                     v-show="!sidebarCollapsed && menuSections.purchasing"
                     class="submenu"
                 >
-                    <router-link
+                    <!-- <router-link
                         to="/purchasing/dashboard"
                         class="menu-item"
                         active-class="active"
@@ -269,7 +269,7 @@
                     >
                         <i class="fas fa-chart-line"></i>
                         <span v-if="!sidebarCollapsed">Price Trends</span>
-                    </router-link>
+                    </router-link>-->
                     <router-link
                         to="/purchasing/vendors"
                         class="menu-item"
@@ -295,6 +295,15 @@
                     >
                         <i class="fas fa-file-invoice-dollar"></i>
                         <span v-if="!sidebarCollapsed">RFQs</span>
+                    </router-link>
+
+                    <router-link
+                        to="/purchasing/quotations"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span v-if="!sidebarCollapsed">Vendor Quotations</span>
                     </router-link>
 
                     <router-link
@@ -342,59 +351,6 @@
                             >Contract Expiry Dashboard</span
                         >
                     </router-link>
-
-                    <router-link
-                        to="/purchasing/evaluations"
-                        class="menu-item"
-                        active-class="active"
-                    >
-                        <i class="fas fa-star"></i>
-                        <span v-if="!sidebarCollapsed">Vendor Evaluations</span>
-                    </router-link>
-
-                    <router-link
-                        to="/purchasing/evaluation-dashboard"
-                        class="menu-item"
-                        active-class="active"
-                    >
-                        <i class="fas fa-chart-bar"></i>
-                        <span v-if="!sidebarCollapsed">Evaluation Metrics</span>
-                    </router-link>
-
-                    <router-link
-                        to="/purchasing/quotations"
-                        class="menu-item"
-                        active-class="active"
-                    >
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span v-if="!sidebarCollapsed">Vendor Quotations</span>
-                    </router-link>
-
-                    <router-link
-                        to="/purchasing/rfqs/1/compare"
-                        class="menu-item"
-                        active-class="active"
-                    >
-                        <i class="fas fa-balance-scale"></i>
-                        <span v-if="!sidebarCollapsed">Compare Quotations</span>
-                    </router-link>
-                    <router-link
-                        to="/purchasing/evaluations"
-                        class="menu-item"
-                        active-class="active"
-                    >
-                        <i class="fas fa-star"></i>
-                        <span v-if="!sidebarCollapsed">Vendor Evaluations</span>
-                    </router-link>
-
-                        <router-link
-                        to="/purchasing/evaluation-dashboard"
-                        class="menu-item"
-                        active-class="active"
-                        >
-                        <i class="fas fa-chart-bar"></i>
-                        <span v-if="!sidebarCollapsed">Evaluation Metrics</span>
-                        </router-link>
                 </div>
 
                 <!-- Sales Section -->
