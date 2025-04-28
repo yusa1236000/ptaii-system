@@ -132,6 +132,13 @@ import MaterialPlansGeneration from "../views/planning/MaterialPlansGeneration.v
 import MaterialPlansList from "../views/planning/MaterialPlansList.vue";
 import PurchaseRequisitionGeneration from "../views/planning/PurchaseRequisitionGeneration.vue";
 
+//Budget Manajement
+import BudgetsList from "../views/accounting/BudgetsList.vue";
+import BudgetForm from "../views/accounting/BudgetForm.vue";
+import BudgetDetail from "../views/accounting/BudgetDetail.vue";
+import BudgetVsActual from "../views/accounting/BudgetVsActual.vue";
+import VarianceAnalysis from "../views/accounting/VarianceAnalysis.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -1439,6 +1446,45 @@ const routes = [
                 path: "/planning/generate-requisitions",
                 name: "PurchaseRequisitionGeneration",
                 component: PurchaseRequisitionGeneration,
+                meta: { requiresAuth: true },
+            },
+            // Budget Management
+            {
+                path: "/accounting/budgets",
+                name: "Budgets",
+                component: BudgetsList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/budgets/create",
+                name: "BudgetForm",
+                component: BudgetForm,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/budgets/:id",
+                name: "BudgetDetail",
+                component: BudgetDetail,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/budgets/:id/edit",
+                name: "EditBudget",
+                component: BudgetForm,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/budgets/vs-actual",
+                name: "BudgetVsActual",
+                component: BudgetVsActual,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/budgets/variance",
+                name: "VarianceAnalysis",
+                component: VarianceAnalysis,
                 meta: { requiresAuth: true },
             },
 

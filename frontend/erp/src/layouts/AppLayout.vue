@@ -611,6 +611,11 @@
                         <span v-if="!sidebarCollapsed">Payable Payments</span>
                     </router-link>
 
+                    <router-link to="/accounting/budgets" class="menu-item" active-class="active">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span v-if="!sidebarCollapsed">Budget</span>
+                    </router-link>
+
                     <router-link
                         to="/accounting/financial-reports"
                         class="menu-item"
