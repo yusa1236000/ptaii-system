@@ -624,6 +624,32 @@
                         <i class="fas fa-chart-bar"></i>
                         <span v-if="!sidebarCollapsed">Financial Reports</span>
                     </router-link>
+                    <router-link
+                        to="/accounting/tax-transactions"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span v-if="!sidebarCollapsed">Transaksi Pajak</span>
+                    </router-link>
+
+                    <router-link
+                        to="/accounting/tax-transactions/summary"
+                        class="menu-item"
+                        active-class="active"
+                        >
+                        <i class="fas fa-chart-pie"></i>
+                        <span v-if="!sidebarCollapsed">Laporan Pajak</span>
+                        </router-link>
+
+                        <router-link
+                        to="/accounting/tax-transactions/filing"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-tasks"></i>
+                        <span v-if="!sidebarCollapsed">Pelaporan Pajak</span>
+                    </router-link>
                 </div>
 
                 <div

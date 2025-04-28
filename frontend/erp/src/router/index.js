@@ -1488,6 +1488,52 @@ const routes = [
                 meta: { requiresAuth: true },
             },
 
+            // Tax Transactions Management Routes
+            {
+                path: "/accounting/tax-transactions",
+                name: "TaxTransactions",
+                component: () =>
+                    import("../views/accounting/TaxTransactionsList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/tax-transactions/create",
+                name: "CreateTaxTransaction",
+                component: () =>
+                    import("../views/accounting/TaxTransactionForm.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/tax-transactions/:id",
+                name: "TaxTransactionDetail",
+                component: () =>
+                    import("../views/accounting/TaxTransactionDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/tax-transactions/:id/edit",
+                name: "EditTaxTransaction",
+                component: () =>
+                    import("../views/accounting/TaxTransactionForm.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/tax-transactions/summary",
+                name: "TaxSummaryReport",
+                component: () =>
+                    import("../views/accounting/TaxSummaryReport.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/tax-transactions/filing",
+                name: "TaxFilingPreparation",
+                component: () =>
+                    import("../views/accounting/TaxFilingPreparation.vue"),
+                meta: { requiresAuth: true },
+            },
+
             // Admin Routes
             {
                 path: "admin/users",
