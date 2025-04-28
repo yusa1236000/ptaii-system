@@ -95,6 +95,12 @@ import PendingReceiptsDashboard from "../views/purchasing/PendingReceiptsDashboa
 // import PriceTrendAnalysis from "../views/purchasing/PriceTrendAnalysis.vue";
 
 // Vendor Evaluation
+import VendorEvaluationList from "../views/purchasing/VendorEvaluationList.vue";
+import VendorEvaluationForm from "../views/purchasing/VendorEvaluationForm.vue";
+import VendorPerformanceAnalysis from "../views/purchasing/VendorPerformanceAnalysis.vue";
+import EvaluationHistoryPage from "../views/purchasing/EvaluationHistoryPage.vue";
+import EvaluationMetricsDashboard from "../views/purchasing/EvaluationMetricsDashboard.vue";
+
 // import VendorEvaluationList from "../views/purchasing/VendorEvaluationList.vue";
 // import VendorEvaluationDetail from "../views/purchasing/VendorEvaluationDetail.vue";
 // import VendorEvaluationForm from "../views/purchasing/VendorEvaluationForm.vue";
@@ -512,6 +518,54 @@ const routes = [
                 meta: { requiresAuth: true },
             },
 
+            // Vendor Quotation routes
+            {
+                path: "/purchasing/quotations",
+                name: "VendorQuotationList",
+                component: () =>
+                    import("../views/purchasing/VendorQuotationList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/quotations/create",
+                name: "CreateVendorQuotation",
+                component: () =>
+                    import("../views/purchasing/VendorQuotationForm.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/quotations/:id",
+                name: "VendorQuotationDetail",
+                component: () =>
+                    import("../views/purchasing/VendorQuotationDetail.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/quotations/:id/edit",
+                name: "EditVendorQuotation",
+                component: () =>
+                    import("../views/purchasing/VendorQuotationForm.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/quotations/:id/create-po",
+                name: "CreatePOFromQuotation",
+                component: () =>
+                    import("../views/purchasing/CreatePOFromQuotation.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/rfqs/:id/compare",
+                name: "QuotationComparisonMatrix",
+                component: () =>
+                    import("../views/purchasing/QuotationComparisonMatrix.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+
             //Purchasing & Dashboard Reporting
             // {
             //     path: "/purchasing/dashboard",
@@ -555,6 +609,52 @@ const routes = [
             // },
 
             //Vendor Evaluation
+            {
+                path: "/purchasing/evaluations",
+                name: "VendorEvaluations",
+                component: VendorEvaluationList,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/evaluations/create",
+                name: "CreateVendorEvaluation",
+                component: VendorEvaluationForm,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/evaluations/:id",
+                name: "VendorEvaluationDetail",
+                component: VendorEvaluationForm,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/evaluations/:id/edit",
+                name: "EditVendorEvaluation",
+                component: VendorEvaluationForm,
+                props: (route) => ({ id: route.params.id, editMode: true }),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/vendors/:id/performance",
+                name: "VendorPerformanceAnalysis",
+                component: VendorPerformanceAnalysis,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/vendors/:id/evaluation-history",
+                name: "EvaluationHistoryPage",
+                component: EvaluationHistoryPage,
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/evaluation-dashboard",
+                name: "VendorEvaluationDashboard",
+                component: EvaluationMetricsDashboard,
+                meta: { requiresAuth: true },
+            },
             // {
             //     path: "/purchasing/evaluations",
             //     name: "VendorEvaluations",

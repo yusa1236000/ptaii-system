@@ -1,1061 +1,902 @@
 <!-- src/views/purchasing/VendorPerformanceAnalysis.vue -->
 <template>
     <div class="vendor-performance-container">
-        <div class="page-header">
-            <div class="header-left">
-                <router-link to="/purchasing/vendors" class="back-link">
-                    <i class="fas fa-arrow-left"></i> Back to Vendors
-                </router-link>
-                <h1>{{ vendor?.name || "Vendor" }} Performance Analysis</h1>
+      <div class="page-header">
+        <h1 class="text-2xl font-semibold">Vendor Performance Analysis</h1>
+        <div class="actions">
+          <router-link to="/purchasing/vendors" class="btn-outline">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Vendors
+          </router-link>
+        </div>
+      </div>
+
+      <div class="vendor-info-panel" v-if="vendor">
+        <div class="vendor-profile">
+          <div class="vendor-avatar">
+            <i class="fas fa-building"></i>
+          </div>
+          <div class="vendor-details">
+            <h2>{{ vendor.name }}</h2>
+            <p class="vendor-code">{{ vendor.vendor_code }}</p>
+            <div class="vendor-contacts">
+              <div class="contact-item">
+                <i class="fas fa-user"></i>
+                <span>{{ vendor.contact_person || 'No contact person' }}</span>
+              </div>
+              <div class="contact-item">
+                <i class="fas fa-envelope"></i>
+                <span>{{ vendor.email || 'No email' }}</span>
+              </div>
+              <div class="contact-item">
+                <i class="fas fa-phone"></i>
+                <span>{{ vendor.phone || 'No phone' }}</span>
+              </div>
             </div>
-            <div class="header-actions">
-                <div class="filter-group inline-filter">
-                    <label for="period-filter">Time Period:</label>
-                    <select
-                        id="period-filter"
-                        v-model="selectedPeriod"
-                        @change="fetchPerformanceData"
-                    >
-                        <option value="month">Last Month</option>
-                        <option value="quarter">Last Quarter</option>
-                        <option value="year">Last Year</option>
-                        <option value="all">All Time</option>
-                    </select>
-                </div>
+          </div>
+          <div class="vendor-status">
+            <div class="status-badge" :class="getStatusClass(vendor.status)">
+              {{ vendor.status }}
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filters-panel">
+        <div class="period-selector">
+          <label for="period">Performance Period</label>
+          <select id="period" v-model="selectedPeriod" class="form-control" @change="loadPerformanceData">
+            <option value="month">Last Month</option>
+            <option value="quarter">Last Quarter</option>
+            <option value="year">Last Year</option>
+            <option value="all">All Time</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="performance-overview" v-if="performanceData">
+        <div class="metrics-summary">
+          <div class="metric-card">
+            <div class="metric-label">Quality</div>
+            <div class="metric-value" :class="getScoreClass(performanceData.averages.quality)">
+              {{ performanceData.averages.quality }}
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Delivery</div>
+            <div class="metric-value" :class="getScoreClass(performanceData.averages.delivery)">
+              {{ performanceData.averages.delivery }}
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Price</div>
+            <div class="metric-value" :class="getScoreClass(performanceData.averages.price)">
+              {{ performanceData.averages.price }}
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Service</div>
+            <div class="metric-value" :class="getScoreClass(performanceData.averages.service)">
+              {{ performanceData.averages.service }}
+            </div>
+          </div>
+          <div class="metric-card total-score">
+            <div class="metric-label">Overall</div>
+            <div class="metric-value total" :class="getScoreClass(performanceData.averages.total)">
+              {{ performanceData.averages.total }}
+            </div>
+            <div class="metric-descriptor">{{ getPerformanceDescription(performanceData.averages.total) }}</div>
+          </div>
         </div>
 
-        <div v-if="isLoading" class="loading-container">
-            <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-            </div>
-            <p>Loading performance data...</p>
+        <div class="performance-charts">
+          <div class="chart-container">
+            <h3>Performance Radar Chart</h3>
+            <div ref="radarChartContainer" class="radar-chart"></div>
+          </div>
+          <div class="chart-container">
+            <h3>Performance Trend</h3>
+            <div ref="trendChartContainer" class="trend-chart"></div>
+          </div>
         </div>
 
-        <div v-else-if="!vendor" class="error-container">
-            <div class="error-icon">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <h2>Vendor Not Found</h2>
-            <p>
-                The requested vendor could not be found or may have been
-                deleted.
-            </p>
-            <router-link to="/purchasing/vendors" class="btn btn-primary">
-                Return to Vendors List
-            </router-link>
-        </div>
+        <div class="evaluation-history">
+          <h3>Evaluation History</h3>
+          <div v-if="loading" class="loading-container">
+            <i class="fas fa-spinner fa-spin text-4xl text-primary"></i>
+            <p>Loading evaluations...</p>
+          </div>
 
-        <div v-else class="performance-content">
-            <!-- Overall Performance Score Card -->
-            <div class="performance-card overall-card">
-                <div class="card-header">
-                    <h2 class="card-title">Overall Performance</h2>
-                </div>
-                <div class="card-body">
-                    <div class="overall-score-display">
-                        <div
-                            class="score-circle"
-                            :class="getScoreClass(averages.total)"
-                        >
-                            <span class="score-value">{{
-                                formatScore(averages.total)
-                            }}</span>
-                            <span class="score-label">out of 5</span>
-                        </div>
-                    </div>
-                    <div class="score-details">
-                        <div class="score-item">
-                            <span class="score-label">Quality</span>
-                            <div class="score-bar-container">
-                                <div class="score-bar">
-                                    <div
-                                        class="score-fill"
-                                        :style="{
-                                            width: `${averages.quality * 20}%`,
-                                        }"
-                                    ></div>
-                                </div>
-                                <span class="score-number">{{
-                                    formatScore(averages.quality)
-                                }}</span>
-                            </div>
-                        </div>
-                        <div class="score-item">
-                            <span class="score-label">Delivery</span>
-                            <div class="score-bar-container">
-                                <div class="score-bar">
-                                    <div
-                                        class="score-fill"
-                                        :style="{
-                                            width: `${averages.delivery * 20}%`,
-                                        }"
-                                    ></div>
-                                </div>
-                                <span class="score-number">{{
-                                    formatScore(averages.delivery)
-                                }}</span>
-                            </div>
-                        </div>
-                        <div class="score-item">
-                            <span class="score-label">Price</span>
-                            <div class="score-bar-container">
-                                <div class="score-bar">
-                                    <div
-                                        class="score-fill"
-                                        :style="{
-                                            width: `${averages.price * 20}%`,
-                                        }"
-                                    ></div>
-                                </div>
-                                <span class="score-number">{{
-                                    formatScore(averages.price)
-                                }}</span>
-                            </div>
-                        </div>
-                        <div class="score-item">
-                            <span class="score-label">Service</span>
-                            <div class="score-bar-container">
-                                <div class="score-bar">
-                                    <div
-                                        class="score-fill"
-                                        :style="{
-                                            width: `${averages.service * 20}%`,
-                                        }"
-                                    ></div>
-                                </div>
-                                <span class="score-number">{{
-                                    formatScore(averages.service)
-                                }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          <div v-else-if="performanceData.evaluations.length === 0" class="empty-state">
+            <i class="fas fa-clipboard-check text-5xl mb-4 text-gray-400"></i>
+            <h3>No evaluations found</h3>
+            <p>No evaluation records for this vendor in the selected period</p>
+          </div>
 
-            <!-- Performance Trend Chart -->
-            <div class="performance-card trend-card">
-                <div class="card-header">
-                    <h2 class="card-title">Performance Trend</h2>
-                </div>
-                <div class="card-body">
-                    <div v-if="evaluations.length < 2" class="no-trend-data">
-                        <i class="fas fa-chart-line"></i>
-                        <p>
-                            Not enough data to display performance trend. At
-                            least 2 evaluations are required.
-                        </p>
+          <div v-else class="table-container">
+            <table class="evaluations-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Quality</th>
+                  <th>Delivery</th>
+                  <th>Price</th>
+                  <th>Service</th>
+                  <th>Total</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="evaluation in performanceData.evaluations" :key="evaluation.evaluation_id">
+                  <td>{{ formatDate(evaluation.evaluation_date) }}</td>
+                  <td>
+                    <div class="score-badge" :class="getScoreClass(evaluation.quality_score)">
+                      {{ evaluation.quality_score }}
                     </div>
-                    <div v-else class="chart-container">
-                        <LineChart
-                            :chart-data="chartData"
-                            :chart-options="chartOptions"
-                        />
+                  </td>
+                  <td>
+                    <div class="score-badge" :class="getScoreClass(evaluation.delivery_score)">
+                      {{ evaluation.delivery_score }}
                     </div>
-                </div>
-            </div>
-
-            <!-- Evaluation History Card -->
-            <div class="performance-card history-card">
-                <div class="card-header">
-                    <h2 class="card-title">Evaluation History</h2>
-                    <router-link
-                        :to="`/purchasing/evaluations/create?vendor_id=${vendorId}`"
-                        class="btn btn-sm btn-primary"
-                    >
-                        <i class="fas fa-plus"></i> New Evaluation
+                  </td>
+                  <td>
+                    <div class="score-badge" :class="getScoreClass(evaluation.price_score)">
+                      {{ evaluation.price_score }}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-badge" :class="getScoreClass(evaluation.service_score)">
+                      {{ evaluation.service_score }}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-badge total-score" :class="getScoreClass(evaluation.total_score)">
+                      {{ evaluation.total_score.toFixed(2) }}
+                    </div>
+                  </td>
+                  <td class="actions-cell">
+                    <router-link :to="`/purchasing/evaluations/${evaluation.evaluation_id}`" class="btn-icon" title="View Details">
+                      <i class="fas fa-eye"></i>
                     </router-link>
-                </div>
-                <div class="card-body">
-                    <div v-if="evaluations.length === 0" class="empty-state">
-                        <div class="empty-icon">
-                            <i class="fas fa-clipboard-list"></i>
-                        </div>
-                        <h3>No Evaluations Available</h3>
-                        <p>
-                            There are no evaluations recorded for this vendor in
-                            the selected time period.
-                        </p>
-                    </div>
-                    <div v-else class="evaluation-timeline">
-                        <div
-                            v-for="(evaluation, index) in evaluations"
-                            :key="evaluation.evaluation_id"
-                            class="timeline-item"
-                        >
-                            <div class="timeline-date">
-                                {{ formatDate(evaluation.evaluation_date) }}
-                            </div>
-                            <div
-                                class="timeline-connector"
-                                v-if="index < evaluations.length - 1"
-                            ></div>
-                            <div class="timeline-content">
-                                <div class="timeline-header">
-                                    <div
-                                        :class="[
-                                            'timeline-score',
-                                            getScoreClass(
-                                                evaluation.total_score
-                                            ),
-                                        ]"
-                                    >
-                                        {{
-                                            formatScore(evaluation.total_score)
-                                        }}
-                                    </div>
-                                    <div class="timeline-actions">
-                                        <router-link
-                                            :to="`/purchasing/evaluations/${evaluation.evaluation_id}`"
-                                            class="btn btn-sm btn-outline"
-                                        >
-                                            View Details
-                                        </router-link>
-                                    </div>
-                                </div>
-                                <div class="timeline-scores">
-                                    <div class="mini-score">
-                                        <span class="mini-label">Quality</span>
-                                        <span class="mini-value">{{
-                                            evaluation.quality_score
-                                        }}</span>
-                                    </div>
-                                    <div class="mini-score">
-                                        <span class="mini-label">Delivery</span>
-                                        <span class="mini-value">{{
-                                            evaluation.delivery_score
-                                        }}</span>
-                                    </div>
-                                    <div class="mini-score">
-                                        <span class="mini-label">Price</span>
-                                        <span class="mini-value">{{
-                                            evaluation.price_score
-                                        }}</span>
-                                    </div>
-                                    <div class="mini-score">
-                                        <span class="mini-label">Service</span>
-                                        <span class="mini-value">{{
-                                            evaluation.service_score
-                                        }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recommendations Card -->
-            <div class="performance-card recommendations-card">
-                <div class="card-header">
-                    <h2 class="card-title">Recommendations</h2>
-                </div>
-                <div class="card-body">
-                    <div class="recommendation-list">
-                        <div
-                            v-if="recommendations.length === 0"
-                            class="no-recommendations"
-                        >
-                            <p>
-                                This vendor's performance is great! No specific
-                                recommendations at this time.
-                            </p>
-                        </div>
-                        <div
-                            v-else
-                            v-for="(recommendation, index) in recommendations"
-                            :key="index"
-                            class="recommendation-item"
-                        >
-                            <div class="recommendation-icon">
-                                <i :class="recommendation.icon"></i>
-                            </div>
-                            <div class="recommendation-content">
-                                <h4 class="recommendation-title">
-                                    {{ recommendation.title }}
-                                </h4>
-                                <p class="recommendation-description">
-                                    {{ recommendation.description }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
     </div>
-</template>
+  </template>
 
-<script>
-import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import VendorService from "@/services/VendorService";
-import VendorEvaluationService from "@/services/VendorEvaluationService";
-import { Line as LineChart } from "vue-chartjs";
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-} from "chart.js";
+  <script>
+  import axios from "axios";
+  import * as d3 from 'd3';
 
-// Register the Chart.js components
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend
-);
-
-export default {
+  export default {
     name: "VendorPerformanceAnalysis",
-    components: {
-        LineChart,
+    props: {
+      id: {
+        type: [Number, String],
+        required: true
+      }
     },
-    setup() {
-        const route = useRoute();
-        // const router = useRouter();
-        const vendorId = ref(route.params.id);
-        const vendor = ref(null);
-        const evaluations = ref([]);
-        const averages = ref({
-            quality: 0,
-            delivery: 0,
-            price: 0,
-            service: 0,
-            total: 0,
-        });
-        const selectedPeriod = ref("year");
-        const isLoading = ref(true);
-        const recommendations = ref([]);
-
-        // Chart data
-        const chartData = computed(() => {
-            if (evaluations.value.length === 0) {
-                return { datasets: [] };
-            }
-
-            // Sort evaluations by date
-            const sortedEvaluations = [...evaluations.value].sort(
-                (a, b) =>
-                    new Date(a.evaluation_date) - new Date(b.evaluation_date)
-            );
-
-            const labels = sortedEvaluations.map((e) =>
-                formatDate(e.evaluation_date)
-            );
-
-            return {
-                labels,
-                datasets: [
-                    {
-                        label: "Quality",
-                        borderColor: "#3b82f6",
-                        backgroundColor: "rgba(59, 130, 246, 0.2)",
-                        data: sortedEvaluations.map((e) => e.quality_score),
-                        tension: 0.4,
-                    },
-                    {
-                        label: "Delivery",
-                        borderColor: "#10b981",
-                        backgroundColor: "rgba(16, 185, 129, 0.2)",
-                        data: sortedEvaluations.map((e) => e.delivery_score),
-                        tension: 0.4,
-                    },
-                    {
-                        label: "Price",
-                        borderColor: "#f59e0b",
-                        backgroundColor: "rgba(245, 158, 11, 0.2)",
-                        data: sortedEvaluations.map((e) => e.price_score),
-                        tension: 0.4,
-                    },
-                    {
-                        label: "Service",
-                        borderColor: "#8b5cf6",
-                        backgroundColor: "rgba(139, 92, 246, 0.2)",
-                        data: sortedEvaluations.map((e) => e.service_score),
-                        tension: 0.4,
-                    },
-                    {
-                        label: "Overall",
-                        borderColor: "#ef4444",
-                        backgroundColor: "rgba(239, 68, 68, 0.2)",
-                        data: sortedEvaluations.map((e) => e.total_score),
-                        tension: 0.4,
-                        borderWidth: 2,
-                    },
-                ],
-            };
-        });
-
-        // Chart options
-        const chartOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    min: 0,
-                    max: 5,
-                    ticks: {
-                        stepSize: 1,
-                    },
-                },
-            },
-            plugins: {
-                legend: {
-                    position: "top",
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function (context) {
-                            let label = context.dataset.label || "";
-                            if (label) {
-                                label += ": ";
-                            }
-                            if (context.parsed.y !== null) {
-                                label += context.parsed.y.toFixed(1);
-                            }
-                            return label;
-                        },
-                    },
-                },
-            },
-        };
-
-        // Fetch vendor details
-        const fetchVendor = async () => {
-            try {
-                const response = await VendorService.getVendorById(
-                    vendorId.value
-                );
-                vendor.value =
-                    response.data && response.data.data
-                        ? response.data.data
-                        : null;
-            } catch (error) {
-                console.error("Error fetching vendor details:", error);
-                vendor.value = null;
-            }
-        };
-
-        // Fetch vendor performance data
-        const fetchPerformanceData = async () => {
-            isLoading.value = true;
-
-            try {
-                const params = {
-                    vendor_id: vendorId.value,
-                    period: selectedPeriod.value,
-                };
-
-                const response =
-                    await VendorEvaluationService.getVendorPerformance(params);
-
-                if (response.data && response.data.data) {
-                    evaluations.value = response.data.data.evaluations || [];
-                    averages.value = response.data.data.averages || {
-                        quality: 0,
-                        delivery: 0,
-                        price: 0,
-                        service: 0,
-                        total: 0,
-                    };
-
-                    // Generate recommendations based on scores
-                    generateRecommendations();
-                }
-            } catch (error) {
-                console.error("Error fetching vendor performance:", error);
-                evaluations.value = [];
-                averages.value = {
-                    quality: 0,
-                    delivery: 0,
-                    price: 0,
-                    service: 0,
-                    total: 0,
-                };
-            } finally {
-                isLoading.value = false;
-            }
-        };
-
-        // Generate recommendations based on scores
-        const generateRecommendations = () => {
-            recommendations.value = [];
-
-            // Quality recommendations
-            if (averages.value.quality < 3) {
-                recommendations.value.push({
-                    title: "Improve Quality Control",
-                    description:
-                        "This vendor has low quality scores. Consider requesting improved quality control measures or looking for alternative suppliers.",
-                    icon: "fas fa-clipboard-check",
-                });
-            }
-
-            // Delivery recommendations
-            if (averages.value.delivery < 3) {
-                recommendations.value.push({
-                    title: "Address Delivery Issues",
-                    description:
-                        "Delivery performance is below average. Discuss delivery timeframes and reliability with this vendor.",
-                    icon: "fas fa-truck",
-                });
-            }
-
-            // Price recommendations
-            if (averages.value.price < 3) {
-                recommendations.value.push({
-                    title: "Review Pricing Structure",
-                    description:
-                        "Price competitiveness is lower than expected. Consider negotiating better terms or exploring alternatives.",
-                    icon: "fas fa-tags",
-                });
-            }
-
-            // Service recommendations
-            if (averages.value.service < 3) {
-                recommendations.value.push({
-                    title: "Improve Communication",
-                    description:
-                        "Service quality needs improvement. Establish better communication channels and set clear expectations.",
-                    icon: "fas fa-comments",
-                });
-            }
-
-            // Overall performance recommendation
-            if (averages.value.total < 2.5) {
-                recommendations.value.push({
-                    title: "Consider Vendor Replacement",
-                    description:
-                        "Overall performance is consistently poor. Consider finding alternative vendors for future purchases.",
-                    icon: "fas fa-exclamation-triangle",
-                });
-            }
-        };
-
-        // Format date
-        const formatDate = (dateString) => {
-            if (!dateString) return "N/A";
-            const date = new Date(dateString);
-            return date.toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "2-digit",
-            });
-        };
-
-        // Format score to one decimal place
-        const formatScore = (score) => {
-            return parseFloat(score).toFixed(1);
-        };
-
-        // Get CSS class based on score
-        const getScoreClass = (score) => {
-            if (score >= 4.5) return "score-excellent";
-            if (score >= 3.5) return "score-good";
-            if (score >= 2.5) return "score-average";
-            if (score >= 1.5) return "score-below-average";
-            return "score-poor";
-        };
-
-        // Watch for period changes
-        // watch(selectedPeriod, () => {
-        //     fetchPerformanceData();
-        // });
-
-        // Initialize
-        onMounted(() => {
-            Promise.all([fetchVendor(), fetchPerformanceData()]).catch(
-                (error) => {
-                    console.error("Error initializing data:", error);
-                }
-            );
-        });
-
-        return {
-            vendorId,
-            vendor,
-            evaluations,
-            averages,
-            selectedPeriod,
-            isLoading,
-            recommendations,
-            chartData,
-            chartOptions,
-            formatDate,
-            formatScore,
-            getScoreClass,
-            fetchPerformanceData,
-        };
+    data() {
+      return {
+        vendor: null,
+        performanceData: null,
+        selectedPeriod: 'quarter',
+        loading: false,
+        charts: {
+          radar: null,
+          trend: null
+        }
+      };
     },
-};
-</script>
+    created() {
+      this.loadVendorData();
+      this.loadPerformanceData();
+    },
+    mounted() {
+      window.addEventListener('resize', this.handleResize);
+    },
+    beforeUnmount() {
+      window.removeEventListener('resize', this.handleResize);
+    },
+    methods: {
+      async loadVendorData() {
+        try {
+          const response = await axios.get(`/api/vendors/${this.id}`);
+          this.vendor = response.data.data;
+        } catch (error) {
+          console.error("Error loading vendor data:", error);
+          // You can add error handling/notification here
+        }
+      },
+      async loadPerformanceData() {
+        this.loading = true;
+        try {
+          const response = await axios.get('/api/vendor-performance', {
+            params: {
+              vendor_id: this.id,
+              period: this.selectedPeriod
+            }
+          });
 
-<style scoped>
-.vendor-performance-container {
-    padding: 1rem;
-}
+          this.performanceData = response.data.data;
 
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1.5rem;
-}
+          // After data is loaded, render charts
+          this.$nextTick(() => {
+            this.renderCharts();
+          });
+        } catch (error) {
+          console.error("Error loading performance data:", error);
+          // You can add error handling/notification here
+        } finally {
+          this.loading = false;
+        }
+      },
+      formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      },
+      getStatusClass(status) {
+        switch (status?.toLowerCase()) {
+          case 'active':
+            return 'status-active';
+          case 'inactive':
+            return 'status-inactive';
+          case 'suspended':
+            return 'status-suspended';
+          default:
+            return 'status-unknown';
+        }
+      },
+      getScoreClass(score) {
+        if (score >= 4) return 'score-excellent';
+        if (score >= 3) return 'score-good';
+        if (score >= 2) return 'score-average';
+        return 'score-poor';
+      },
+      getPerformanceDescription(score) {
+        if (score >= 4.5) return 'Outstanding performer';
+        if (score >= 4) return 'Excellent performer';
+        if (score >= 3.5) return 'Very good performer';
+        if (score >= 3) return 'Good performer';
+        if (score >= 2.5) return 'Average performer';
+        if (score >= 2) return 'Below average performer';
+        return 'Poor performer, consider finding alternatives';
+      },
+      handleResize() {
+        // Debounce and redraw charts when window is resized
+        if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(() => {
+          this.renderCharts();
+        }, 300);
+      },
+      renderCharts() {
+        if (!this.performanceData) return;
 
-.header-left {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
+        this.renderRadarChart();
+        this.renderTrendChart();
+      },
+      renderRadarChart() {
+        const container = this.$refs.radarChartContainer;
+        if (!container) return;
 
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--gray-600);
-    text-decoration: none;
-    font-size: 0.875rem;
-}
+        // Clear previous chart
+        d3.select(container).selectAll('*').remove();
 
-.back-link:hover {
-    color: var(--primary-color);
-}
+        const margin = { top: 50, right: 80, bottom: 50, left: 80 };
+        const width = container.clientWidth - margin.left - margin.right;
+        const height = container.clientHeight - margin.top - margin.bottom;
+        const radius = Math.min(width, height) / 2;
 
-.header-left h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: var(--gray-800);
-}
+        const svg = d3.select(container)
+          .append('svg')
+          .attr('width', width + margin.left + margin.right)
+          .attr('height', height + margin.top + margin.bottom)
+          .append('g')
+          .attr('transform', `translate(${width / 2 + margin.left}, ${height / 2 + margin.top})`);
 
-.inline-filter {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+        // Data for radar chart
+        const averages = this.performanceData.averages;
+        const data = [
+          { axis: "Quality", value: averages.quality / 5 },
+          { axis: "Delivery", value: averages.delivery / 5 },
+          { axis: "Price", value: averages.price / 5 },
+          { axis: "Service", value: averages.service / 5 }
+        ];
 
-.loading-container,
-.error-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 2rem;
-    background-color: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    text-align: center;
-}
+        // Number of axes
+        const totalAxes = data.length;
 
-.loading-spinner {
-    font-size: 2rem;
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-}
+        // Angle for each axis
+        const angleSlice = (Math.PI * 2) / totalAxes;
 
-.error-icon {
-    font-size: 3rem;
-    color: var(--danger-color);
-    margin-bottom: 1rem;
-}
+        // Scale for radius
+        const rScale = d3.scaleLinear()
+          .range([0, radius])
+          .domain([0, 1]);
 
-.performance-content {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-}
+        // Create the circular grid
+        const axisGrid = svg.append("g").attr("class", "axis-grid");
 
-.performance-card {
-    background-color: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
+        // Draw the circular grid lines
+        const levels = 5;
+        for (let j = 0; j < levels; j++) {
+          const levelFactor = radius * ((j + 1) / levels);
 
-.overall-card {
-    grid-column: 1 / 2;
-    grid-row: 1 / 2;
-}
+          // Text for each level
+          axisGrid.append("text")
+            .attr("class", "legend")
+            .attr("x", 4)
+            .attr("y", -levelFactor + 4)
+            .attr("dy", "0.4em")
+            .style("font-size", "10px")
+            .style("fill", "#737373")
+            .text((j + 1));
+        }
 
-.trend-card {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
-}
+        // Create the axes
+        const axes = axisGrid.selectAll(".axis")
+          .data(data)
+          .enter()
+          .append("g")
+          .attr("class", "axis");
 
-.history-card {
-    grid-column: 1 / 3;
-    grid-row: 2 / 3;
-}
+        // Append lines
+        axes.append("line")
+          .attr("x1", 0)
+          .attr("y1", 0)
+          .attr("x2", (d, i) => rScale(1.1) * Math.cos(angleSlice * i - Math.PI / 2))
+          .attr("y2", (d, i) => rScale(1.1) * Math.sin(angleSlice * i - Math.PI / 2))
+          .attr("class", "line")
+          .style("stroke", "#999")
+          .style("stroke-width", "1px");
 
-.recommendations-card {
-    grid-column: 1 / 3;
-    grid-row: 3 / 4;
-}
+        // Append axis labels
+        axes.append("text")
+          .attr("class", "legend")
+          .attr("text-anchor", "middle")
+          .attr("dy", "0.35em")
+          .attr("x", (d, i) => rScale(1.15) * Math.cos(angleSlice * i - Math.PI / 2))
+          .attr("y", (d, i) => rScale(1.15) * Math.sin(angleSlice * i - Math.PI / 2))
+          .text(d => d.axis)
+          .style("font-size", "11px")
+          .style("fill", "#333");
 
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    background-color: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-}
+        // Create the radar chart blobs
+        const radarLine = d3.lineRadial()
+          .curve(d3.curveLinearClosed)
+          .radius(d => rScale(d.value))
+          .angle((d, i) => i * angleSlice);
 
-.card-title {
-    margin: 0;
-    font-size: 1.25rem;
-    color: var(--gray-800);
-}
+        // Append the paths
+        svg.append("path")
+          .datum(data)
+          .attr("class", "radar-area")
+          .attr("d", radarLine)
+          .style("fill", "#2563eb")
+          .style("fill-opacity", 0.7)
+          .style("stroke", "#2563eb")
+          .style("stroke-width", "2px");
 
-.card-body {
-    padding: 1.5rem;
-}
+        // Create circles for each point
+        svg.selectAll(".radar-circle")
+          .data(data)
+          .enter()
+          .append("circle")
+          .attr("class", "radar-circle")
+          .attr("r", 5)
+          .attr("cx", (d, i) => rScale(d.value) * Math.cos(angleSlice * i - Math.PI / 2))
+          .attr("cy", (d, i) => rScale(d.value) * Math.sin(angleSlice * i - Math.PI / 2))
+          .style("fill", "#fff")
+          .style("stroke", "#2563eb")
+          .style("stroke-width", "2px");
+      },
+      renderTrendChart() {
+        const container = this.$refs.trendChartContainer;
+        if (!container || !this.performanceData.evaluations || this.performanceData.evaluations.length === 0) return;
 
-/* Overall Score Card Styling */
-.overall-score-display {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 2rem;
-}
+        // Clear previous chart
+        d3.select(container).selectAll('*').remove();
 
-.score-circle {
-    position: relative;
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+        const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+        const width = container.clientWidth - margin.left - margin.right;
+        const height = container.clientHeight - margin.top - margin.bottom;
 
-.score-value {
-    font-size: 3rem;
-    font-weight: bold;
-    line-height: 1;
-}
+        const svg = d3.select(container)
+          .append('svg')
+          .attr('width', width + margin.left + margin.right)
+          .attr('height', height + margin.top + margin.bottom)
+          .append('g')
+          .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-.score-label {
-    font-size: 0.875rem;
-    opacity: 0.8;
-}
+        // Process data for trend chart - sort by date
+        const evaluations = [...this.performanceData.evaluations]
+          .sort((a, b) => new Date(a.evaluation_date) - new Date(b.evaluation_date));
 
-.score-details {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
+        // X scale - time
+        const xScale = d3.scaleTime()
+          .domain(d3.extent(evaluations, d => new Date(d.evaluation_date)))
+          .range([0, width]);
 
-.score-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
+        // Y scale - score (1-5)
+        const yScale = d3.scaleLinear()
+          .domain([1, 5])
+          .range([height, 0]);
 
-.score-label {
-    min-width: 70px;
-    font-weight: 500;
-}
+        // Line generators for each metric
+        const line = metric => {
+          return d3.line()
+            .x(d => xScale(new Date(d.evaluation_date)))
+            .y(d => yScale(d[metric]))
+            .curve(d3.curveMonotoneX);
+        };
 
-.score-bar-container {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    gap: 1rem;
-}
+        // Generate color scale for lines
+        const colorScale = d3.scaleOrdinal()
+          .domain(['quality_score', 'delivery_score', 'price_score', 'service_score', 'total_score'])
+          .range(['#3b82f6', '#059669', '#d97706', '#8b5cf6', '#dc2626']);
 
-.score-bar {
-    position: relative;
+        // Draw X axis
+        svg.append('g')
+          .attr('transform', `translate(0, ${height})`)
+          .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.timeFormat("%b %Y")))
+          .selectAll("text")
+          .style("text-anchor", "end")
+          .attr("dx", "-.8em")
+          .attr("dy", ".15em")
+          .attr("transform", "rotate(-45)");
+
+        // Draw Y axis
+        svg.append('g')
+          .call(d3.axisLeft(yScale).ticks(5));
+
+        // Add X axis label
+        svg.append("text")
+          .attr("text-anchor", "middle")
+          .attr("x", width / 2)
+          .attr("y", height + margin.bottom - 10)
+          .text("Date")
+          .style("font-size", "12px");
+
+        // Add Y axis label
+        svg.append("text")
+          .attr("text-anchor", "middle")
+          .attr("transform", "rotate(-90)")
+          .attr("y", -margin.left + 15)
+          .attr("x", -height / 2)
+          .text("Score")
+          .style("font-size", "12px");
+
+        // Add title
+        svg.append("text")
+          .attr("x", width / 2)
+          .attr("y", -margin.top / 2)
+          .attr("text-anchor", "middle")
+          .style("font-size", "14px")
+          .style("font-weight", "bold")
+          .text("Vendor Performance Trend");
+
+        // Draw lines for each metric
+        const metrics = [
+          { id: 'quality_score', name: 'Quality' },
+          { id: 'delivery_score', name: 'Delivery' },
+          { id: 'price_score', name: 'Price' },
+          { id: 'service_score', name: 'Service' },
+          { id: 'total_score', name: 'Overall' }
+        ];
+
+        metrics.forEach(metric => {
+          svg.append("path")
+            .datum(evaluations)
+            .attr("fill", "none")
+            .attr("stroke", colorScale(metric.id))
+            .attr("stroke-width", metric.id === 'total_score' ? 3 : 2)
+            .attr("stroke-linejoin", "round")
+            .attr("stroke-linecap", "round")
+            .attr("d", line(metric.id));
+
+          // Add dots for each data point
+          svg.selectAll(`.dot-${metric.id}`)
+            .data(evaluations)
+            .enter()
+            .append("circle")
+            .attr("class", `dot-${metric.id}`)
+            .attr("cx", d => xScale(new Date(d.evaluation_date)))
+            .attr("cy", d => yScale(d[metric.id]))
+            .attr("r", 4)
+            .attr("fill", colorScale(metric.id));
+        });
+
+        // Add legend
+        const legend = svg.append("g")
+          .attr("class", "legend")
+          .attr("transform", `translate(${width - 100}, 0)`);
+
+        metrics.forEach((metric, i) => {
+          const legendRow = legend.append("g")
+            .attr("transform", `translate(0, ${i * 20})`);
+
+          legendRow.append("rect")
+            .attr("width", 10)
+            .attr("height", 10)
+            .attr("fill", colorScale(metric.id));
+
+          legendRow.append("text")
+            .attr("x", 15)
+            .attr("y", 10)
+            .attr("text-anchor", "start")
+            .style("font-size", "12px")
+            .text(metric.name);
+        });
+      }
+    }
+  };
+  </script>
+
+  <style scoped>
+  .vendor-performance-container {
     width: 100%;
-    height: 0.75rem;
-    background-color: var(--gray-100);
-    border-radius: 0.25rem;
-    overflow: hidden;
-}
-
-.score-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background-color: var(--primary-color);
-    border-radius: 0.25rem;
-}
-
-.score-number {
-    font-weight: 500;
-    min-width: 2rem;
-    text-align: right;
-}
-
-/* Chart Styling */
-.chart-container {
-    height: 300px;
-}
-
-.no-trend-data {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    color: var(--gray-500);
-    text-align: center;
-}
-
-.no-trend-data i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.3;
-}
-
-/* Timeline Styling */
-.evaluation-timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.timeline-item {
-    position: relative;
-    display: flex;
-    margin-bottom: 1.5rem;
-}
-
-.timeline-date {
-    min-width: 100px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    padding-top: 0.5rem;
-}
-
-.timeline-connector {
-    position: absolute;
-    left: 100px;
-    top: 2rem;
-    width: 2px;
-    height: calc(100% + 1.5rem);
-    background-color: var(--gray-200);
-}
-
-.timeline-content {
-    flex: 1;
     padding: 1rem;
-    border: 1px solid var(--gray-200);
+    background-color: white;
     border-radius: 0.5rem;
-    background-color: var(--gray-50);
-}
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
 
-.timeline-header {
+  .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
-}
+    margin-bottom: 1.5rem;
+  }
 
-.timeline-score {
-    font-weight: bold;
-    font-size: 1.25rem;
-    padding: 0.25rem 0.75rem;
+  .btn-outline {
+    background-color: transparent;
+    color: var(--gray-700);
+    padding: 0.625rem 1.25rem;
+    border: 1px solid var(--gray-300);
     border-radius: 0.375rem;
-}
-
-.timeline-scores {
-    display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
-}
-
-.mini-score {
-    display: flex;
-    flex-direction: column;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
     align-items: center;
-    min-width: 70px;
-}
+  }
 
-.mini-label {
-    font-size: 0.75rem;
-    color: var(--gray-500);
-    margin-bottom: 0.25rem;
-}
+  .btn-outline:hover {
+    border-color: var(--gray-500);
+    color: var(--gray-800);
+    text-decoration: none;
+  }
 
-.mini-value {
+  .vendor-info-panel {
+    background-color: var(--gray-50);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .vendor-profile {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .vendor-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 0.5rem;
+    font-size: 2rem;
+  }
+
+  .vendor-details {
+    flex: 1;
+  }
+
+  .vendor-details h2 {
+    font-size: 1.5rem;
     font-weight: 600;
-    font-size: 1.125rem;
-}
+    margin-bottom: 0.25rem;
+  }
 
-/* Recommendations Styling */
-.recommendation-list {
+  .vendor-code {
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .vendor-contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+  }
+
+  .vendor-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .status-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .status-active {
+    background-color: rgba(5, 150, 105, 0.1);
+    color: var(--success-color);
+  }
+
+  .status-inactive {
+    background-color: rgba(100, 116, 139, 0.1);
+    color: var(--gray-500);
+  }
+
+  .status-suspended {
+    background-color: rgba(220, 38, 38, 0.1);
+    color: var(--danger-color);
+  }
+
+  .status-unknown {
+    background-color: rgba(217, 119, 6, 0.1);
+    color: var(--warning-color);
+  }
+
+  .filters-panel {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--gray-200);
+  }
+
+  .period-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .period-selector label {
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-bottom: 0;
+  }
+
+  .form-control {
+    padding: 0.5rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    min-width: 150px;
+  }
+
+  .performance-overview {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-}
+  }
 
-.recommendation-item {
+  .metrics-summary {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    background-color: var(--gray-50);
-    border-left: 4px solid var(--primary-color);
-}
+    justify-content: space-between;
+  }
 
-.recommendation-icon {
-    font-size: 1.5rem;
-    color: var(--primary-color);
-}
-
-.recommendation-content {
+  .metric-card {
     flex: 1;
-}
-
-.recommendation-title {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.125rem;
-}
-
-.recommendation-description {
-    margin: 0;
-    color: var(--gray-600);
-}
-
-.no-recommendations {
-    text-align: center;
+    min-width: 150px;
+    background-color: white;
+    border-radius: 0.5rem;
     padding: 1rem;
-    color: var(--gray-600);
-}
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-/* Empty State Styling */
-.empty-state {
+  .metric-card.total-score {
+    background-color: var(--gray-50);
+    flex: 2;
+  }
+
+  .metric-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--gray-700);
+  }
+
+  .metric-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .metric-value.total {
+    width: 80px;
+    height: 80px;
+    font-size: 1.5rem;
+  }
+
+  .metric-descriptor {
+    margin-top: 0.5rem;
+    font-style: italic;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+  }
+
+  .performance-charts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .chart-container {
+    flex: 1;
+    min-width: 300px;
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .chart-container h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .radar-chart, .trend-chart {
+    width: 100%;
+    height: 300px;
+  }
+
+  .evaluation-history {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .evaluation-history h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .loading-container, .empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem 2rem;
-    text-align: center;
-}
-
-.empty-icon {
-    font-size: 2.5rem;
-    color: var(--gray-300);
-    margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-    font-size: 1.125rem;
-    color: var(--gray-700);
-    margin-bottom: 0.5rem;
-}
-
-.empty-state p {
+    padding: 3rem;
     color: var(--gray-500);
-    max-width: 24rem;
-}
+  }
 
-/* Score Classes */
-.score-excellent {
-    background-color: #15803d;
-    color: white;
-}
+  .table-container {
+    overflow-x: auto;
+  }
 
-.score-good {
-    background-color: #65a30d;
-    color: white;
-}
+  .evaluations-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
 
-.score-average {
-    background-color: #f59e0b;
-    color: white;
-}
+  .evaluations-table th, .evaluations-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--gray-200);
+  }
 
-.score-below-average {
-    background-color: #f97316;
-    color: white;
-}
-
-.score-poor {
-    background-color: #dc2626;
-    color: white;
-}
-
-/* Button Styles */
-.btn {
-    padding: 0.625rem 1.25rem;
+  .evaluations-table th {
+    background-color: var(--gray-100);
+    font-weight: 600;
     font-size: 0.875rem;
-    font-weight: 500;
-    border-radius: 0.375rem;
-    cursor: pointer;
+    color: var(--gray-700);
+  }
+
+  .score-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    border: none;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     color: white;
-}
+    font-weight: 600;
+  }
 
-.btn-primary:hover {
-    background-color: var(--primary-dark);
-}
+  .total-score {
+    width: 50px;
+    border-radius: 18px;
+  }
 
-.btn-outline {
-    background-color: transparent;
-    border: 1px solid var(--gray-300);
-    color: var(--gray-700);
-}
+  .score-excellent {
+    background-color: var(--success-color);
+  }
 
-.btn-outline:hover {
+  .score-good {
+    background-color: #3b82f6; /* Blue */
+  }
+
+  .score-average {
+    background-color: var(--warning-color);
+  }
+
+  .score-poor {
+    background-color: var(--danger-color);
+  }
+
+  .actions-cell {
+    white-space: nowrap;
+  }
+
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    color: var(--gray-600);
     background-color: var(--gray-100);
-}
+    transition: all 0.2s;
+  }
 
-@media (max-width: 768px) {
-    .performance-content {
-        grid-template-columns: 1fr;
+  .btn-icon:hover {
+    background-color: var(--gray-200);
+    color: var(--gray-800);
+  }
+
+  @media (max-width: 768px) {
+    .vendor-profile {
+      flex-direction: column;
+      text-align: center;
     }
 
-    .overall-card,
-    .trend-card,
-    .history-card,
-    .recommendations-card {
-        grid-column: 1 / 2;
+    .vendor-contacts {
+      justify-content: center;
     }
 
-    .overall-card {
-        grid-row: 1 / 2;
+    .metrics-summary {
+      flex-direction: column;
     }
 
-    .trend-card {
-        grid-row: 2 / 3;
+    .metric-card {
+      width: 100%;
     }
 
-    .history-card {
-        grid-row: 3 / 4;
+    .performance-charts {
+      flex-direction: column;
     }
-
-    .recommendations-card {
-        grid-row: 4 / 5;
-    }
-
-    .timeline-scores {
-        gap: 1rem;
-    }
-}
-</style>
+  }
+  </style>
