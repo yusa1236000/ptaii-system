@@ -1,1053 +1,764 @@
 <!-- src/views/purchasing/PriceTrendAnalysis.vue -->
 <template>
-    <div class="price-trend-container">
-        <div class="header-section mb-4">
-            <h1 class="page-title">Price Trend Analysis</h1>
-            <div class="filter-controls d-flex align-items-center flex-wrap">
-                <div class="form-group mr-3">
-                    <label for="timeRangeSelect" class="mb-1"
-                        >Time Period:</label
-                    >
-                    <select
-                        id="timeRangeSelect"
-                        v-model="filters.timeRange"
-                        class="form-control"
-                        @change="applyFilters"
-                    >
-                        <option value="6months">Last 6 Months</option>
-                        <option value="1year">Last Year</option>
-                        <option value="2years">Last 2 Years</option>
-                        <option value="custom">Custom Range</option>
-                    </select>
-                </div>
-                <div
-                    v-if="filters.timeRange === 'custom'"
-                    class="date-range-picker d-flex align-items-center"
-                >
-                    <div class="form-group mr-2">
-                        <label for="startDate" class="mb-1">From:</label>
-                        <input
-                            type="date"
-                            id="startDate"
-                            v-model="filters.startDate"
-                            class="form-control"
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label for="endDate" class="mb-1">To:</label>
-                        <input
-                            type="date"
-                            id="endDate"
-                            v-model="filters.endDate"
-                            class="form-control"
-                        />
-                    </div>
-                </div>
-                <div class="form-group mx-3">
-                    <label for="categorySelect" class="mb-1">Category:</label>
-                    <select
-                        id="categorySelect"
-                        v-model="filters.category"
-                        class="form-control"
-                    >
-                        <option value="">All Categories</option>
-                        <option
-                            v-for="category in categories"
-                            :key="category.id"
-                            :value="category.id"
-                        >
-                            {{ category.name }}
-                        </option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="itemSelect" class="mb-1">Item:</label>
-                    <select
-                        id="itemSelect"
-                        v-model="filters.item"
-                        class="form-control"
-                    >
-                        <option value="">All Items</option>
-                        <option
-                            v-for="item in filteredItems"
-                            :key="item.item_id"
-                            :value="item.item_id"
-                        >
-                            {{ item.name }}
-                        </option>
-                    </select>
-                </div>
-                <button class="btn btn-primary mt-3 ml-3" @click="applyFilters">
-                    <i class="fas fa-filter mr-1"></i> Apply Filters
-                </button>
-                <button
-                    class="btn btn-secondary mt-3 ml-2"
-                    @click="resetFilters"
-                >
-                    <i class="fas fa-undo mr-1"></i> Reset
-                </button>
-            </div>
+    <div class="price-trend-analysis">
+      <div class="page-header mb-6">
+        <h1 class="text-2xl font-semibold">Price Trend Analysis</h1>
+        <p class="text-gray-500">Track and analyze purchasing price trends over time</p>
+      </div>
+
+      <div class="filters bg-white p-4 rounded-lg shadow mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="filter-group">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+            <select v-model="filters.dateRange" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+              <option value="180">Last 6 Months</option>
+              <option value="365">Last Year</option>
+              <option value="730">Last 2 Years</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+
+          <div class="filter-group" v-if="filters.dateRange === 'custom'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <input type="date" v-model="filters.startDate" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+          </div>
+
+          <div class="filter-group" v-if="filters.dateRange === 'custom'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <input type="date" v-model="filters.endDate" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+          </div>
+
+          <div class="filter-group">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
+            <select v-model="filters.vendorId" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+              <option value="">All Vendors</option>
+              <option v-for="vendor in vendors" :key="vendor.vendor_id" :value="vendor.vendor_id">
+                {{ vendor.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select v-model="filters.categoryId" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+              <option value="">All Categories</option>
+              <option v-for="category in categories" :key="category.category_id" :value="category.category_id">
+                {{ category.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Item</label>
+            <select v-model="filters.itemId" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+              <option value="">All Items</option>
+              <option v-for="item in items" :key="item.item_id" :value="item.item_id">
+                {{ item.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="filter-group md:col-span-2 flex items-end">
+            <button @click="applyFilters" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded">
+              Apply Filters
+            </button>
+            <button @click="resetFilters" class="ml-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded">
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-cards grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="card bg-white p-4 rounded-lg shadow">
+          <h3 class="text-lg font-semibold text-gray-700 mb-2">Average Price</h3>
+          <p class="text-3xl font-bold text-blue-600">${{ formatNumber(summary.avgPrice) }}</p>
+          <div class="text-sm text-gray-500 mt-1">
+            <span :class="summary.priceChange >= 0 ? 'text-red-600' : 'text-green-600'">
+              <i :class="summary.priceChange >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'" class="mr-1"></i>
+              {{ Math.abs(summary.priceChange) }}%
+            </span>
+            vs. previous period
+          </div>
         </div>
 
-        <div v-if="loading" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="sr-only">Loading...</span>
-            </div>
-            <p class="mt-2">Loading price trend data...</p>
+        <div class="card bg-white p-4 rounded-lg shadow">
+          <h3 class="text-lg font-semibold text-gray-700 mb-2">Price Volatility</h3>
+          <p class="text-3xl font-bold text-purple-600">{{ summary.volatility }}%</p>
+          <div class="text-sm text-gray-500 mt-1">
+            <span :class="summary.volatilityChange >= 0 ? 'text-red-600' : 'text-green-600'">
+              <i :class="summary.volatilityChange >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'" class="mr-1"></i>
+              {{ Math.abs(summary.volatilityChange) }}%
+            </span>
+            vs. previous period
+          </div>
         </div>
 
-        <div v-else class="analysis-content">
-            <!-- Summary Cards -->
-            <div
-                class="grid grid-cols-3 sm:grid-cols-1 md:grid-cols-3 gap-4 mb-4"
-            >
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title text-gray-600">
-                            Average Price Change
-                        </h5>
-                        <div class="d-flex align-items-center mt-3">
-                            <h2
-                                :class="
-                                    summary.avgPriceChange >= 0
-                                        ? 'text-danger'
-                                        : 'text-success'
-                                "
-                            >
-                                {{ summary.avgPriceChange >= 0 ? "+" : ""
-                                }}{{ summary.avgPriceChange }}%
-                            </h2>
-                            <i
-                                :class="[
-                                    summary.avgPriceChange >= 0
-                                        ? 'fas fa-arrow-up text-danger'
-                                        : 'fas fa-arrow-down text-success',
-                                    'ml-2 fa-lg',
-                                ]"
-                            ></i>
-                        </div>
-                        <small class="text-gray-500"
-                            >Over the selected period</small
-                        >
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title text-gray-600">
-                            Items with Price Increase
-                        </h5>
-                        <div class="d-flex align-items-center mt-3">
-                            <h2 class="text-danger">
-                                {{ summary.priceIncreaseCount }}
-                            </h2>
-                            <span class="text-danger ml-2"
-                                >({{ summary.priceIncreasePercentage }}%)</span
-                            >
-                        </div>
-                        <small class="text-gray-500"
-                            >Out of {{ summary.totalItems }} items</small
-                        >
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title text-gray-600">
-                            Items with Price Decrease
-                        </h5>
-                        <div class="d-flex align-items-center mt-3">
-                            <h2 class="text-success">
-                                {{ summary.priceDecreaseCount }}
-                            </h2>
-                            <span class="text-success ml-2"
-                                >({{ summary.priceDecreasePercentage }}%)</span
-                            >
-                        </div>
-                        <small class="text-gray-500"
-                            >Out of {{ summary.totalItems }} items</small
-                        >
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main Price Trend Chart -->
-            <div class="card mb-4">
-                <div
-                    class="card-header d-flex justify-content-between align-items-center"
-                >
-                    <h5 class="card-title mb-0">
-                        {{
-                            filters.item
-                                ? getItemName(filters.item) + " - Price Trend"
-                                : "Price Trend Over Time"
-                        }}
-                    </h5>
-                    <div class="chart-controls d-flex">
-                        <div class="form-group mr-2 mb-0">
-                            <select
-                                v-model="chartView"
-                                class="form-control form-control-sm"
-                            >
-                                <option value="line">Line Chart</option>
-                                <option value="area">Area Chart</option>
-                                <option value="column">Column Chart</option>
-                            </select>
-                        </div>
-                        <div class="form-group mb-0">
-                            <div class="btn-group">
-                                <button
-                                    v-for="interval in [
-                                        'monthly',
-                                        'quarterly',
-                                        'yearly',
-                                    ]"
-                                    :key="interval"
-                                    class="btn btn-sm"
-                                    :class="
-                                        timeInterval === interval
-                                            ? 'btn-primary'
-                                            : 'btn-secondary'
-                                    "
-                                    @click="timeInterval = interval"
-                                >
-                                    {{ getIntervalLabel(interval) }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 400px">
-                        <price-trend-chart
-                            :chart-data="priceData"
-                            :chart-type="chartView"
-                            :multiple-items="!filters.item"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <!-- Price Comparison by Vendor (only shown when a specific item is selected) -->
-            <div v-if="filters.item" class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        {{ getItemName(filters.item) }} - Price by Vendor
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 350px">
-                        <vendor-price-comparison-chart
-                            :chart-data="vendorPriceData"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <!-- Price Analysis by Category -->
-            <div
-                v-if="!filters.item"
-                class="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4 mb-4"
-            >
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            Price Change by Category
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="height: 350px">
-                            <category-price-chart
-                                :chart-data="categoryPriceData"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            Items with Highest Price Change
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Category</th>
-                                        <th>Previous Price</th>
-                                        <th>Current Price</th>
-                                        <th>Change</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr
-                                        v-for="item in topPriceChanges"
-                                        :key="item.item_id"
-                                    >
-                                        <td>
-                                            <a
-                                                href="#"
-                                                @click.prevent="
-                                                    selectItem(item.item_id)
-                                                "
-                                                class="text-primary"
-                                            >
-                                                {{ item.name }}
-                                            </a>
-                                        </td>
-                                        <td>{{ item.category }}</td>
-                                        <td>
-                                            ${{
-                                                formatNumber(item.previousPrice)
-                                            }}
-                                        </td>
-                                        <td>
-                                            ${{
-                                                formatNumber(item.currentPrice)
-                                            }}
-                                        </td>
-                                        <td>
-                                            <span
-                                                :class="
-                                                    item.percentageChange >= 0
-                                                        ? 'text-danger'
-                                                        : 'text-success'
-                                                "
-                                            >
-                                                {{
-                                                    item.percentageChange >= 0
-                                                        ? "+"
-                                                        : ""
-                                                }}{{ item.percentageChange }}%
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Price Data Table -->
-            <div class="card">
-                <div
-                    class="card-header d-flex justify-content-between align-items-center"
-                >
-                    <h5 class="card-title mb-0">Price History</h5>
-                    <button
-                        class="btn btn-sm btn-outline-primary"
-                        @click="downloadCSV"
-                    >
-                        <i class="fas fa-download mr-1"></i> Export CSV
-                    </button>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th
-                                        class="sortable"
-                                        @click="sortTable('date')"
-                                    >
-                                        Date
-                                        <i
-                                            :class="getSortIconClass('date')"
-                                        ></i>
-                                    </th>
-                                    <th
-                                        class="sortable"
-                                        @click="sortTable('item')"
-                                    >
-                                        Item
-                                        <i
-                                            :class="getSortIconClass('item')"
-                                        ></i>
-                                    </th>
-                                    <th
-                                        class="sortable"
-                                        @click="sortTable('vendor')"
-                                    >
-                                        Vendor
-                                        <i
-                                            :class="getSortIconClass('vendor')"
-                                        ></i>
-                                    </th>
-                                    <th
-                                        class="sortable"
-                                        @click="sortTable('po_number')"
-                                    >
-                                        PO Number
-                                        <i
-                                            :class="
-                                                getSortIconClass('po_number')
-                                            "
-                                        ></i>
-                                    </th>
-                                    <th
-                                        class="sortable"
-                                        @click="sortTable('unit_price')"
-                                    >
-                                        Unit Price
-                                        <i
-                                            :class="
-                                                getSortIconClass('unit_price')
-                                            "
-                                        ></i>
-                                    </th>
-                                    <th
-                                        class="sortable"
-                                        @click="sortTable('change')"
-                                    >
-                                        Change
-                                        <i
-                                            :class="getSortIconClass('change')"
-                                        ></i>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="(record, index) in paginatedRecords"
-                                    :key="index"
-                                >
-                                    <td>{{ formatDate(record.date) }}</td>
-                                    <td>
-                                        <a
-                                            href="#"
-                                            @click.prevent="
-                                                selectItem(record.item_id)
-                                            "
-                                            class="text-primary"
-                                        >
-                                            {{ record.item }}
-                                        </a>
-                                    </td>
-                                    <td>{{ record.vendor }}</td>
-                                    <td>
-                                        <router-link
-                                            :to="`/purchasing/orders/${record.po_id}`"
-                                            class="text-primary"
-                                        >
-                                            {{ record.po_number }}
-                                        </router-link>
-                                    </td>
-                                    <td>
-                                        ${{ formatNumber(record.unit_price) }}
-                                    </td>
-                                    <td>
-                                        <span
-                                            v-if="record.change !== null"
-                                            :class="
-                                                record.change >= 0
-                                                    ? 'text-danger'
-                                                    : 'text-success'
-                                            "
-                                        >
-                                            {{ record.change >= 0 ? "+" : ""
-                                            }}{{ record.change }}%
-                                        </span>
-                                        <span v-else>-</span>
-                                    </td>
-                                </tr>
-                                <tr v-if="paginatedRecords.length === 0">
-                                    <td colspan="6" class="text-center py-4">
-                                        No price history found
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <div
-                        class="d-flex justify-content-between align-items-center"
-                    >
-                        <div class="pagination-info">
-                            Showing {{ paginationStart + 1 }} to
-                            {{ paginationEnd }} of
-                            {{ filteredRecords.length }} records
-                        </div>
-                        <ul class="pagination mb-0">
-                            <li
-                                class="page-item"
-                                :class="{ disabled: currentPage === 1 }"
-                            >
-                                <a
-                                    class="page-link"
-                                    href="#"
-                                    @click.prevent="changePage(currentPage - 1)"
-                                >
-                                    <i class="fas fa-chevron-left"></i>
-                                </a>
-                            </li>
-                            <li
-                                v-for="page in totalPages"
-                                :key="page"
-                                class="page-item"
-                                :class="{ active: currentPage === page }"
-                            >
-                                <a
-                                    class="page-link"
-                                    href="#"
-                                    @click.prevent="changePage(page)"
-                                    >{{ page }}</a
-                                >
-                            </li>
-                            <li
-                                class="page-item"
-                                :class="{
-                                    disabled: currentPage === totalPages,
-                                }"
-                            >
-                                <a
-                                    class="page-link"
-                                    href="#"
-                                    @click.prevent="changePage(currentPage + 1)"
-                                >
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+        <div class="card bg-white p-4 rounded-lg shadow">
+          <h3 class="text-lg font-semibold text-gray-700 mb-2">Price Range</h3>
+          <p class="text-3xl font-bold text-green-600">${{ formatNumber(summary.minPrice) }} - ${{ formatNumber(summary.maxPrice) }}</p>
+          <div class="text-sm text-gray-500 mt-1">
+            <span>Range: ${{ formatNumber(summary.maxPrice - summary.minPrice) }}</span>
+          </div>
         </div>
+
+        <div class="card bg-white p-4 rounded-lg shadow">
+          <h3 class="text-lg font-semibold text-gray-700 mb-2">YoY Change</h3>
+          <p class="text-3xl font-bold" :class="summary.yoyChange >= 0 ? 'text-red-600' : 'text-green-600'">
+            {{ summary.yoyChange >= 0 ? '+' : '' }}{{ summary.yoyChange }}%
+          </p>
+          <div class="text-sm text-gray-500 mt-1">
+            Year-over-year price change
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-section mb-6">
+        <div class="bg-white p-4 rounded-lg shadow">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Price Trend Over Time</h3>
+            <div class="trend-controls flex items-center space-x-4">
+              <div class="flex items-center">
+                <label class="text-sm mr-2">Group By:</label>
+                <select v-model="trendOptions.groupBy" class="border border-gray-300 rounded-md shadow-sm px-3 py-1">
+                  <option value="month">Month</option>
+                  <option value="quarter">Quarter</option>
+                  <option value="year">Year</option>
+                </select>
+              </div>
+              <div class="flex items-center">
+                <label class="text-sm mr-2">Display:</label>
+                <select v-model="trendOptions.display" class="border border-gray-300 rounded-md shadow-sm px-3 py-1">
+                  <option value="line">Line</option>
+                  <option value="bar">Bar</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="chart-container" style="height: 400px;">
+            <canvas ref="trendChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="analysis-grid grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="chart-card bg-white p-4 rounded-lg shadow">
+          <h3 class="text-lg font-semibold mb-4">Price Comparison by Vendor</h3>
+          <div class="chart-container" style="height: 350px;">
+            <canvas ref="vendorComparisonChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card bg-white p-4 rounded-lg shadow">
+          <h3 class="text-lg font-semibold mb-4">Price Comparison by Category</h3>
+          <div class="chart-container" style="height: 350px;">
+            <canvas ref="categoryComparisonChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="detailed-data bg-white p-4 rounded-lg shadow">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">Price History Detail</h3>
+          <button @click="exportData" class="bg-gray-800 hover:bg-gray-900 text-white font-medium px-4 py-2 rounded flex items-center">
+            <i class="fas fa-download mr-2"></i> Export Data
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PO Number</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="(entry, index) in priceHistory" :key="entry.id">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{{ entry.item_name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ entry.vendor_name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.category_name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(entry.date) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">${{ formatNumber(entry.unit_price) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.quantity }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                  <router-link :to="`/purchasing/orders/${entry.po_id}`">
+                    {{ entry.po_number }}
+                  </router-link>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <span v-if="index < priceHistory.length - 1"
+                        :class="getPriceChangeClass(entry.unit_price, priceHistory[index + 1].unit_price)">
+                    {{ calculatePriceChange(entry.unit_price, priceHistory[index + 1].unit_price) }}%
+                  </span>
+                  <span v-else>-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 flex justify-between items-center">
+          <div class="text-sm text-gray-700">
+            Showing <span class="font-medium">{{ paginationInfo.from }}</span> to <span class="font-medium">{{ paginationInfo.to }}</span> of <span class="font-medium">{{ paginationInfo.total }}</span> records
+          </div>
+          <pagination-component
+            :current-page="paginationInfo.current_page"
+            :last-page="paginationInfo.last_page"
+            @page-changed="changePage">
+          </pagination-component>
+        </div>
+      </div>
     </div>
-</template>
+  </template>
 
-<script>
-import axios from "axios";
-import PriceTrendChart from "./PriceTrendChart.vue";
-import VendorPriceComparisonChart from "./VendorPriceComparisonChart.vue";
-import CategoryPriceChart from "./CategoryPriceChart.vue";
+  <script>
+  import { ref, onMounted, reactive, watch } from 'vue';
+  import axios from 'axios';
+  import Chart from 'chart.js/auto';
 
-export default {
-    name: "PriceTrendAnalysis",
-    components: {
-        PriceTrendChart,
-        VendorPriceComparisonChart,
-        CategoryPriceChart,
-    },
-    data() {
-        return {
-            loading: true,
-            filters: {
-                timeRange: "1year",
-                startDate: null,
-                endDate: null,
-                category: "",
-                item: "",
+  export default {
+    name: 'PriceTrendAnalysis',
+    setup() {
+      const trendChart = ref(null);
+      const vendorComparisonChart = ref(null);
+      const categoryComparisonChart = ref(null);
+      const vendors = ref([]);
+      const categories = ref([]);
+      const items = ref([]);
+      const priceHistory = ref([]);
+      let trendChartInstance = null;
+
+      const filters = reactive({
+        dateRange: '365',
+        startDate: '',
+        endDate: '',
+        vendorId: '',
+        categoryId: '',
+        itemId: ''
+      });
+
+      const trendOptions = reactive({
+        groupBy: 'month',
+        display: 'line'
+      });
+
+      const summary = reactive({
+        avgPrice: 0,
+        priceChange: 0,
+        volatility: 0,
+        volatilityChange: 0,
+        minPrice: 0,
+        maxPrice: 0,
+        yoyChange: 0
+      });
+
+      const paginationInfo = reactive({
+        current_page: 1,
+        from: 1,
+        to: 0,
+        total: 0,
+        last_page: 1
+      });
+
+      const loadVendors = async () => {
+        try {
+          const response = await axios.get('/api/vendors');
+          if (response.data && response.data.data) {
+            vendors.value = response.data.data;
+          }
+        } catch (error) {
+          console.error('Error loading vendors:', error);
+        }
+      };
+
+      const loadCategories = async () => {
+        try {
+          const response = await axios.get('/api/categories');
+          if (response.data && response.data.data) {
+            categories.value = response.data.data;
+          }
+        } catch (error) {
+          console.error('Error loading categories:', error);
+        }
+      };
+
+      const loadItems = async () => {
+        try {
+          const response = await axios.get('/api/items');
+          if (response.data && response.data.data) {
+            items.value = response.data.data;
+          }
+        } catch (error) {
+          console.error('Error loading items:', error);
+        }
+      };
+
+      const loadPriceData = async () => {
+        try {
+          // In a real implementation, this would be an API call with the filters
+          // const response = await axios.get('/api/price-trend-analysis', {
+          //   params: {
+          //     ...filters,
+          //     page: paginationInfo.current_page
+          //   }
+          // });
+
+          // For demo purposes, we'll use sample data
+
+          // Simulated price history data
+          priceHistory.value = generateSamplePriceHistory();
+
+          // Update pagination info
+          paginationInfo.from = 1;
+          paginationInfo.to = priceHistory.value.length;
+          paginationInfo.total = priceHistory.value.length;
+          paginationInfo.last_page = 1;
+
+          // Calculate summary metrics
+          calculateSummaryMetrics();
+
+          // Render charts
+          renderTrendChart();
+          renderComparisonCharts();
+        } catch (error) {
+          console.error('Error loading price data:', error);
+        }
+      };
+
+      const generateSamplePriceHistory = () => {
+        // Generate sample price history data for demonstration
+        const data = [];
+        const items = ['Steel Pipe', 'Aluminum Sheet', 'Copper Wire', 'Plastic Resin', 'Electronic Component'];
+        const vendors = ['Acme Supplies', 'Tech Parts Inc', 'Global Materials', 'Quality Components', 'Sunrise Distributors'];
+        const categories = ['Raw Materials', 'Metal Products', 'Electronic Parts', 'Plastic Components', 'Misc Supplies'];
+
+        const baseDate = new Date();
+        baseDate.setFullYear(baseDate.getFullYear() - 1);
+
+        for (let i = 0; i < 20; i++) {
+          const date = new Date(baseDate);
+          date.setDate(date.getDate() + i * 18); // Spread entries over the past year
+
+          const itemIndex = i % items.length;
+          const vendorIndex = i % vendors.length;
+          const categoryIndex = i % categories.length;
+
+          // Generate oscillating prices to show trends
+          const basePrice = 50 + (itemIndex * 10);
+          const priceVariation = Math.sin(i * 0.5) * 5; // Oscillating component
+          const trendComponent = i * 0.2; // Slight upward trend
+          const randomComponent = (Math.random() - 0.5) * 4; // Random noise
+
+          const unitPrice = basePrice + priceVariation + trendComponent + randomComponent;
+
+          data.push({
+            id: i + 1,
+            item_name: items[itemIndex],
+            vendor_name: vendors[vendorIndex],
+            category_name: categories[categoryIndex],
+            date: date.toISOString().split('T')[0],
+            unit_price: parseFloat(unitPrice.toFixed(2)),
+            quantity: Math.floor(Math.random() * 100) + 10,
+            po_id: 1000 + i,
+            po_number: `PO-${2023}-${1000 + i}`
+          });
+        }
+
+        // Sort by date descending
+        return data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      };
+
+      const calculateSummaryMetrics = () => {
+        // Calculate average price
+        const prices = priceHistory.value.map(entry => entry.unit_price);
+        summary.avgPrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
+
+        // Calculate min and max price
+        summary.minPrice = Math.min(...prices);
+        summary.maxPrice = Math.max(...prices);
+
+        // Calculate price change (compared to previous period)
+        // Assume first entry is most recent, last entry is oldest
+        const currentPrice = prices[0];
+        const previousPrice = prices[prices.length - 1];
+        summary.priceChange = parseFloat(((currentPrice - previousPrice) / previousPrice * 100).toFixed(1));
+
+        // Calculate volatility (standard deviation as percentage of mean)
+        const mean = summary.avgPrice;
+        const squaredDiffs = prices.map(price => (price - mean) ** 2);
+        const variance = squaredDiffs.reduce((sum, sqDiff) => sum + sqDiff, 0) / prices.length;
+        const stdDev = Math.sqrt(variance);
+        summary.volatility = parseFloat(((stdDev / mean) * 100).toFixed(1));
+
+        // Previous period volatility (simulated for demo)
+        summary.volatilityChange = -1.2;
+
+        // Year-over-year change (simulated for demo)
+        summary.yoyChange = 3.5;
+      };
+
+      const renderTrendChart = () => {
+        // Destroy existing chart if it exists
+        if (trendChartInstance) {
+          trendChartInstance.destroy();
+        }
+
+        if (!trendChart.value) return;
+
+        // Prepare data for chart based on groupBy option
+        const groupedData = groupPriceData(priceHistory.value, trendOptions.groupBy);
+
+        // Create chart
+        const ctx = trendChart.value.getContext('2d');
+        trendChartInstance = new Chart(ctx, {
+          type: trendOptions.display,
+          data: {
+            labels: groupedData.labels,
+            datasets: [{
+              label: 'Average Price',
+              data: groupedData.averages,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              tension: 0.3,
+              fill: trendOptions.display === 'line'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(tooltipItem) {
+                    return `Avg Price: ${tooltipItem.raw.toFixed(2)}`;
+                  }
+                }
+              }
             },
-            categories: [],
-            items: [],
-            chartView: "line",
-            timeInterval: "monthly",
-            summary: {
-                avgPriceChange: 0,
-                priceIncreaseCount: 0,
-                priceDecreaseCount: 0,
-                priceIncreasePercentage: 0,
-                priceDecreasePercentage: 0,
-                totalItems: 0,
-            },
-            priceData: [],
-            vendorPriceData: [],
-            categoryPriceData: [],
-            topPriceChanges: [],
-            priceRecords: [],
-
-            // Table sorting and pagination
-            sortField: "date",
-            sortDirection: "desc",
-            currentPage: 1,
-            pageSize: 10,
-        };
-    },
-    computed: {
-        filteredItems() {
-            if (!this.filters.category) {
-                return this.items;
-            }
-            return this.items.filter(
-                (item) =>
-                    item.category_id.toString() ===
-                    this.filters.category.toString()
-            );
-        },
-        filteredRecords() {
-            let data = [...this.priceRecords];
-
-            // Apply sorting
-            data.sort((a, b) => {
-                let fieldA = a[this.sortField];
-                let fieldB = b[this.sortField];
-
-                // Handle numeric fields
-                if (
-                    this.sortField === "unit_price" ||
-                    this.sortField === "change"
-                ) {
-                    fieldA = parseFloat(fieldA || 0);
-                    fieldB = parseFloat(fieldB || 0);
+            scales: {
+              y: {
+                beginAtZero: false,
+                ticks: {
+                  callback: function(value) {
+                    return '$' + value.toFixed(2);
+                  }
                 }
-
-                // Handle date fields
-                if (this.sortField === "date") {
-                    fieldA = new Date(fieldA);
-                    fieldB = new Date(fieldB);
-                }
-
-                if (fieldA < fieldB) {
-                    return this.sortDirection === "asc" ? -1 : 1;
-                }
-                if (fieldA > fieldB) {
-                    return this.sortDirection === "asc" ? 1 : -1;
-                }
-                return 0;
-            });
-
-            return data;
-        },
-        paginatedRecords() {
-            const start = (this.currentPage - 1) * this.pageSize;
-            const end = start + this.pageSize;
-            return this.filteredRecords.slice(start, end);
-        },
-        totalPages() {
-            return Math.ceil(this.filteredRecords.length / this.pageSize);
-        },
-        paginationStart() {
-            return (this.currentPage - 1) * this.pageSize;
-        },
-        paginationEnd() {
-            const end = this.paginationStart + this.pageSize;
-            return end > this.filteredRecords.length
-                ? this.filteredRecords.length
-                : end;
-        },
-    },
-    created() {
-        // Set default date range (last year)
-        const end = new Date();
-        const start = new Date();
-        start.setFullYear(start.getFullYear() - 1);
-
-        this.filters.startDate = this.formatDateForInput(start);
-        this.filters.endDate = this.formatDateForInput(end);
-
-        this.loadInitialData();
-    },
-    methods: {
-        async loadInitialData() {
-            this.loading = true;
-
-            try {
-                // Load categories and items for the filters
-                const [categoriesResponse, itemsResponse] = await Promise.all([
-                    axios.get("/api/categories"),
-                    axios.get("/api/items"),
-                ]);
-
-                this.categories = categoriesResponse.data.data || [];
-                this.items = itemsResponse.data.data || [];
-
-                // Load price trend data
-                await this.loadPriceTrendData();
-            } catch (error) {
-                console.error("Error loading initial data:", error);
-                // Load mock data for demonstration
-                this.loadMockData();
-            } finally {
-                this.loading = false;
+              }
             }
-        },
+          }
+        });
+      };
 
-        async loadPriceTrendData() {
-            try {
-                // Calculate date range based on filter
-                let startDate = this.filters.startDate;
-                let endDate = this.filters.endDate;
+      const groupPriceData = (priceData, groupBy) => {
+        // Group price data by selected time period
+        const groups = {};
+        const labels = [];
+        const averages = [];
 
-                if (this.filters.timeRange !== "custom") {
-                    const end = new Date();
-                    const start = new Date();
+        // Sort by date (oldest to newest for chart)
+        const sortedData = [...priceData].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-                    if (this.filters.timeRange === "6months") {
-                        start.setMonth(start.getMonth() - 6);
-                    } else if (this.filters.timeRange === "1year") {
-                        start.setFullYear(start.getFullYear() - 1);
-                    } else if (this.filters.timeRange === "2years") {
-                        start.setFullYear(start.getFullYear() - 2);
-                    }
+        sortedData.forEach(entry => {
+          const date = new Date(entry.date);
+          let groupKey;
 
-                    startDate = this.formatDateForInput(start);
-                    endDate = this.formatDateForInput(end);
+          if (groupBy === 'month') {
+            groupKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+          } else if (groupBy === 'quarter') {
+            const quarter = Math.floor(date.getMonth() / 3) + 1;
+            groupKey = `${date.getFullYear()}-Q${quarter}`;
+          } else if (groupBy === 'year') {
+            groupKey = date.getFullYear().toString();
+          }
 
-                    // Update the date inputs for UI consistency
-                    this.filters.startDate = startDate;
-                    this.filters.endDate = endDate;
-                }
-
-                // API call to get price trend data
-                const response = await axios.get(
-                    "/api/purchasing/price-trend",
-                    {
-                        params: {
-                            start_date: startDate,
-                            end_date: endDate,
-                            category_id: this.filters.category,
-                            item_id: this.filters.item,
-                            interval: this.timeInterval,
-                        },
-                    }
-                );
-
-                const data = response.data.data;
-
-                // Update component data
-                this.summary = data.summary;
-                this.priceData = data.priceData;
-                this.vendorPriceData = data.vendorPriceData;
-                this.categoryPriceData = data.categoryPriceData;
-                this.topPriceChanges = data.topPriceChanges;
-                this.priceRecords = data.priceRecords;
-            } catch (error) {
-                console.error("Error loading price trend data:", error);
-                // Load mock data if API fails
-                this.loadMockData();
-            }
-        },
-
-        // Mock data for development/demo
-        loadMockData() {
-            // Mock categories if needed
-            if (this.categories.length === 0) {
-                this.categories = [
-                    { id: 1, name: "Raw Materials" },
-                    { id: 2, name: "Packaging" },
-                    { id: 3, name: "Equipment" },
-                    { id: 4, name: "Office Supplies" },
-                ];
-            }
-
-            // Mock items if needed
-            if (this.items.length === 0) {
-                this.items = [
-                    { item_id: 1, name: "Steel Sheets", category_id: 1 },
-                    { item_id: 2, name: "Aluminum Rods", category_id: 1 },
-                    { item_id: 3, name: "Plastic Pellets", category_id: 1 },
-                    { item_id: 4, name: "Cardboard Boxes", category_id: 2 },
-                    { item_id: 5, name: "Packaging Tape", category_id: 2 },
-                    { item_id: 6, name: "Drill Press", category_id: 3 },
-                    { item_id: 7, name: "Laser Cutter", category_id: 3 },
-                    { item_id: 8, name: "Copy Paper", category_id: 4 },
-                    { item_id: 9, name: "Toner Cartridges", category_id: 4 },
-                ];
-            }
-
-            // Mock summary data
-            this.summary = {
-                avgPriceChange: 5.8,
-                priceIncreaseCount: 28,
-                priceDecreaseCount: 12,
-                priceIncreasePercentage: 70,
-                priceDecreasePercentage: 30,
-                totalItems: 40,
+          if (!groups[groupKey]) {
+            groups[groupKey] = {
+              prices: [],
+              label: formatGroupLabel(groupKey, groupBy)
             };
+          }
 
-            // Mock price trend data
-            if (this.filters.item) {
-                // Single item price trend
-                const selectedItem = this.items.find(
-                    (item) =>
-                        item.item_id.toString() === this.filters.item.toString()
-                );
-                const itemName = selectedItem
-                    ? selectedItem.name
-                    : "Selected Item";
+          groups[groupKey].prices.push(entry.unit_price);
+        });
 
-                this.priceData = this.generateMockPriceData(itemName);
+        // Calculate averages and prepare labels
+        Object.keys(groups).sort().forEach(key => {
+          const group = groups[key];
+          labels.push(group.label);
+          const sum = group.prices.reduce((total, price) => total + price, 0);
+          averages.push(parseFloat((sum / group.prices.length).toFixed(2)));
+        });
 
-                // Mock vendor price comparison data
-                this.vendorPriceData = [
-                    { vendor: "ABC Supplies", price: 125.5, change: 7.2 },
-                    { vendor: "XYZ Manufacturing", price: 118.75, change: 5.5 },
-                    {
-                        vendor: "Global Distributors",
-                        price: 132.25,
-                        change: 9.8,
-                    },
-                    { vendor: "Tech Solutions Inc", price: 120.9, change: 6.2 },
-                    { vendor: "Reliable Parts Co", price: 128.4, change: 8.1 },
-                ];
-            } else {
-                // Multiple items price trend
-                this.priceData = [
-                    {
-                        name: "Steel Sheets",
-                        data: this.generateMockPriceDataPoints(),
-                    },
-                    {
-                        name: "Aluminum Rods",
-                        data: this.generateMockPriceDataPoints(),
-                    },
-                    {
-                        name: "Plastic Pellets",
-                        data: this.generateMockPriceDataPoints(),
-                    },
-                    {
-                        name: "Cardboard Boxes",
-                        data: this.generateMockPriceDataPoints(),
-                    },
-                    {
-                        name: "Drill Press",
-                        data: this.generateMockPriceDataPoints(),
-                    },
-                ];
+        return { labels, averages };
+      };
 
-                // Mock category price data
-                this.categoryPriceData = [
-                    {
-                        category: "Raw Materials",
-                        change: 8.5,
-                        avgPrice: 115.25,
-                    },
-                    { category: "Packaging", change: 4.2, avgPrice: 76.5 },
-                    { category: "Equipment", change: 3.1, avgPrice: 1250.75 },
-                    {
-                        category: "Office Supplies",
-                        change: 6.7,
-                        avgPrice: 45.8,
-                    },
-                ];
+      const formatGroupLabel = (key, groupBy) => {
+        if (groupBy === 'month') {
+          const [year, month] = key.split('-');
+          const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+          return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+        } else if (groupBy === 'quarter') {
+          return key; // Already in YYYY-QN format
+        } else {
+          return key; // Year
+        }
+      };
 
-                // Mock top price changes
-                this.topPriceChanges = [
-                    {
-                        item_id: 3,
-                        name: "Plastic Pellets",
-                        category: "Raw Materials",
-                        previousPrice: 95.5,
-                        currentPrice: 120.75,
-                        percentageChange: 26.4,
-                    },
-                    {
-                        item_id: 9,
-                        name: "Toner Cartridges",
-                        category: "Office Supplies",
-                        previousPrice: 65.25,
-                        currentPrice: 78.8,
-                        percentageChange: 20.8,
-                    },
-                    {
-                        item_id: 1,
-                        name: "Steel Sheets",
-                        category: "Raw Materials",
-                        previousPrice: 175.5,
-                        currentPrice: 202.35,
-                        percentageChange: 15.3,
-                    },
-                    {
-                        item_id: 8,
-                        name: "Copy Paper",
-                        category: "Office Supplies",
-                        previousPrice: 32.75,
-                        currentPrice: 36.5,
-                        percentageChange: 11.5,
-                    },
-                    {
-                        item_id: 5,
-                        name: "Packaging Tape",
-                        category: "Packaging",
-                        previousPrice: 12.25,
-                        currentPrice: 13.6,
-                        percentageChange: 11.0,
-                    },
-                    {
-                        item_id: 6,
-                        name: "Drill Press",
-                        category: "Equipment",
-                        previousPrice: 1450.0,
-                        currentPrice: 1380.25,
-                        percentageChange: -4.8,
-                    },
-                    {
-                        item_id: 7,
-                        name: "Laser Cutter",
-                        category: "Equipment",
-                        previousPrice: 4200.0,
-                        currentPrice: 3950.75,
-                        percentageChange: -5.9,
-                    },
-                ];
+      const renderComparisonCharts = () => {
+        // Vendor Comparison Chart
+        if (vendorComparisonChart.value) {
+          // Group and calculate average prices by vendor
+          const vendorData = {};
+
+          priceHistory.value.forEach(entry => {
+            if (!vendorData[entry.vendor_name]) {
+              vendorData[entry.vendor_name] = {
+                prices: [],
+                color: getRandomColor()
+              };
             }
 
-            // Mock price records
-            this.priceRecords = [];
-            const vendors = [
-                "ABC Supplies",
-                "XYZ Manufacturing",
-                "Global Distributors",
-                "Tech Solutions Inc",
-                "Reliable Parts Co",
-            ];
+            vendorData[entry.vendor_name].prices.push(entry.unit_price);
+          });
 
-            // Generate records for each item
-            this.items.forEach((item) => {
-                let prevPrice = null;
+          const vendorLabels = [];
+          const vendorAverages = [];
+          const vendorColors = [];
 
-                // Generate multiple price points over time
-                for (let i = 0; i < 5; i++) {
-                    const date = new Date();
-                    date.setMonth(date.getMonth() - i * 2); // Every 2 months
+          Object.keys(vendorData).forEach(vendor => {
+            vendorLabels.push(vendor);
+            const prices = vendorData[vendor].prices;
+            const avg = prices.reduce((total, price) => total + price, 0) / prices.length;
+            vendorAverages.push(parseFloat(avg.toFixed(2)));
+            vendorColors.push(vendorData[vendor].color);
+          });
 
-                    const vendor =
-                        vendors[Math.floor(Math.random() * vendors.length)];
-                    const poNumber = `PO-2023-${
-                        1000 + i * 10 + this.items.indexOf(item)
-                    }`;
-                    const unitPrice =
-                        50 + Math.random() * 50 + this.items.indexOf(item) * 10;
-
-                    let change = null;
-                    if (prevPrice !== null) {
-                        change = (
-                            ((unitPrice - prevPrice) / prevPrice) *
-                            100
-                        ).toFixed(1);
+          // Create chart
+          new Chart(vendorComparisonChart.value.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: vendorLabels,
+              datasets: [{
+                label: 'Average Price by Vendor',
+                data: vendorAverages,
+                backgroundColor: vendorColors
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(tooltipItem) {
+                      return `Avg Price: ${tooltipItem.raw.toFixed(2)}`;
                     }
-
-                    prevPrice = unitPrice;
-
-                    this.priceRecords.push({
-                        date: this.formatDateForInput(date),
-                        item_id: item.item_id,
-                        item: item.name,
-                        vendor,
-                        po_id: 1000 + i * 10 + this.items.indexOf(item),
-                        po_number: poNumber,
-                        unit_price: unitPrice.toFixed(2),
-                        change,
-                    });
+                  }
                 }
-            });
-        },
-
-        generateMockPriceData(itemName) {
-            if (this.timeInterval === "monthly") {
-                const months = [
-                    "Jan",
-                    "Feb",
-                    "Mar",
-                    "Apr",
-                    "May",
-                    "Jun",
-                    "Jul",
-                    "Aug",
-                    "Sep",
-                    "Oct",
-                    "Nov",
-                    "Dec",
-                ];
-                return [
-                    {
-                        name: itemName,
-                        data: months.map((month, index) => {
-                            const basePrice = 100;
-                            // Add some randomness and a slight upward trend
-                            const price =
-                                basePrice +
-                                index * 0.5 +
-                                (Math.random() * 10 - 5);
-                            return { x: month, y: price.toFixed(2) };
-                        }),
-                    },
-                ];
-            } else if (this.timeInterval === "quarterly") {
-                const quarters = [
-                    "Q1 2023",
-                    "Q2 2023",
-                    "Q3 2023",
-                    "Q4 2023",
-                    "Q1 2024",
-                ];
-                return [
-                    {
-                        name: itemName,
-                        data: quarters.map((quarter, index) => {
-                            const basePrice = 100;
-                            // Add some randomness and a slight upward trend
-                            const price =
-                                basePrice + index * 2 + (Math.random() * 8 - 4);
-                            return { x: quarter, y: price.toFixed(2) };
-                        }),
-                    },
-                ];
-            } else {
-                // Yearly
-                const years = ["2020", "2021", "2022", "2023", "2024"];
-                return [
-                    {
-                        name: itemName,
-                        data: years.map((year, index) => {
-                            const basePrice = 100;
-                            // Add some randomness and a slight upward trend
-                            const price =
-                                basePrice + index * 5 + (Math.random() * 6 - 3);
-                            return { x: year, y: price.toFixed(2) };
-                        }),
-                    },
-                ];
+              },
+            scales: {
+              y: {
+                beginAtZero: false,
+                ticks: {
+                  callback: function(value) {
+                    return '$' + value.toFixed(2);
+                  }
+                }
+              }
             }
-        },
+            }
+          });
+        }
 
-        generateMockPriceDataPoints() {
-            if (this.timeInterval === "monthly") {
-                const months = [
-                    "Jan",
-                    "Feb",
-                    "Mar",
-                    "Apr",
-                    "May",
-                    "Jun",
-                    "Jul",
-                    "Aug",
-                    "Sep",
-                    "Oct",
-                    "Nov",
-                    "Dec",
-                ];
-                return months.map((month, index) => {
-                    const basePrice = 50 + Math.random() * 100;
-                    // Add some randomness and a slight trend
-                    const price =
-                        basePrice +
-                        index * (Math.random() > 0.5 ? 0.5 : -0.3) +
-                        (Math.random() * 10 - 5);
-                    return { x: month, y: price.toFixed(2) };
-                });
-            } else if (this.timeInterval === "quarterly") {
-                const quarters = [
-                    "Q1 2023",
-                    "Q2 2023",
-                    "Q3 2023",
-                    "Q4 2023",
-                    "Q1 2024",
-                ];
-                return quarters.map((quarter, index) => {
-                    const basePrice = 50 + Math.random() * 100;
-                    // Add some randomness and a slight trend
-                    const price =
-                        basePrice +
-                        index * (Math.random() > 0.5<thinking>
-//The attempt to edit the file using a diff editor failed due to an editor error. I will instead read the full content of the file, modify the import statements in the content, and then overwrite the entire file with the corrected content using create_file tool. This will avoid the diff editor issue.
-</thinking>
+        // Category Comparison Chart
+        if (categoryComparisonChart.value) {
+          // Group and calculate average prices by category
+          const categoryData = {};
 
-<read_file>
-<path>frontend/erp/src/views/purchasing/PriceTrendAnalysis.vue</path>
-</read_file>
+          priceHistory.value.forEach(entry => {
+            if (!categoryData[entry.category_name]) {
+              categoryData[entry.category_name] = {
+                prices: [],
+                color: getRandomColor()
+              };
+            }
+
+            categoryData[entry.category_name].prices.push(entry.unit_price);
+          });
+
+          const categoryLabels = [];
+          const categoryAverages = [];
+          const categoryColors = [];
+
+          Object.keys(categoryData).forEach(category => {
+            categoryLabels.push(category);
+            const prices = categoryData[category].prices;
+            const avg = prices.reduce((total, price) => total + price, 0) / prices.length;
+            categoryAverages.push(parseFloat(avg.toFixed(2)));
+            categoryColors.push(categoryData[category].color);
+          });
+
+          // Create chart
+          new Chart(categoryComparisonChart.value.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: categoryLabels,
+              datasets: [{
+                label: 'Average Price by Category',
+                data: categoryAverages,
+                backgroundColor: categoryColors
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(tooltipItem) {
+                      return `Avg Price: ${tooltipItem.raw.toFixed(2)}`;
+                    }
+                  }
+                }
+              },
+            scales: {
+              y: {
+                beginAtZero: false,
+                ticks: {
+                  callback: function(value) {
+                    return '$' + value.toFixed(2);
+                  }
+                }
+              }
+            }
+            }
+          });
+        }
+      };
+
+      const getRandomColor = () => {
+        // Generate random colors for chart elements
+        const colors = [
+          'rgba(59, 130, 246, 0.7)',  // Blue
+          'rgba(16, 185, 129, 0.7)',  // Green
+          'rgba(245, 158, 11, 0.7)',  // Amber
+          'rgba(139, 92, 246, 0.7)',  // Purple
+          'rgba(236, 72, 153, 0.7)',  // Pink
+          'rgba(239, 68, 68, 0.7)',   // Red
+          'rgba(168, 85, 247, 0.7)',  // Violet
+          'rgba(14, 165, 233, 0.7)'   // Sky
+        ];
+
+        return colors[Math.floor(Math.random() * colors.length)];
+      };
+
+      const applyFilters = () => {
+        paginationInfo.current_page = 1;
+        loadPriceData();
+      };
+
+      const resetFilters = () => {
+        filters.dateRange = '365';
+        filters.startDate = '';
+        filters.endDate = '';
+        filters.vendorId = '';
+        filters.categoryId = '';
+        filters.itemId = '';
+        paginationInfo.current_page = 1;
+        loadPriceData();
+      };
+
+      const changePage = (page) => {
+        paginationInfo.current_page = page;
+        loadPriceData();
+      };
+
+      const exportData = () => {
+        // This would typically export to CSV or Excel
+        alert('Exporting price trend data...');
+        // In a real implementation, you would call an API endpoint that returns a file
+      };
+
+      const formatNumber = (num) => {
+        return num ? num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
+      };
+
+      const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      };
+
+      const calculatePriceChange = (currentPrice, previousPrice) => {
+        if (!previousPrice) return 0;
+        const change = ((currentPrice - previousPrice) / previousPrice) * 100;
+        return change.toFixed(2);
+      };
+
+      const getPriceChangeClass = (currentPrice, previousPrice) => {
+        if (!previousPrice) return '';
+        const change = currentPrice - previousPrice;
+        if (change > 0) return 'text-red-600';
+        if (change < 0) return 'text-green-600';
+        return 'text-gray-600';
+      };
+
+      // Watch for changes in trend options to update chart
+      watch([() => trendOptions.groupBy, () => trendOptions.display], () => {
+        renderTrendChart();
+      });
+
+      onMounted(() => {
+        loadVendors();
+        loadCategories();
+        loadItems();
+        loadPriceData();
+      });
+
+      return {
+        trendChart,
+        vendorComparisonChart,
+        categoryComparisonChart,
+        vendors,
+        categories,
+        items,
+        priceHistory,
+        filters,
+        trendOptions,
+        summary,
+        paginationInfo,
+        applyFilters,
+        resetFilters,
+        changePage,
+        exportData,
+        formatNumber,
+        formatDate,
+        calculatePriceChange,
+        getPriceChangeClass
+      };
+    }
+  };
+  </script>
+
+  <style scoped>
+  .price-trend-analysis {
+    min-height: calc(100vh - 150px);
+  }
+  </style>

@@ -244,7 +244,7 @@
                     v-show="!sidebarCollapsed && menuSections.purchasing"
                     class="submenu"
                 >
-                    <!-- <router-link
+                    <router-link
                         to="/purchasing/dashboard"
                         class="menu-item"
                         active-class="active"
@@ -287,7 +287,7 @@
                     >
                         <i class="fas fa-chart-line"></i>
                         <span v-if="!sidebarCollapsed">Price Trends</span>
-                    </router-link>-->
+                    </router-link>
                     <router-link
                         to="/purchasing/vendors"
                         class="menu-item"

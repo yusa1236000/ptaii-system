@@ -26,19 +26,19 @@ class PurchaseOrderController extends Controller
         $query = PurchaseOrder::with(['vendor']);
         
         // Apply filters
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         
-        if ($request->has('vendor_id')) {
+        if ($request->filled('vendor_id')) {
             $query->where('vendor_id', $request->vendor_id);
         }
         
-        if ($request->has('date_from')) {
+        if ($request->filled('date_from')) {
             $query->whereDate('po_date', '>=', $request->date_from);
         }
         
-        if ($request->has('date_to')) {
+        if ($request->filled('date_to')) {
             $query->whereDate('po_date', '<=', $request->date_to);
         }
         

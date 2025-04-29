@@ -19,6 +19,7 @@ class Vendor extends Model
         'contact_person',
         'phone',
         'email',
+        'preferred_currency', // Baru
         'status'
     ];
 
@@ -45,5 +46,13 @@ class Vendor extends Model
     public function invoices()
     {
         return $this->hasMany(VendorInvoice::class, 'vendor_id');
+    }
+    
+    /**
+     * Get the payables for the vendor.
+     */
+    public function payables()
+    {
+        return $this->hasMany(VendorPayable::class, 'vendor_id');
     }
 }

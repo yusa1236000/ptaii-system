@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\CurrencyRate;
 
 class VendorInvoice extends Model
 {
@@ -19,12 +20,22 @@ class VendorInvoice extends Model
         'total_amount',
         'tax_amount',
         'due_date',
-        'status'
+        'status',
+        'currency_code', // Baru
+        'exchange_rate', // Baru
+        'base_currency', // Baru
+        'base_currency_total', // Baru
+        'base_currency_tax' // Baru
     ];
 
     protected $casts = [
         'invoice_date' => 'date',
         'due_date' => 'date',
+        'total_amount' => 'float',
+        'tax_amount' => 'float',
+        'exchange_rate' => 'float', // Baru
+        'base_currency_total' => 'float', // Baru
+        'base_currency_tax' => 'float' // Baru
     ];
 
     public function vendor()
@@ -42,8 +53,61 @@ class VendorInvoice extends Model
         return $this->hasMany(VendorInvoiceLine::class, 'invoice_id');
     }
 
-    public function payments()
+    public function payables()
     {
-        return $this->hasMany(PayablePayment::class, 'invoice_id');
+        return $this->hasMany(VendorPayable::class, 'invoice_id');
+    }
+    
+    /**
+     * Convert amounts to specified currency.
+     *
+     * @param string $toCurrency
+     * @param string|null $date
+     * @return array
+     */
+    public function getAmountsInCurrency($toCurrency, $date = null)
+    {
+        $date = $date ?? $this->invoice_date;
+        
+        // If already in requested currency, return original amounts
+        if ($this->currency_code === $toCurrency) {
+            return [
+                'total_amount' => $this->total_amount,
+                'tax_amount' => $this->tax_amount
+            ];
+        }
+        
+        // Try to convert via base currency first
+        if ($toCurrency === $this->base_currency) {
+            return [
+                'total_amount' => $this->base_currency_total,
+                'tax_amount' => $this->base_currency_tax
+            ];
+        }
+        
+        // Get rate from base currency to requested currency
+        $rate = CurrencyRate::getCurrentRate($this->base_currency, $toCurrency, $date);
+        
+        if (!$rate) {
+            // Try direct conversion
+            $rate = CurrencyRate::getCurrentRate($this->currency_code, $toCurrency, $date);
+            if (!$rate) {
+                // If no conversion possible, return original values
+                return [
+                    'total_amount' => $this->total_amount,
+                    'tax_amount' => $this->tax_amount
+                ];
+            }
+            
+            return [
+                'total_amount' => $this->total_amount * $rate,
+                'tax_amount' => $this->tax_amount * $rate
+            ];
+        }
+        
+        return [
+            'total_amount' => $this->base_currency_total * $rate,
+            'tax_amount' => $this->base_currency_tax * $rate
+        ];
     }
 }

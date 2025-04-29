@@ -11,7 +11,7 @@ class RoutingOperation extends Model
 {
     use HasFactory;
 
-    protected $table = 'RoutingOperation';
+    protected $table = 'routing_operations';
     protected $primaryKey = 'operation_id';
     public $timestamps = false;
 

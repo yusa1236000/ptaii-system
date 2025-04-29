@@ -7,9 +7,11 @@ use App\Models\Sales\SalesOrder;
 use App\Models\Sales\SOLine;
 use App\Models\Sales\SalesQuotation;
 use App\Models\Sales\SalesQuotationLine;
+use App\Models\Sales\DeliveryLine;
 use App\Models\Item;
 use App\Models\Customer;
 use App\Models\CurrencyRate;
+use App\Models\ItemStock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -310,7 +312,7 @@ class SalesOrderController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-public function show($id)
+    public function show($id)
     {
         $order = SalesOrder::with([
             'customer',
@@ -814,6 +816,7 @@ public function show($id)
             return response()->json(['message' => 'Failed to remove order line', 'error' => $e->getMessage()], 500);
         }
     }
+    
     /**
      * Convert sales order currency.
      *
@@ -944,5 +947,142 @@ public function show($id)
             DB::rollBack();
             return response()->json(['message' => 'Failed to convert sales order currency', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Get outstanding items for a specific sales order.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function getOutstandingItems($id)
+    {
+        $order = SalesOrder::with(['salesOrderLines.item', 'customer'])->find($id);
+        
+        if (!$order) {
+            return response()->json(['message' => 'Sales order tidak ditemukan'], 404);
+        }
+        
+        $outstandingItems = [];
+        $allDelivered = true;
+        
+        foreach ($order->salesOrderLines as $line) {
+            $orderedQty = $line->quantity;
+            $deliveredQty = DeliveryLine::join('Delivery', 'DeliveryLine.delivery_id', '=', 'Delivery.delivery_id')
+                ->where('DeliveryLine.so_line_id', $line->line_id)
+                ->where('Delivery.status', 'Completed')
+                ->sum('DeliveryLine.delivered_quantity');
+            
+            $outstandingQty = $orderedQty - $deliveredQty;
+            
+            // Hanya masukkan item yang masih memiliki outstanding quantity
+            if ($outstandingQty > 0) {
+                $allDelivered = false;
+                
+                // Get available stock in warehouses
+                $warehouseStocks = ItemStock::where('item_id', $line->item_id)
+                    ->where('quantity', '>', 0)
+                    ->with('warehouse')
+                    ->get()
+                    ->map(function($stock) {
+                        return [
+                            'warehouse_id' => $stock->warehouse_id,
+                            'warehouse_name' => $stock->warehouse->name,
+                            'available_quantity' => $stock->quantity - $stock->reserved_quantity,
+                            'total_quantity' => $stock->quantity
+                        ];
+                    });
+                
+                $outstandingItems[] = [
+                    'so_id' => $order->so_id,
+                    'so_number' => $order->so_number,
+                    'so_line_id' => $line->line_id,
+                    'item_id' => $line->item_id,
+                    'item_name' => $line->item->name,
+                    'item_code' => $line->item->item_code,
+                    'ordered_quantity' => $orderedQty,
+                    'delivered_quantity' => $deliveredQty,
+                    'outstanding_quantity' => $outstandingQty,
+                    'uom_id' => $line->uom_id,
+                    'warehouse_stocks' => $warehouseStocks
+                ];
+            }
+        }
+        
+        return response()->json([
+            'data' => [
+                'so_id' => $order->so_id,
+                'so_number' => $order->so_number,
+                'customer_id' => $order->customer_id,
+                'customer_name' => $order->customer->name,
+                'status' => $order->status,
+                'is_fully_delivered' => $allDelivered,
+                'outstanding_items' => $outstandingItems
+            ]
+        ], 200);
+    }
+
+    /**
+     * Get all outstanding sales orders.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getAllOutstandingSalesOrders()
+    {
+        // Ambil semua sales order yang belum fully delivered
+        $orders = SalesOrder::whereNotIn('status', ['Delivered', 'Closed', 'Cancelled'])
+                    ->with(['customer'])
+                    ->get();
+        
+        $outstandingSalesOrders = [];
+        
+        foreach ($orders as $order) {
+            $hasOutstanding = false;
+            $outstandingItems = [];
+            $totalOutstandingQty = 0;
+            
+            // Hitung outstanding quantity untuk setiap line item
+            foreach ($order->salesOrderLines as $line) {
+                $orderedQty = $line->quantity;
+                $deliveredQty = DeliveryLine::join('Delivery', 'DeliveryLine.delivery_id', '=', 'Delivery.delivery_id')
+                    ->where('DeliveryLine.so_line_id', $line->line_id)
+                    ->where('Delivery.status', 'Completed')
+                    ->sum('DeliveryLine.delivered_quantity');
+                
+                $outstandingQty = $orderedQty - $deliveredQty;
+                
+                if ($outstandingQty > 0) {
+                    $hasOutstanding = true;
+                    $totalOutstandingQty += $outstandingQty;
+                    $outstandingItems[] = [
+                        'so_line_id' => $line->line_id,
+                        'item_id' => $line->item_id,
+                        'item_name' => $line->item->name,
+                        'item_code' => $line->item->item_code,
+                        'ordered_quantity' => $orderedQty,
+                        'delivered_quantity' => $deliveredQty,
+                        'outstanding_quantity' => $outstandingQty
+                    ];
+                }
+            }
+            
+            // Hanya tambahkan sales order yang memiliki outstanding items
+            if ($hasOutstanding) {
+                $outstandingSalesOrders[] = [
+                    'so_id' => $order->so_id,
+                    'so_number' => $order->so_number,
+                    'so_date' => $order->so_date,
+                    'customer_id' => $order->customer_id,
+                    'customer_name' => $order->customer->name,
+                    'status' => $order->status,
+                    'outstanding_items_count' => count($outstandingItems),
+                    'total_outstanding_quantity' => $totalOutstandingQty,
+                ];
+            }
+        }
+        
+        return response()->json([
+            'data' => $outstandingSalesOrders
+        ], 200);
     }
 }

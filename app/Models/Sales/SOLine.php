@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Item;
 use App\Models\UnitOfMeasure;
+use App\Models\CurrencyRate;
 
 class SOLine extends Model
 {
@@ -26,7 +27,26 @@ class SOLine extends Model
         'discount',
         'subtotal',
         'tax',
-        'total'
+        'total',
+        'base_currency_unit_price', // Baru
+        'base_currency_subtotal', // Baru
+        'base_currency_discount', // Baru
+        'base_currency_tax', // Baru
+        'base_currency_total' // Baru
+    ];
+    
+    protected $casts = [
+        'unit_price' => 'float',
+        'quantity' => 'float',
+        'discount' => 'float',
+        'subtotal' => 'float',
+        'tax' => 'float',
+        'total' => 'float',
+        'base_currency_unit_price' => 'float', // Baru
+        'base_currency_subtotal' => 'float', // Baru
+        'base_currency_discount' => 'float', // Baru
+        'base_currency_tax' => 'float', // Baru
+        'base_currency_total' => 'float' // Baru
     ];
 
     /**
@@ -67,5 +87,74 @@ class SOLine extends Model
     public function salesInvoiceLines(): HasMany
     {
         return $this->hasMany(SalesInvoiceLine::class, 'so_line_id');
+    }
+    
+    /**
+     * Get line amounts in specified currency.
+     *
+     * @param string $toCurrency
+     * @param string|null $date
+     * @return array
+     */
+    public function getAmountsInCurrency($toCurrency, $date = null)
+    {
+        $salesOrder = $this->salesOrder;
+        $date = $date ?? $salesOrder->so_date;
+        
+        // If already in requested currency, return original amounts
+        if ($salesOrder->currency_code === $toCurrency) {
+            return [
+                'unit_price' => $this->unit_price,
+                'subtotal' => $this->subtotal,
+                'discount' => $this->discount,
+                'tax' => $this->tax,
+                'total' => $this->total
+            ];
+        }
+        
+        // Try to convert via base currency first
+        if ($toCurrency === $salesOrder->base_currency) {
+            return [
+                'unit_price' => $this->base_currency_unit_price,
+                'subtotal' => $this->base_currency_subtotal,
+                'discount' => $this->base_currency_discount,
+                'tax' => $this->base_currency_tax,
+                'total' => $this->base_currency_total
+            ];
+        }
+        
+        // Get rate from base currency to requested currency
+        $rate = CurrencyRate::getCurrentRate($salesOrder->base_currency, $toCurrency, $date);
+        
+        if (!$rate) {
+            // Try direct conversion
+            $rate = CurrencyRate::getCurrentRate($salesOrder->currency_code, $toCurrency, $date);
+            if (!$rate) {
+                // If no conversion possible, return original values
+                return [
+                    'unit_price' => $this->unit_price,
+                    'subtotal' => $this->subtotal,
+                    'discount' => $this->discount,
+                    'tax' => $this->tax,
+                    'total' => $this->total
+                ];
+            }
+            
+            return [
+                'unit_price' => $this->unit_price * $rate,
+                'subtotal' => $this->subtotal * $rate,
+                'discount' => $this->discount * $rate,
+                'tax' => $this->tax * $rate,
+                'total' => $this->total * $rate
+            ];
+        }
+        
+        return [
+            'unit_price' => $this->base_currency_unit_price * $rate,
+            'subtotal' => $this->base_currency_subtotal * $rate,
+            'discount' => $this->base_currency_discount * $rate,
+            'tax' => $this->base_currency_tax * $rate,
+            'total' => $this->base_currency_total * $rate
+        ];
     }
 }

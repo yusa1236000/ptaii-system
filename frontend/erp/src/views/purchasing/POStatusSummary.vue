@@ -1,729 +1,685 @@
+<!-- src/views/purchasing/POStatusSummary.vue -->
 <template>
-    <div class="po-status-container">
-        <!-- template content unchanged -->
+    <div class="po-status-summary">
+      <div class="page-header mb-6">
+        <h1 class="text-2xl font-semibold">Purchase Order Status Summary</h1>
+        <p class="text-gray-500">Track and manage purchase orders by status</p>
+      </div>
+
+      <div class="filters bg-white p-4 rounded-lg shadow mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="filter-group">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+            <select v-model="filters.dateRange" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="180">Last 6 Months</option>
+              <option value="365">Last Year</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+
+          <div class="filter-group" v-if="filters.dateRange === 'custom'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <input type="date" v-model="filters.startDate" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+          </div>
+
+          <div class="filter-group" v-if="filters.dateRange === 'custom'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <input type="date" v-model="filters.endDate" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+          </div>
+
+          <div class="filter-group">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
+            <select v-model="filters.vendorId" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+              <option value="">All Vendors</option>
+              <option v-for="vendor in vendors" :key="vendor.vendor_id" :value="vendor.vendor_id">
+                {{ vendor.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select v-model="filters.status" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+              <option value="">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="submitted">Submitted</option>
+              <option value="approved">Approved</option>
+              <option value="sent">Sent</option>
+              <option value="partial">Partial</option>
+              <option value="received">Received</option>
+              <option value="completed">Completed</option>
+              <option value="canceled">Canceled</option>
+            </select>
+          </div>
+
+          <div class="filter-group md:col-span-2 flex items-end">
+            <button @click="applyFilters" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded">
+              Apply Filters
+            </button>
+            <button @click="resetFilters" class="ml-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded">
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-cards grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="card p-4 bg-white rounded-lg shadow text-center relative overflow-hidden">
+          <div class="status-indicator absolute top-0 left-0 w-full h-1 bg-gray-300"></div>
+          <h3 class="text-lg font-semibold text-gray-700">Total POs</h3>
+          <p class="text-3xl font-bold text-gray-800 my-2">{{ summary.totalPOs }}</p>
+          <p class="text-sm text-gray-500">Value: ${{ formatNumber(summary.totalValue) }}</p>
+        </div>
+
+        <div class="card p-4 bg-white rounded-lg shadow text-center relative overflow-hidden">
+          <div class="status-indicator absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
+          <h3 class="text-lg font-semibold text-gray-700">Open POs</h3>
+          <p class="text-3xl font-bold text-blue-600 my-2">{{ summary.openPOs }}</p>
+          <p class="text-sm text-gray-500">Value: ${{ formatNumber(summary.openValue) }}</p>
+        </div>
+
+        <div class="card p-4 bg-white rounded-lg shadow text-center relative overflow-hidden">
+          <div class="status-indicator absolute top-0 left-0 w-full h-1 bg-yellow-500"></div>
+          <h3 class="text-lg font-semibold text-gray-700">Pending Receipt</h3>
+          <p class="text-3xl font-bold text-yellow-600 my-2">{{ summary.pendingPOs }}</p>
+          <p class="text-sm text-gray-500">Value: ${{ formatNumber(summary.pendingValue) }}</p>
+        </div>
+
+        <div class="card p-4 bg-white rounded-lg shadow text-center relative overflow-hidden">
+          <div class="status-indicator absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+          <h3 class="text-lg font-semibold text-gray-700">Completed</h3>
+          <p class="text-3xl font-bold text-green-600 my-2">{{ summary.completedPOs }}</p>
+          <p class="text-sm text-gray-500">Value: ${{ formatNumber(summary.completedValue) }}</p>
+        </div>
+      </div>
+
+      <div class="charts-grid grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="chart-card bg-white p-4 rounded-lg shadow">
+          <h3 class="text-lg font-semibold mb-4">PO Status Distribution</h3>
+          <div class="chart-container" style="height: 300px;">
+            <canvas ref="statusDistributionChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card bg-white p-4 rounded-lg shadow">
+          <h3 class="text-lg font-semibold mb-4">PO Value by Status</h3>
+          <div class="chart-container" style="height: 300px;">
+            <canvas ref="valueByStatusChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-details">
+        <div class="tab-header bg-white p-4 rounded-t-lg shadow flex border-b">
+          <button
+            v-for="tab in statusTabs"
+            :key="tab.value"
+            @click="currentTab = tab.value"
+            class="tab-button py-2 px-4 font-medium rounded-t-lg mr-2"
+            :class="currentTab === tab.value ? 'bg-blue-100 text-blue-700 border-b-2 border-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+          >
+            {{ tab.label }}
+            <span class="ml-1 px-2 py-0.5 text-xs rounded-full"
+              :class="getStatusBadgeClass(tab.value)">
+              {{ getPOCountByStatus(tab.value) }}
+            </span>
+          </button>
+        </div>
+
+        <div class="tab-content bg-white p-4 rounded-b-lg shadow">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PO Number</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Delivery</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr v-for="po in filteredPOs" :key="po.po_id">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                    <router-link :to="`/purchasing/orders/${po.po_id}`">
+                      {{ po.po_number }}
+                    </router-link>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ po.vendor ? po.vendor.name : 'N/A' }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(po.po_date) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${{ formatNumber(po.total_amount) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                      :class="getStatusClass(po.status)">
+                      {{ po.status }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ formatDate(po.expected_delivery) }}
+                    <span v-if="isDeliveryLate(po)" class="text-xs text-red-600 ml-2">
+                      <i class="fas fa-exclamation-circle"></i> Late
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <div class="flex space-x-2">
+                      <router-link :to="`/purchasing/orders/${po.po_id}/track`" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-chart-line"></i>
+                      </router-link>
+                      <router-link :to="`/purchasing/orders/${po.po_id}/edit`" class="text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-edit"></i>
+                      </router-link>
+                      <button v-if="canUpdateStatus(po.status)" @click="openStatusUpdateModal(po)" class="text-purple-600 hover:text-purple-800">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-4 flex justify-between items-center">
+            <div class="text-sm text-gray-700">
+              Showing <span class="font-medium">{{ paginationInfo.from }}</span> to <span class="font-medium">{{ paginationInfo.to }}</span> of <span class="font-medium">{{ paginationInfo.total }}</span> purchase orders
+            </div>
+            <pagination-component
+              :current-page="paginationInfo.current_page"
+              :last-page="paginationInfo.last_page"
+              @page-changed="changePage">
+            </pagination-component>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Update Modal (would be implemented with a modal component) -->
+      <div v-if="showStatusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-96">
+          <h3 class="text-lg font-semibold mb-4">Update PO Status</h3>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
+            <div class="px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+              <span class="px-2 py-1 text-xs rounded-full" :class="getStatusClass(selectedPO.status)">
+                {{ selectedPO.status }}
+              </span>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+            <select v-model="newStatus" class="w-full border border-gray-300 rounded-md shadow-sm px-3 py-2">
+              <option v-for="status in availableStatuses" :key="status" :value="status">{{ status }}</option>
+            </select>
+          </div>
+          <div class="flex justify-end space-x-2">
+            <button @click="closeStatusModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md">Cancel</button>
+            <button @click="updatePOStatus" class="px-4 py-2 bg-blue-600 text-white rounded-md">Update</button>
+          </div>
+        </div>
+      </div>
     </div>
-</template>
+  </template>
 
-<script>
-import axios from "axios";
-import POStatusDistributionChart from "./POStatusDistributionChart.vue";
-import POStatusTrendChart from "./POStatusTrendChart.vue";
-import DeliveryPerformanceChart from "./DeliveryPerformanceChart.vue";
+  <script>
+  import { ref, onMounted, reactive, computed } from 'vue';
+  import axios from 'axios';
+  import Chart from 'chart.js/auto';
 
-export default {
-    name: "POStatusSummary",
-    components: {
-        //POStatusDistributionChart,
-        //POStatusTrendChart,
-        //DeliveryPerformanceChart,
-    },
-    data() {
-        return {
-            loading: true,
-            filters: {
-                dateRange: "month",
-                startDate: null,
-                endDate: null,
-                vendor: "",
-            },
-            vendors: [],
-            summary: {
-                draftCount: 0,
-                approvedCount: 0,
-                sentCount: 0,
-                partialCount: 0,
-                completedCount: 0,
-                canceledCount: 0,
-                draftChange: 0,
-                approvedChange: 0,
-                sentChange: 0,
-                partialChange: 0,
-                completedChange: 0,
-                canceledChange: 0,
-            },
-            statusData: [],
-            trendData: [],
-            purchaseOrders: [],
-            deliveryPerformance: {
-                onTimePercentage: 0,
-                totalDeliveries: 0,
-                onTimeCount: 0,
-                lateCount: 0,
-                avgDelay: 0,
-                monthlyData: [],
-            },
-            chartType: "pie",
+  export default {
+    name: 'POStatusSummary',
+    setup() {
+      const statusDistributionChart = ref(null);
+      const valueByStatusChart = ref(null);
+      const vendors = ref([]);
+      const purchaseOrders = ref([]);
+      const currentTab = ref('all');
+      const showStatusModal = ref(false);
+      const selectedPO = ref({});
+      const newStatus = ref('');
 
-            // Table sorting and pagination
-            sortField: "po_date",
-            sortDirection: "desc",
-            currentPage: 1,
-            pageSize: 10,
+      const filters = reactive({
+        dateRange: '180',
+        startDate: '',
+        endDate: '',
+        vendorId: '',
+        status: ''
+      });
 
-            // Status update modal
-            selectedPO: null,
-            newStatus: "",
-            availableStatuses: [],
+      const summary = reactive({
+        totalPOs: 0,
+        totalValue: 0,
+        openPOs: 0,
+        openValue: 0,
+        pendingPOs: 0,
+        pendingValue: 0,
+        completedPOs: 0,
+        completedValue: 0
+      });
+
+      const paginationInfo = reactive({
+        current_page: 1,
+        from: 1,
+        to: 0,
+        total: 0,
+        last_page: 1
+      });
+
+      const statusTabs = [
+        { label: 'All', value: 'all' },
+        { label: 'Draft', value: 'draft' },
+        { label: 'Submitted', value: 'submitted' },
+        { label: 'Approved', value: 'approved' },
+        { label: 'Sent', value: 'sent' },
+        { label: 'Partial', value: 'partial' },
+        { label: 'Received', value: 'received' },
+        { label: 'Completed', value: 'completed' },
+        { label: 'Canceled', value: 'canceled' }
+      ];
+
+      const filteredPOs = computed(() => {
+        if (currentTab.value === 'all') {
+          return purchaseOrders.value;
+        }
+        return purchaseOrders.value.filter(po => po.status.toLowerCase() === currentTab.value);
+      });
+
+      const availableStatuses = computed(() => {
+        const currentStatus = selectedPO.value.status;
+        if (!currentStatus) return [];
+
+        // Define valid status transitions based on your business rules
+        const validTransitions = {
+          'draft': ['submitted', 'canceled'],
+          'submitted': ['approved', 'canceled'],
+          'approved': ['sent', 'canceled'],
+          'sent': ['partial', 'received', 'canceled'],
+          'partial': ['completed', 'canceled'],
+          'received': ['completed', 'canceled'],
+          'completed': ['canceled'],
+          'canceled': []
         };
-    },
-    computed: {
-        filteredPOs() {
-            let data = [...this.purchaseOrders];
 
-            // Apply vendor filter
-            if (this.filters.vendor) {
-                data = data.filter(
-                    (po) =>
-                        po.vendor_id.toString() ===
-                        this.filters.vendor.toString()
-                );
+        return validTransitions[currentStatus.toLowerCase()] || [];
+      });
+
+      const loadVendors = async () => {
+        try {
+          const response = await axios.get('/api/vendors');
+          if (response.data && response.data.data) {
+            vendors.value = response.data.data;
+          }
+        } catch (error) {
+          console.error('Error loading vendors:', error);
+        }
+      };
+
+      const loadPurchaseOrders = async () => {
+        try {
+          // Construct query parameters from filters
+          const params = {
+            page: paginationInfo.current_page,
+            per_page: 10
+          };
+
+          if (filters.vendorId) params.vendor_id = filters.vendorId;
+          if (filters.status) params.status = filters.status;
+          if (filters.startDate) params.date_from = filters.startDate;
+          if (filters.endDate) params.date_to = filters.endDate;
+
+          // Make API request
+          const response = await axios.get('/api/purchase-orders', { params });
+
+          if (response.data && response.data.data) {
+            purchaseOrders.value = response.data.data.data || [];
+
+            // Update pagination info
+            paginationInfo.current_page = response.data.data.current_page;
+            paginationInfo.from = response.data.data.from || 1;
+            paginationInfo.to = response.data.data.to || 0;
+            paginationInfo.total = response.data.data.total || 0;
+            paginationInfo.last_page = response.data.data.last_page || 1;
+
+            // Update summary data
+            updateSummary();
+            renderCharts();
+          }
+        } catch (error) {
+          console.error('Error loading purchase orders:', error);
+        }
+      };
+
+      const updateSummary = () => {
+        // Reset summary values
+        summary.totalPOs = purchaseOrders.value.length;
+        summary.totalValue = purchaseOrders.value.reduce((total, po) => total + (po.total_amount || 0), 0);
+
+        // Count open POs (draft, submitted, approved, sent)
+        const openStatuses = ['draft', 'submitted', 'approved', 'sent'];
+        const openPOs = purchaseOrders.value.filter(po => openStatuses.includes(po.status.toLowerCase()));
+        summary.openPOs = openPOs.length;
+        summary.openValue = openPOs.reduce((total, po) => total + (po.total_amount || 0), 0);
+
+        // Count pending receipt POs (sent, partial)
+        const pendingStatuses = ['sent', 'partial'];
+        const pendingPOs = purchaseOrders.value.filter(po => pendingStatuses.includes(po.status.toLowerCase()));
+        summary.pendingPOs = pendingPOs.length;
+        summary.pendingValue = pendingPOs.reduce((total, po) => total + (po.total_amount || 0), 0);
+
+        // Count completed POs
+        const completedPOs = purchaseOrders.value.filter(po => po.status.toLowerCase() === 'completed');
+        summary.completedPOs = completedPOs.length;
+        summary.completedValue = completedPOs.reduce((total, po) => total + (po.total_amount || 0), 0);
+      };
+
+      const renderCharts = () => {
+        // Status Distribution Chart
+        if (statusDistributionChart.value) {
+          // Count POs by status
+          const statusCounts = {};
+          statusTabs.forEach(tab => {
+            if (tab.value !== 'all') {
+              statusCounts[tab.value] = purchaseOrders.value.filter(
+                po => po.status.toLowerCase() === tab.value
+              ).length;
             }
+          });
 
-            // Apply sorting
-            data.sort((a, b) => {
-                let fieldA = a[this.sortField];
-                let fieldB = b[this.sortField];
+          // Prepare data for chart
+          const labels = Object.keys(statusCounts).map(status =>
+            status.charAt(0).toUpperCase() + status.slice(1)
+          );
+          const data = Object.values(statusCounts);
 
-                // Handle nested fields (e.g., vendor.name)
-                if (this.sortField === "vendor") {
-                    fieldA = a.vendor?.name;
-                    fieldB = b.vendor?.name;
+          // Define colors for each status
+          const colors = {
+            'draft': '#f1f5f9',       // Light gray
+            'submitted': '#cbd5e1',   // Gray
+            'approved': '#2563eb',    // Blue
+            'sent': '#3b82f6',        // Lighter blue
+            'partial': '#f59e0b',     // Amber
+            'received': '#10b981',    // Green
+            'completed': '#059669',   // Darker green
+            'canceled': '#ef4444'     // Red
+          };
+
+          const backgroundColor = Object.keys(statusCounts).map(status => colors[status]);
+
+          // Create chart
+          new Chart(statusDistributionChart.value.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: data,
+                backgroundColor: backgroundColor
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'right',
+                  labels: {
+                    padding: 20
+                  }
                 }
-
-                // Handle numeric fields
-                if (this.sortField === "total_amount") {
-                    fieldA = parseFloat(fieldA);
-                    fieldB = parseFloat(fieldB);
-                }
-
-                // Handle date fields
-                if (
-                    this.sortField === "po_date" ||
-                    this.sortField === "expected_delivery"
-                ) {
-                    fieldA = new Date(fieldA);
-                    fieldB = new Date(fieldB);
-                }
-
-                if (fieldA < fieldB) {
-                    return this.sortDirection === "asc" ? -1 : 1;
-                }
-                if (fieldA > fieldB) {
-                    return this.sortDirection === "asc" ? 1 : -1;
-                }
-                return 0;
-            });
-
-            return data;
-        },
-        paginatedPOs() {
-            const start = (this.currentPage - 1) * this.pageSize;
-            const end = start + this.pageSize;
-            return this.filteredPOs.slice(start, end);
-        },
-        totalPages() {
-            return Math.ceil(this.filteredPOs.length / this.pageSize);
-        },
-        paginationStart() {
-            return (this.currentPage - 1) * this.pageSize;
-        },
-        paginationEnd() {
-            const end = this.paginationStart + this.pageSize;
-            return end > this.filteredPOs.length
-                ? this.filteredPOs.length
-                : end;
-        },
-    },
-    created() {
-        // Set default date range (last 30 days)
-        const end = new Date();
-        const start = new Date();
-        start.setDate(start.getDate() - 30);
-
-        this.filters.startDate = this.formatDateForInput(start);
-        this.filters.endDate = this.formatDateForInput(end);
-
-        this.loadInitialData();
-    },
-    methods: {
-        async loadInitialData() {
-            this.loading = true;
-
-            try {
-                // Load vendors list for the filter
-                const vendorsResponse = await axios.get("/api/vendors");
-                this.vendors = vendorsResponse.data.data || [];
-
-                // Load PO status data
-                await this.loadPOStatusData();
-            } catch (error) {
-                console.error("Error loading initial data:", error);
-                // Load mock data for demonstration
-                this.loadMockData();
-            } finally {
-                this.loading = false;
+              }
             }
-        },
+          });
+        }
 
-        async loadPOStatusData() {
-            try {
-                // Calculate date range based on filter
-                let startDate = this.filters.startDate;
-                let endDate = this.filters.endDate;
+        // Value by Status Chart
+        if (valueByStatusChart.value) {
+          // Calculate total value by status
+          const statusValues = {};
+          statusTabs.forEach(tab => {
+            if (tab.value !== 'all') {
+              statusValues[tab.value] = purchaseOrders.value
+                .filter(po => po.status.toLowerCase() === tab.value)
+                .reduce((total, po) => total + (po.total_amount || 0), 0);
+            }
+          });
 
-                if (this.filters.dateRange !== "custom") {
-                    const end = new Date();
-                    const start = new Date();
+          // Prepare data for chart
+          const labels = Object.keys(statusValues).map(status =>
+            status.charAt(0).toUpperCase() + status.slice(1)
+          );
+          const data = Object.values(statusValues);
 
-                    if (this.filters.dateRange === "month") {
-                        start.setDate(start.getDate() - 30);
-                    } else if (this.filters.dateRange === "quarter") {
-                        start.setMonth(start.getMonth() - 3);
-                    } else if (this.filters.dateRange === "year") {
-                        start.setFullYear(start.getFullYear() - 1);
+          // Define colors for each status (same as above)
+          const colors = {
+            'draft': '#f1f5f9',
+            'submitted': '#cbd5e1',
+            'approved': '#2563eb',
+            'sent': '#3b82f6',
+            'partial': '#f59e0b',
+            'received': '#10b981',
+            'completed': '#059669',
+            'canceled': '#ef4444'
+          };
+
+          const backgroundColor = Object.keys(statusValues).map(status => colors[status]);
+
+          // Create chart
+          new Chart(valueByStatusChart.value.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Total Value',
+                data: data,
+                backgroundColor: backgroundColor
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(tooltipItem) {
+                      return `${tooltipItem.raw.toLocaleString()}`;
                     }
-
-                    startDate = this.formatDateForInput(start);
-                    endDate = this.formatDateForInput(end);
-
-                    // Update the date inputs for UI consistency
-                    this.filters.startDate = startDate;
-                    this.filters.endDate = endDate;
+                  }
                 }
-
-                // API call to get PO status data
-                const response = await axios.get(
-                    "/api/purchasing/po-status-summary",
-                    {
-                        params: {
-                            start_date: startDate,
-                            end_date: endDate,
-                            vendor_id: this.filters.vendor,
-                        },
-                    }
-                );
-
-                const data = response.data.data;
-
-                // Update component data
-                this.summary = data.summary;
-                this.statusData = data.statusDistribution;
-                this.trendData = data.statusTrend;
-                this.purchaseOrders = data.purchaseOrders;
-                this.deliveryPerformance = data.deliveryPerformance;
-            } catch (error) {
-                console.error("Error loading PO status data:", error);
-                // Load mock data if API fails
-                this.loadMockData();
-            }
-        },
-
-        // Mock data for development/demo
-        loadMockData() {
-            // Mock summary data
-            this.summary = {
-                draftCount: 14,
-                approvedCount: 32,
-                sentCount: 48,
-                partialCount: 18,
-                completedCount: 62,
-                canceledCount: 6,
-                draftChange: -5.2,
-                approvedChange: 12.3,
-                sentChange: 7.5,
-                partialChange: -2.8,
-                completedChange: 15.6,
-                canceledChange: -10.4,
-            };
-
-            // Mock status distribution data
-            this.statusData = [
-                { name: "Draft", value: 14, color: "#94a3b8" },
-                { name: "Approved", value: 32, color: "#3b82f6" },
-                { name: "Sent", value: 48, color: "#0ea5e9" },
-                { name: "Partial", value: 18, color: "#f59e0b" },
-                { name: "Completed", value: 62, color: "#10b981" },
-                { name: "Canceled", value: 6, color: "#ef4444" },
-            ];
-
-            // Mock trend data
-            this.trendData = [];
-            const months = [
-                "Jan",
-                "Feb",
-                "Mar",
-                "Apr",
-                "May",
-                "Jun",
-                "Jul",
-                "Aug",
-                "Sep",
-                "Oct",
-                "Nov",
-                "Dec",
-            ];
-
-            for (let i = 0; i < 12; i++) {
-                const month = months[i];
-                this.trendData.push({
-                    month,
-                    draft: Math.floor(Math.random() * 10) + 5,
-                    approved: Math.floor(Math.random() * 15) + 10,
-                    sent: Math.floor(Math.random() * 20) + 15,
-                    partial: Math.floor(Math.random() * 10) + 5,
-                    completed: Math.floor(Math.random() * 25) + 20,
-                    canceled: Math.floor(Math.random() * 5) + 1,
-                });
-            }
-
-            // Mock PO data
-            this.purchaseOrders = [];
-            const statuses = [
-                "draft",
-                "approved",
-                "sent",
-                "partial",
-                "completed",
-                "canceled",
-            ];
-            const vendors = [
-                { vendor_id: 1, name: "ABC Supplies" },
-                { vendor_id: 2, name: "XYZ Manufacturing" },
-                { vendor_id: 3, name: "Global Distributors" },
-                { vendor_id: 4, name: "Tech Solutions Inc" },
-                { vendor_id: 5, name: "Reliable Parts Co" },
-            ];
-
-            // Generate mock vendors if needed
-            if (this.vendors.length === 0) {
-                this.vendors = vendors;
-            }
-
-            // Generate mock POs
-            for (let i = 1; i <= 100; i++) {
-                const vendor =
-                    vendors[Math.floor(Math.random() * vendors.length)];
-                const status =
-                    statuses[Math.floor(Math.random() * statuses.length)];
-                const amount = parseFloat(
-                    (Math.random() * 25000 + 1000).toFixed(2)
-                );
-
-                // Generate dates
-                const poDate = new Date();
-                poDate.setDate(
-                    poDate.getDate() - Math.floor(Math.random() * 180)
-                ); // Last 6 months
-
-                const expectedDelivery = new Date(poDate);
-                expectedDelivery.setDate(
-                    poDate.getDate() + Math.floor(Math.random() * 30) + 15
-                ); // 15-45 days after PO date
-
-                this.purchaseOrders.push({
-                    po_id: i,
-                    po_number: `PO-2023-${(1000 + i).toString()}`,
-                    po_date: this.formatDateForInput(poDate),
-                    vendor_id: vendor.vendor_id,
-                    vendor: vendor,
-                    total_amount: amount,
-                    expected_delivery:
-                        this.formatDateForInput(expectedDelivery),
-                    status,
-                });
-            }
-
-            // Mock delivery performance data
-            const onTimeCount = 142;
-            const lateCount = 28;
-            const totalDeliveries = onTimeCount + lateCount;
-            const onTimePercentage = Math.round(
-                (onTimeCount / totalDeliveries) * 100
-            );
-
-            this.deliveryPerformance = {
-                onTimePercentage,
-                totalDeliveries,
-                onTimeCount,
-                lateCount,
-                avgDelay: 3.5,
-                monthlyData: [],
-            };
-
-            // Generate monthly delivery performance data
-            for (let i = 0; i < 12; i++) {
-                const month = months[i];
-                const onTime = Math.floor(Math.random() * 20) + 10;
-                const late = Math.floor(Math.random() * 8) + 1;
-                const percentage = Math.round((onTime / (onTime + late)) * 100);
-
-                this.deliveryPerformance.monthlyData.push({
-                    month,
-                    onTime,
-                    late,
-                    percentage,
-                });
-            }
-        },
-
-        applyFilters() {
-            this.loading = true;
-            this.currentPage = 1; // Reset pagination
-            this.loadPOStatusData();
-        },
-
-        resetFilters() {
-            this.filters.dateRange = "month";
-            this.filters.vendor = "";
-
-            // Reset date range to last 30 days
-            const end = new Date();
-            const start = new Date();
-            start.setDate(start.getDate() - 30);
-
-            this.filters.startDate = this.formatDateForInput(start);
-            this.filters.endDate = this.formatDateForInput(end);
-
-            this.applyFilters();
-        },
-
-        sortTable(field) {
-            if (this.sortField === field) {
-                this.sortDirection =
-                    this.sortDirection === "asc" ? "desc" : "asc";
-            } else {
-                this.sortField = field;
-                this.sortDirection = "asc";
-            }
-        },
-
-        getSortIconClass(field) {
-            if (this.sortField !== field) {
-                return "fas fa-sort";
-            }
-            return this.sortDirection === "asc"
-                ? "fas fa-sort-up"
-                : "fas fa-sort-down";
-        },
-
-        changePage(page) {
-            if (page < 1 || page > this.totalPages) {
-                return;
-            }
-            this.currentPage = page;
-        },
-
-        downloadCSV() {
-            // Generate CSV data
-            const headers = [
-                "PO Number",
-                "Date",
-                "Vendor",
-                "Amount",
-                "Expected Delivery",
-                "Status",
-            ];
-            let csvContent = headers.join(",") + "\n";
-
-            this.filteredPOs.forEach((po) => {
-                const row = [
-                    po.po_number,
-                    this.formatDate(po.po_date),
-                    po.vendor.name,
-                    po.total_amount,
-                    this.formatDate(po.expected_delivery),
-                    po.status,
-                ];
-                csvContent += row.join(",") + "\n";
-            });
-
-            // Create download link
-            const blob = new Blob([csvContent], {
-                type: "text/csv;charset=utf-8;",
-            });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute(
-                "download",
-                `po-status-${this.formatDateForFilename(new Date())}.csv`
-            );
-            link.style.visibility = "hidden";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        },
-
-        generateReport() {
-            // This would typically generate a PDF report
-            // For now, just show an alert
-            alert("Report generation functionality would be implemented here.");
-        },
-
-        openStatusModal(po) {
-            this.selectedPO = po;
-            this.newStatus = po.status;
-
-            // Determine available status transitions
-            this.availableStatuses = this.getAvailableStatuses(po.status);
-
-            // Open the modal - you would need to use a proper modal implementation here
-            // For Bootstrap, this would be:
-            // $('#statusUpdateModal').modal('show');
-        },
-
-        async updateStatus() {
-            if (!this.selectedPO || this.newStatus === this.selectedPO.status) {
-                return;
-            }
-
-            try {
-                // API call to update status
-                await axios.patch(
-                    `/api/purchase-orders/${this.selectedPO.po_id}/status`,
-                    {
-                        status: this.newStatus,
-                    }
-                );
-
-                // Update local data
-                const poIndex = this.purchaseOrders.findIndex(
-                    (po) => po.po_id === this.selectedPO.po_id
-                );
-                if (poIndex !== -1) {
-                    this.purchaseOrders[poIndex].status = this.newStatus;
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+ticks: {
+  callback: function(value) {
+    return value.toLocaleString();
+  }
+}
                 }
-
-                // Close modal
-                // $('#statusUpdateModal').modal('hide');
-
-                // Refresh data
-                this.loadPOStatusData();
-            } catch (error) {
-                console.error("Error updating PO status:", error);
-                alert("Failed to update PO status. Please try again.");
+              }
             }
-        },
+          });
+        }
+      };
 
-        getAvailableStatuses(currentStatus) {
-            // Define valid status transitions based on current status
-            const validTransitions = {
-                draft: ["submitted", "canceled"],
-                submitted: ["approved", "canceled"],
-                approved: ["sent", "canceled"],
-                sent: ["partial", "received", "canceled"],
-                partial: ["completed", "canceled"],
-                received: ["completed", "canceled"],
-                completed: ["canceled"],
-                canceled: [],
-            };
+      const applyFilters = () => {
+        paginationInfo.current_page = 1;
+        loadPurchaseOrders();
+      };
 
-            return validTransitions[currentStatus] || [];
-        },
+      const resetFilters = () => {
+        filters.dateRange = '180';
+        filters.startDate = '';
+        filters.endDate = '';
+        filters.vendorId = '';
+        filters.status = '';
+        paginationInfo.current_page = 1;
+        loadPurchaseOrders();
+      };
 
-        canEditStatus(status) {
-            // Check if the status can be edited (has valid transitions)
-            const transitions = this.getAvailableStatuses(status);
-            return transitions.length > 0;
-        },
+      const changePage = (page) => {
+        paginationInfo.current_page = page;
+        loadPurchaseOrders();
+      };
 
-        formatNumber(number) {
-            return number
-                ? number.toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                  })
-                : "0.00";
-        },
+      const getPOCountByStatus = (status) => {
+        if (status === 'all') {
+          return purchaseOrders.value.length;
+        }
+        return purchaseOrders.value.filter(po => po.status.toLowerCase() === status).length;
+      };
 
-        formatDate(dateString) {
-            if (!dateString) return "N/A";
-            const date = new Date(dateString);
-            return date.toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-            });
-        },
+      const getStatusClass = (status) => {
+        const statusClasses = {
+          'draft': 'bg-gray-100 text-gray-800',
+          'submitted': 'bg-blue-100 text-blue-800',
+          'approved': 'bg-cyan-100 text-cyan-800',
+          'sent': 'bg-indigo-100 text-indigo-800',
+          'partial': 'bg-amber-100 text-amber-800',
+          'received': 'bg-green-100 text-green-800',
+          'completed': 'bg-emerald-100 text-emerald-800',
+          'canceled': 'bg-red-100 text-red-800'
+        };
 
-        formatDateForInput(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const day = String(date.getDate()).padStart(2, "0");
-            return `${year}-${month}-${day}`;
-        },
+        return statusClasses[status.toLowerCase()] || 'bg-gray-100 text-gray-800';
+      };
 
-        formatDateForFilename(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const day = String(date.getDate()).padStart(2, "0");
-            return `${year}${month}${day}`;
-        },
+      const getStatusBadgeClass = (status) => {
+        if (status === 'all') return 'bg-gray-200 text-gray-800';
 
-        getStatusBadgeClass(status) {
-            switch (status) {
-                case "draft":
-                    return "badge-secondary";
-                case "submitted":
-                    return "badge-info";
-                case "approved":
-                    return "badge-primary";
-                case "sent":
-                    return "badge-primary";
-                case "partial":
-                    return "badge-warning";
-                case "received":
-                    return "badge-success";
-                case "completed":
-                    return "badge-success";
-                case "canceled":
-                    return "badge-danger";
-                default:
-                    return "badge-secondary";
-            }
-        },
+        const statusClasses = {
+          'draft': 'bg-gray-200 text-gray-800',
+          'submitted': 'bg-blue-200 text-blue-800',
+          'approved': 'bg-cyan-200 text-cyan-800',
+          'sent': 'bg-indigo-200 text-indigo-800',
+          'partial': 'bg-amber-200 text-amber-800',
+          'received': 'bg-green-200 text-green-800',
+          'completed': 'bg-emerald-200 text-emerald-800',
+          'canceled': 'bg-red-200 text-red-800'
+        };
 
-        getDeliveryPerformanceClass(percentage) {
-            if (percentage >= 90) return "circle-excellent";
-            if (percentage >= 80) return "circle-good";
-            if (percentage >= 70) return "circle-adequate";
-            if (percentage >= 60) return "circle-fair";
-            return "circle-poor";
-        },
-    },
-};
-</script>
+        return statusClasses[status.toLowerCase()] || 'bg-gray-200 text-gray-800';
+      };
 
-<style scoped>
-.po-status-container {
-    margin-bottom: 2rem;
-}
+      const formatNumber = (num) => {
+        return num ? num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
+      };
 
-.header-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-}
+      const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      };
 
-.filter-controls {
-    flex-wrap: wrap;
-}
+      const isDeliveryLate = (po) => {
+        if (!po.expected_delivery) return false;
 
-.chart-container {
-    width: 100%;
-    height: 100%;
-}
+        const today = new Date();
+        const expectedDate = new Date(po.expected_delivery);
 
-.status-icon-container {
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
+        return expectedDate < today && ['sent', 'partial'].includes(po.status.toLowerCase());
+      };
 
-.status-icon-container i {
-    font-size: 1.25rem;
-}
+      const canUpdateStatus = (status) => {
+        // Only allow status updates for certain statuses
+        const updatableStatuses = ['draft', 'submitted', 'approved', 'sent', 'partial', 'received'];
+        return updatableStatuses.includes(status.toLowerCase());
+      };
 
-.sortable {
-    cursor: pointer;
-}
+      const openStatusUpdateModal = (po) => {
+        selectedPO.value = po;
+        newStatus.value = availableStatuses.value[0] || '';
+        showStatusModal.value = true;
+      };
 
-.sortable i {
-    margin-left: 5px;
-    font-size: 0.8rem;
-}
+      const closeStatusModal = () => {
+        showStatusModal.value = false;
+        selectedPO.value = {};
+        newStatus.value = '';
+      };
 
-.page-link {
-    cursor: pointer;
-}
+      const updatePOStatus = async () => {
+        try {
+          // Call the API to update the status
+          await axios.patch(`/api/purchase-orders/${selectedPO.value.po_id}/status`, {
+            status: newStatus.value
+          });
 
-/* Progress circle styles */
-.progress-circle {
-    width: 150px;
-    height: 150px;
-}
+          // Update the local PO status
+          const index = purchaseOrders.value.findIndex(po => po.po_id === selectedPO.value.po_id);
+          if (index !== -1) {
+            purchaseOrders.value[index].status = newStatus.value;
+          }
 
-.circular-chart {
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg);
-}
+          // Update summary and charts
+          updateSummary();
+          renderCharts();
 
-.circle-bg {
-    fill: none;
-    stroke: #eee;
-    stroke-width: 3.8;
-}
+          // Close the modal
+          closeStatusModal();
 
-.circle-excellent,
-.circle-good,
-.circle-adequate,
-.circle-fair,
-.circle-poor {
-    fill: none;
-    stroke-width: 3.8;
-    stroke-linecap: round;
-}
+          // Show success message (would implement with a toast/notification component)
+          alert('Status updated successfully');
+        } catch (error) {
+          console.error('Error updating status:', error);
+          alert('Failed to update status: ' + (error.response?.data?.message || error.message));
+        }
+      };
 
-.circle-excellent {
-    stroke: var(--success-color);
-}
+      onMounted(() => {
+        loadVendors();
+        loadPurchaseOrders();
+      });
 
-.circle-good {
-    stroke: var(--primary-color);
-}
-
-.circle-adequate {
-    stroke: var(--primary-light);
-}
-
-.circle-fair {
-    stroke: var(--warning-color);
-}
-
-.circle-poor {
-    stroke: var(--danger-color);
-}
-
-.percentage {
-    fill: var(--gray-700);
-    font-size: 0.5em;
-    text-anchor: middle;
-    font-weight: bold;
-}
-
-.progress-label {
-    position: absolute;
-    bottom: -30px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-weight: 500;
-    color: var(--gray-700);
-}
-
-.delivery-stat {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 20px;
-}
-
-.stat-label {
-    font-weight: 500;
-}
-
-@media (max-width: 768px) {
-    .header-section {
-        flex-direction: column;
+      return {
+        statusDistributionChart,
+        valueByStatusChart,
+        vendors,
+        purchaseOrders,
+        filters,
+        summary,
+        paginationInfo,
+        statusTabs,
+        currentTab,
+        filteredPOs,
+        showStatusModal,
+        selectedPO,
+        newStatus,
+        availableStatuses,
+        applyFilters,
+        resetFilters,
+        changePage,
+        getPOCountByStatus,
+        getStatusClass,
+        getStatusBadgeClass,
+        formatNumber,
+        formatDate,
+        isDeliveryLate,
+        canUpdateStatus,
+        openStatusUpdateModal,
+        closeStatusModal,
+        updatePOStatus
+      };
     }
+  };
+  </script>
 
-    .filter-controls {
-        margin-top: 1rem;
-        width: 100%;
-    }
-}
-</style>
+  <style scoped>
+  .po-status-summary {
+    min-height: calc(100vh - 150px);
+  }
+
+  .tab-button {
+    transition: background-color 0.2s;
+  }
+
+  .status-indicator {
+    height: 4px;
+  }
+  </style>

@@ -10,7 +10,7 @@ class WorkCenter extends Model
 {
     use HasFactory;
 
-    protected $table = 'WorkCenter';
+    protected $table = 'work_centers';
     protected $primaryKey = 'workcenter_id';
     public $timestamps = false;
 

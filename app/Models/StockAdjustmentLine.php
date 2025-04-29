@@ -15,7 +15,7 @@ class StockAdjustmentLine extends Model
         'adjustment_id', 
         'item_id', 
         'warehouse_id', 
-        'location_id', 
+        //'location_id', 
         'book_quantity', 
         'adjusted_quantity', 
         'variance'
@@ -48,10 +48,10 @@ class StockAdjustmentLine extends Model
     /**
      * Get the location for this adjustment line
      */
-    public function location()
-    {
-        return $this->belongsTo(WarehouseLocation::class, 'location_id', 'location_id');
-    }
+    // public function location()
+    // {
+    //     return $this->belongsTo(WarehouseLocation::class, 'location_id', 'location_id');
+    // }
 
     /**
      * Calculate variance percentage

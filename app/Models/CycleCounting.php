@@ -14,7 +14,7 @@ class CycleCounting extends Model
     protected $fillable = [
         'item_id', 
         'warehouse_id', 
-        'location_id', 
+        //'location_id', 
         'book_quantity', 
         'actual_quantity', 
         'variance', 
@@ -51,10 +51,10 @@ class CycleCounting extends Model
     /**
      * Get the location for this count
      */
-    public function location()
-    {
-        return $this->belongsTo(WarehouseLocation::class, 'location_id', 'location_id');
-    }
+    // public function location()
+    // {
+    //     return $this->belongsTo(WarehouseLocation::class, 'location_id', 'location_id');
+    // }
 
     /**
      * Calculate the variance percentage

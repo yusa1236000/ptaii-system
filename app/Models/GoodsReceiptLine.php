@@ -17,7 +17,7 @@ class GoodsReceiptLine extends Model
         'item_id',
         'received_quantity',
         'warehouse_id',
-        'location_id',
+        //'location_id',
         'batch_number'
     ];
 
@@ -41,8 +41,8 @@ class GoodsReceiptLine extends Model
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
-    public function location()
-    {
-        return $this->belongsTo(WarehouseLocation::class, 'location_id');
-    }
+    // public function location()
+    // {
+    //     return $this->belongsTo(WarehouseLocation::class, 'location_id');
+    // }
 }

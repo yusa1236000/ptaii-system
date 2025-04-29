@@ -16,10 +16,10 @@ class Warehouse extends Model
     /**
      * Get the zones for this warehouse
      */
-    public function zones()
-    {
-        return $this->hasMany(WarehouseZone::class, 'warehouse_id', 'warehouse_id');
-    }
+    // public function zones()
+    // {
+    //     return $this->hasMany(WarehouseZone::class, 'warehouse_id', 'warehouse_id');
+    // }
 
     /**
      * Get the stock transactions for this warehouse
@@ -32,17 +32,17 @@ class Warehouse extends Model
     /**
      * Get all locations in this warehouse through zones
      */
-    public function locations()
-    {
-        return $this->hasManyThrough(
-            WarehouseLocation::class,
-            WarehouseZone::class,
-            'warehouse_id', // Foreign key on warehouse_zones
-            'zone_id', // Foreign key on warehouse_locations
-            'warehouse_id', // Local key on warehouses
-            'zone_id' // Local key on warehouse_zones
-        );
-    }
+    // public function locations()
+    // {
+    //     return $this->hasManyThrough(
+    //         WarehouseLocation::class,
+    //         WarehouseZone::class,
+    //         'warehouse_id', // Foreign key on warehouse_zones
+    //         'zone_id', // Foreign key on warehouse_locations
+    //         'warehouse_id', // Local key on warehouses
+    //         'zone_id' // Local key on warehouse_zones
+    //     );
+    // }
 
     /**
      * Get consignment stocks in this warehouse

@@ -21,7 +21,7 @@ class ProductionConsumption extends Model
         'actual_quantity',
         'variance',
         'warehouse_id',
-        'location_id',
+        //'location_id',
     ];
 
     /**
@@ -51,8 +51,8 @@ class ProductionConsumption extends Model
     /**
      * Get the warehouse location that owns the production consumption.
      */
-    public function warehouseLocation(): BelongsTo
-    {
-        return $this->belongsTo(WarehouseLocation::class, 'location_id', 'location_id');
-    }
+    // public function warehouseLocation(): BelongsTo
+    // {
+    //     return $this->belongsTo(WarehouseLocation::class, 'location_id', 'location_id');
+    // }
 }

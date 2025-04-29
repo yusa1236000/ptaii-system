@@ -147,6 +147,13 @@ import BalanceSheetReport from "../views/accounting/reports/BalanceSheetReport.v
 import CashFlowReport from "../views/accounting/reports/CashFlowReport.vue";
 import ReportsConfiguration from "../views/accounting/reports/ReportsConfiguration.vue";
 
+//Purchasing Dashboard dan reporting
+import PurchasingDashboard from "../views/purchasing/PurchasingDashboard.vue";
+import SpendAnalysisPage from "../views/purchasing/SpendAnalysisPage.vue";
+import VendorPerformanceReport from "../views/purchasing/VendorPerformanceReport.vue";
+import POStatusSummary from "../views/purchasing/POStatusSummary.vue";
+import PriceTrendAnalysis from "../views/purchasing/PriceTrendAnalysis.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -1542,7 +1549,7 @@ const routes = [
                 meta: { requiresAuth: true },
             },
 
-            //Financial Report
+            //Financial Reports Componen
             {
                 path: "/accounting/financial-reports",
                 name: "FinancialDashboard",
@@ -1601,6 +1608,38 @@ const routes = [
                 name: "PriceComparison",
                 component: () =>
                     import("../views/inventory/PriceComparisonScreen.vue"),
+                meta: { requiresAuth: true },
+            },
+
+            //Purchasing Dahsboard dan reporting
+            {
+                path: "/purchasing/dashboard",
+                name: "PurchasingDashboard",
+                component: PurchasingDashboard,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/spend-analysis",
+                name: "SpendAnalysis",
+                component: SpendAnalysisPage,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/vendor-performance",
+                name: "VendorPerformance",
+                component: VendorPerformanceReport,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/po-status",
+                name: "POStatus",
+                component: POStatusSummary,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/purchasing/price-trend",
+                name: "PriceTrend",
+                component: PriceTrendAnalysis,
                 meta: { requiresAuth: true },
             },
 

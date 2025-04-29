@@ -58,7 +58,7 @@ class StockAdjustment extends Model
             StockTransaction::create([
                 'item_id' => $line->item_id,
                 'warehouse_id' => $line->warehouse_id,
-                'location_id' => $line->location_id,
+                //'location_id' => $line->location_id,
                 'transaction_type' => StockTransaction::TYPE_ADJUSTMENT,
                 'quantity' => $line->variance, // The variance can be positive or negative
                 'transaction_date' => $this->adjustment_date,

@@ -14,7 +14,7 @@ class StockTransaction extends Model
     protected $fillable = [
         'item_id', 
         'warehouse_id', 
-        'location_id', 
+        //'location_id', 
         'transaction_type', 
         'quantity', 
         'transaction_date', 
@@ -52,10 +52,10 @@ class StockTransaction extends Model
     /**
      * Get the location for this transaction
      */
-    public function location()
-    {
-        return $this->belongsTo(WarehouseLocation::class, 'location_id', 'location_id');
-    }
+    // public function location()
+    // {
+    //     return $this->belongsTo(WarehouseLocation::class, 'location_id', 'location_id');
+    // }
 
     /**
      * Get the batch for this transaction

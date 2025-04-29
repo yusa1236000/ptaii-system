@@ -22,6 +22,7 @@ class Customer extends Model
         'contact_person',
         'phone',
         'email',
+        'preferred_currency', // Baru
         'status'
     ];
 
@@ -79,5 +80,13 @@ class Customer extends Model
     public function salesForecasts(): HasMany
     {
         return $this->hasMany(SalesForecast::class, 'customer_id');
+    }
+    
+    /**
+     * Get the receivables for the customer.
+     */
+    public function receivables(): HasMany
+    {
+        return $this->hasMany(CustomerReceivable::class, 'customer_id');
     }
 }

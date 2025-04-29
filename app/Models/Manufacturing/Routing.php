@@ -2,6 +2,7 @@
 
 namespace App\Models\Manufacturing;
 
+use App\Models\Item;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,12 +12,12 @@ class Routing extends Model
 {
     use HasFactory;
 
-    protected $table = 'Routing';
+    protected $table = 'routings';
     protected $primaryKey = 'routing_id';
     public $timestamps = false;
 
     protected $fillable = [
-        'product_id',
+        'item_id',
         'routing_code',
         'revision',
         'effective_date',
@@ -30,9 +31,9 @@ class Routing extends Model
     /**
      * Get the product that owns the routing.
      */
-    public function product(): BelongsTo
+    public function item(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'product_id', 'product_id');
+        return $this->belongsTo(Item::class, 'item_id', 'item_id');
     }
 
     /**
