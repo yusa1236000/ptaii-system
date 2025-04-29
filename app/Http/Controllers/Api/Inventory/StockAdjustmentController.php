@@ -64,7 +64,7 @@ class StockAdjustmentController extends Controller
             'lines' => 'required|array|min:1',
             'lines.*.item_id' => 'required|exists:items,item_id',
             'lines.*.warehouse_id' => 'required|exists:warehouses,warehouse_id',
-            'lines.*.location_id' => 'nullable|exists:warehouse_locations,location_id',
+            //'lines.*.location_id' => 'nullable|exists:warehouse_locations,location_id',
             'lines.*.book_quantity' => 'required|numeric',
             'lines.*.adjusted_quantity' => 'required|numeric',
         ]);
@@ -97,7 +97,7 @@ class StockAdjustmentController extends Controller
                     'adjustment_id' => $adjustment->adjustment_id,
                     'item_id' => $line['item_id'],
                     'warehouse_id' => $line['warehouse_id'],
-                    'location_id' => $line['location_id'] ?? null,
+                    //'location_id' => $line['location_id'] ?? null,
                     'book_quantity' => $line['book_quantity'],
                     'adjusted_quantity' => $line['adjusted_quantity'],
                     'variance' => $variance
@@ -186,7 +186,7 @@ class StockAdjustmentController extends Controller
             'lines.*.line_id' => 'nullable|exists:stock_adjustment_lines,line_id',
             'lines.*.item_id' => 'required|exists:items,item_id',
             'lines.*.warehouse_id' => 'required|exists:warehouses,warehouse_id',
-            'lines.*.location_id' => 'nullable|exists:warehouse_locations,location_id',
+            //'lines.*.location_id' => 'nullable|exists:warehouse_locations,location_id',
             'lines.*.book_quantity' => 'required|numeric',
             'lines.*.adjusted_quantity' => 'required|numeric',
         ]);
@@ -223,7 +223,7 @@ class StockAdjustmentController extends Controller
                         $line->update([
                             'item_id' => $lineData['item_id'],
                             'warehouse_id' => $lineData['warehouse_id'],
-                            'location_id' => $lineData['location_id'] ?? null,
+                            //'location_id' => $lineData['location_id'] ?? null,
                             'book_quantity' => $lineData['book_quantity'],
                             'adjusted_quantity' => $lineData['adjusted_quantity'],
                             'variance' => $variance
@@ -237,7 +237,7 @@ class StockAdjustmentController extends Controller
                         'adjustment_id' => $adjustment->adjustment_id,
                         'item_id' => $lineData['item_id'],
                         'warehouse_id' => $lineData['warehouse_id'],
-                        'location_id' => $lineData['location_id'] ?? null,
+                        //'location_id' => $lineData['location_id'] ?? null,
                         'book_quantity' => $lineData['book_quantity'],
                         'adjusted_quantity' => $lineData['adjusted_quantity'],
                         'variance' => $variance

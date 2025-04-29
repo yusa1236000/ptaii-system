@@ -69,7 +69,7 @@ class StockTransactionController extends Controller
         $validator = Validator::make($request->all(), [
             'item_id' => 'required|exists:items,item_id',
             'warehouse_id' => 'required|exists:warehouses,warehouse_id',
-            'location_id' => 'nullable|exists:warehouse_locations,location_id',
+            //'location_id' => 'nullable|exists:warehouse_locations,location_id',
             'transaction_type' => 'required|string|in:receive,issue,transfer,adjustment,return',
             'quantity' => 'required|numeric',
             'transaction_date' => 'required|date',
@@ -86,15 +86,15 @@ class StockTransactionController extends Controller
         }
 
         // Validate location belongs to warehouse
-        if ($request->location_id) {
-            $location = WarehouseLocation::find($request->location_id);
-            if (!$location || $location->zone->warehouse_id != $request->warehouse_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Location does not belong to the specified warehouse'
-                ], 422);
-            }
-        }
+        // if ($request->location_id) {
+        //     $location = WarehouseLocation::find($request->location_id);
+        //     if (!$location || $location->zone->warehouse_id != $request->warehouse_id) {
+        //         return response()->json([
+        //             'success' => false,
+        //             'message' => 'Location does not belong to the specified warehouse'
+        //         ], 422);
+        //     }
+        // }
         
         // Validate batch belongs to item
         if ($request->batch_id) {
@@ -288,9 +288,9 @@ class StockTransactionController extends Controller
         $validator = Validator::make($request->all(), [
             'item_id' => 'required|exists:items,item_id',
             'from_warehouse_id' => 'required|exists:warehouses,warehouse_id',
-            'from_location_id' => 'nullable|exists:warehouse_locations,location_id',
+            //'from_location_id' => 'nullable|exists:warehouse_locations,location_id',
             'to_warehouse_id' => 'required|exists:warehouses,warehouse_id',
-            'to_location_id' => 'nullable|exists:warehouse_locations,location_id',
+            //'to_location_id' => 'nullable|exists:warehouse_locations,location_id',
             'quantity' => 'required|numeric|gt:0',
             'transaction_date' => 'required|date',
             'batch_id' => 'nullable|exists:item_batches,batch_id',
@@ -305,8 +305,8 @@ class StockTransactionController extends Controller
         }
 
         // Check that source and destination are different
-        if ($request->from_warehouse_id == $request->to_warehouse_id && 
-            $request->from_location_id == $request->to_location_id) {
+        if ($request->from_warehouse_id == $request->to_warehouse_id/* && 
+            $request->from_location_id == $request->to_location_id*/) {
             return response()->json([
                 'success' => false,
                 'message' => 'Source and destination must be different'
@@ -314,32 +314,32 @@ class StockTransactionController extends Controller
         }
 
         // Validate locations belong to their respective warehouses
-        if ($request->from_location_id) {
-            $location = WarehouseLocation::find($request->from_location_id);
-            if (!$location || $location->zone->warehouse_id != $request->from_warehouse_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Source location does not belong to the source warehouse'
-                ], 422);
-            }
-        }
+        // if ($request->from_location_id) {
+        //     $location = WarehouseLocation::find($request->from_location_id);
+        //     if (!$location || $location->zone->warehouse_id != $request->from_warehouse_id) {
+        //         return response()->json([
+        //             'success' => false,
+        //             'message' => 'Source location does not belong to the source warehouse'
+        //         ], 422);
+        //     }
+        // }
         
-        if ($request->to_location_id) {
-            $location = WarehouseLocation::find($request->to_location_id);
-            if (!$location || $location->zone->warehouse_id != $request->to_warehouse_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Destination location does not belong to the destination warehouse'
-                ], 422);
-            }
-        }
+        // if ($request->to_location_id) {
+        //     $location = WarehouseLocation::find($request->to_location_id);
+        //     if (!$location || $location->zone->warehouse_id != $request->to_warehouse_id) {
+        //         return response()->json([
+        //             'success' => false,
+        //             'message' => 'Destination location does not belong to the destination warehouse'
+        //         ], 422);
+        //     }
+        // }
 
         // Check available stock in source warehouse
         $sourceStock = StockTransaction::where('item_id', $request->item_id)
             ->where('warehouse_id', $request->from_warehouse_id)
-            ->when($request->from_location_id, function ($query) use ($request) {
-                return $query->where('location_id', $request->from_location_id);
-            })
+            // ->when($request->from_location_id, function ($query) use ($request) {
+            //     return $query->where('location_id', $request->from_location_id);
+            // })
             ->when($request->batch_id, function ($query) use ($request) {
                 return $query->where('batch_id', $request->batch_id);
             })
@@ -360,7 +360,7 @@ class StockTransactionController extends Controller
             $outTransaction = StockTransaction::create([
                 'item_id' => $request->item_id,
                 'warehouse_id' => $request->from_warehouse_id,
-                'location_id' => $request->from_location_id,
+                //'location_id' => $request->from_location_id,
                 'transaction_type' => 'transfer',
                 'quantity' => -$request->quantity, // Negative for outgoing
                 'transaction_date' => $request->transaction_date,
@@ -373,7 +373,7 @@ class StockTransactionController extends Controller
             $inTransaction = StockTransaction::create([
                 'item_id' => $request->item_id,
                 'warehouse_id' => $request->to_warehouse_id,
-                'location_id' => $request->to_location_id,
+                //'location_id' => $request->to_location_id,
                 'transaction_type' => 'transfer',
                 'quantity' => $request->quantity, // Positive for incoming
                 'transaction_date' => $request->transaction_date,
@@ -403,5 +403,18 @@ class StockTransactionController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+    public function getWarehouseTransactions($warehouseId)
+    {
+        // Implementasi untuk mendapatkan transaksi berdasarkan warehouse
+        $transactions = StockTransaction::where('warehouse_id', $warehouseId)
+                        ->with(['item', 'warehouse', 'location', 'batch'])
+                        ->orderBy('transaction_date', 'desc')
+                        ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $transactions
+        ]);
     }
 }

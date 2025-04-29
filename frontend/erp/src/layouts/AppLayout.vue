@@ -93,6 +93,24 @@
                         <i class="fas fa-warehouse"></i>
                         <span v-if="!sidebarCollapsed">Warehouses</span>
                     </router-link>
+
+                    <router-link
+                        to="/item-prices"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-tag"></i>
+                        <span v-if="!sidebarCollapsed">Item Prices</span>
+                    </router-link>
+
+                    <router-link
+                        to="/item-prices/comparison"
+                        class="menu-item"
+                        active-class="active"
+                    >
+                        <i class="fas fa-balance-scale"></i>
+                        <span v-if="!sidebarCollapsed">Price Comparison</span>
+                    </router-link>
                 </div>
 
                 <!-- Material Planning Section -->

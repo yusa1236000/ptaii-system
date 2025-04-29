@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Sales;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sales\Customer;
+use App\Models\CurrencyRate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -36,11 +37,17 @@ class CustomerController extends Controller
             'contact_person' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100',
+            'preferred_currency' => 'nullable|string|size:3', // Added currency validation
             'status' => 'required|string|max:50'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // If preferred_currency is not provided, set to system default
+        if (!$request->has('preferred_currency')) {
+            $request->merge(['preferred_currency' => config('app.base_currency', 'USD')]);
         }
 
         $customer = Customer::create($request->all());
@@ -87,6 +94,7 @@ class CustomerController extends Controller
             'contact_person' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100',
+            'preferred_currency' => 'nullable|string|size:3', // Added currency validation
             'status' => 'required|string|max:50'
         ]);
 
@@ -168,5 +176,94 @@ class CustomerController extends Controller
 
         $invoices = $customer->salesInvoices;
         return response()->json(['data' => $invoices], 200);
+    }
+    
+    /**
+     * Get customer transactions in specified currency.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function getTransactionsInCurrency(Request $request, $id)
+    {
+        $customer = Customer::find($id);
+        
+        if (!$customer) {
+            return response()->json(['message' => 'Customer not found'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'currency' => 'required|string|size:3',
+            'date' => 'nullable|date'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+        
+        $currency = $request->currency;
+        $date = $request->date ?? now()->format('Y-m-d');
+        
+        // Get orders
+        $orders = $customer->salesOrders()
+            ->with(['salesOrderLines'])
+            ->get()
+            ->map(function($order) use ($currency, $date) {
+                $amounts = $order->getAmountsInCurrency($currency, $date);
+                return [
+                    'so_id' => $order->so_id,
+                    'so_number' => $order->so_number,
+                    'so_date' => $order->so_date,
+                    'original_currency' => $order->currency_code,
+                    'display_currency' => $currency,
+                    'total_amount' => $amounts['total_amount'],
+                    'tax_amount' => $amounts['tax_amount']
+                ];
+            });
+        
+        // Get invoices
+        $invoices = $customer->salesInvoices()
+            ->with(['salesInvoiceLines'])
+            ->get()
+            ->map(function($invoice) use ($currency, $date) {
+                $amounts = $invoice->getAmountsInCurrency($currency, $date);
+                return [
+                    'invoice_id' => $invoice->invoice_id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'invoice_date' => $invoice->invoice_date,
+                    'original_currency' => $invoice->currency_code,
+                    'display_currency' => $currency,
+                    'total_amount' => $amounts['total_amount'],
+                    'tax_amount' => $amounts['tax_amount']
+                ];
+            });
+        
+        // Get receivables
+        $receivables = $customer->receivables()
+            ->get()
+            ->map(function($receivable) use ($currency, $date) {
+                $amounts = $receivable->getAmountsInCurrency($currency, $date);
+                return [
+                    'receivable_id' => $receivable->receivable_id,
+                    'invoice_number' => $receivable->salesInvoice->invoice_number,
+                    'due_date' => $receivable->due_date,
+                    'original_currency' => $receivable->currency_code,
+                    'display_currency' => $currency,
+                    'amount' => $amounts['amount'],
+                    'paid_amount' => $amounts['paid_amount'],
+                    'balance' => $amounts['balance']
+                ];
+            });
+        
+        return response()->json([
+            'data' => [
+                'customer' => $customer,
+                'currency' => $currency,
+                'orders' => $orders,
+                'invoices' => $invoices,
+                'receivables' => $receivables
+            ]
+        ], 200);
     }
 }

@@ -63,7 +63,7 @@ class WarehouseController extends Controller
      */
     public function show($id)
     {
-        $warehouse = Warehouse::with(['zones.locations'])->find($id);
+        $warehouse = Warehouse::find($id);
         
         if (!$warehouse) {
             return response()->json([
@@ -136,15 +136,7 @@ class WarehouseController extends Controller
             ], 404);
         }
 
-        // Check if the warehouse has zones
-        if ($warehouse->zones()->count() > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete warehouse with zones'
-            ], 422);
-        }
-
-        // Check if the warehouse has stock transactions
+        // Hanya cek transaksi stock, hapus pengecekan zones
         if ($warehouse->stockTransactions()->count() > 0) {
             return response()->json([
                 'success' => false,

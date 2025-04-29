@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Manufacturing;
 
+use App\Http\Controllers\Controller;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderOperation;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class WorkOrderController extends Controller
      */
     public function index()
     {
-        $workOrders = WorkOrder::with(['product', 'bom', 'routing'])->get();
+        $workOrders = WorkOrder::with(['item', 'bom', 'routing'])->get();
         return response()->json(['data' => $workOrders]);
     }
 
@@ -32,7 +33,7 @@ class WorkOrderController extends Controller
         $validator = Validator::make($request->all(), [
             'wo_number' => 'required|string|max:50|unique:WorkOrder,wo_number',
             'wo_date' => 'required|date',
-            'product_id' => 'required|integer|exists:Product,product_id',
+            'item_id' => 'required|integer|exists:items,item_id',
             'bom_id' => 'required|integer|exists:BOM,bom_id',
             'routing_id' => 'required|integer|exists:Routing,routing_id',
             'planned_quantity' => 'required|numeric',
@@ -68,7 +69,7 @@ class WorkOrderController extends Controller
             DB::commit();
             
             return response()->json([
-                'data' => $workOrder->load(['product', 'bom', 'routing', 'workOrderOperations']),
+                'data' => $workOrder->load(['item', 'bom', 'routing', 'workOrderOperations']),
                 'message' => 'Work order created successfully'
             ], 201);
         } catch (\Exception $e) {
@@ -86,7 +87,7 @@ class WorkOrderController extends Controller
     public function show($id)
     {
         $workOrder = WorkOrder::with([
-            'product', 
+            'item', 
             'bom.bomLines.item', 
             'routing.routingOperations.workCenter',
             'workOrderOperations.routingOperation'
@@ -117,7 +118,7 @@ class WorkOrderController extends Controller
         $validator = Validator::make($request->all(), [
             'wo_number' => 'sometimes|required|string|max:50|unique:WorkOrder,wo_number,' . $id . ',wo_id',
             'wo_date' => 'sometimes|required|date',
-            'product_id' => 'sometimes|required|integer|exists:Product,product_id',
+            'item_id' => 'sometimes|required|integer|exists:items,item_id',
             'bom_id' => 'sometimes|required|integer|exists:BOM,bom_id',
             'routing_id' => 'sometimes|required|integer|exists:Routing,routing_id',
             'planned_quantity' => 'sometimes|required|numeric',

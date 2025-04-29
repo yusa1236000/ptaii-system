@@ -100,7 +100,7 @@ class GoodsReceiptController extends Controller
                     'item_id' => $line['item_id'],
                     'received_quantity' => $line['received_quantity'],
                     'warehouse_id' => $line['warehouse_id'],
-                    'location_id' => $line['location_id'] ?? null,
+                    //'location_id' => $line['location_id'] ?? null,
                     'batch_number' => $line['batch_number'] ?? null
                 ]);
             }
@@ -164,7 +164,7 @@ class GoodsReceiptController extends Controller
                         'item_id' => $line['item_id'],
                         'received_quantity' => $line['received_quantity'],
                         'warehouse_id' => $line['warehouse_id'],
-                        'location_id' => $line['location_id'] ?? null,
+                        //'location_id' => $line['location_id'] ?? null,
                         'batch_number' => $line['batch_number'] ?? null
                     ]);
                 }
@@ -229,7 +229,7 @@ class GoodsReceiptController extends Controller
                 $this->stockService->increaseStock(
                     $line->item_id,
                     $line->warehouse_id,
-                    $line->location_id,
+                    //$line->location_id,
                     $line->received_quantity,
                     'goods_receipt',
                     $goodsReceipt->receipt_number,

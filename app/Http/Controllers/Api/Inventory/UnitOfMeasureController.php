@@ -16,7 +16,8 @@ class UnitOfMeasureController extends Controller
      */
     public function index()
     {
-        $uoms = UnitOfMeasure::all();
+        // Load unit of measures with count of related items to get the "Used By" count
+        $uoms = UnitOfMeasure::withCount('items')->get();
         
         return response()->json([
             'success' => true,

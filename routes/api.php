@@ -84,6 +84,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
 
+    Route::prefix('items')->group(function () {
+        // Existing item routes...
+        // Di dalam grup route prefix 'items'
+        Route::get('/{id}/prices-in-currencies', 'App\Http\Controllers\Api\Inventory\ItemController@getPricesInCurrencies');
+        // Special item filters
+        Route::get('/purchasable', 'App\Http\Controllers\Api\Inventory\ItemController@getPurchasableItems');
+        Route::get('/sellable', 'App\Http\Controllers\Api\Inventory\ItemController@getSellableItems');
+        
+        // Item price routes
+        Route::get('/{itemId}/prices', 'App\Http\Controllers\Api\Inventory\ItemPriceController@index');
+        Route::post('/{itemId}/prices', 'App\Http\Controllers\Api\Inventory\ItemPriceController@store');
+        Route::get('/{itemId}/prices/{id}', 'App\Http\Controllers\Api\Inventory\ItemPriceController@show');
+        Route::put('/{itemId}/prices/{id}', 'App\Http\Controllers\Api\Inventory\ItemPriceController@update');
+        Route::delete('/{itemId}/prices/{id}', 'App\Http\Controllers\Api\Inventory\ItemPriceController@destroy');
+        
+        // Price calculation endpoints
+        Route::get('/{itemId}/best-purchase-price', 'App\Http\Controllers\Api\Inventory\ItemPriceController@getBestPurchasePrice');
+        Route::get('/{itemId}/best-sale-price', 'App\Http\Controllers\Api\Inventory\ItemPriceController@getBestSalePrice');
+        Route::get('/{id}/document', 'App\Http\Controllers\Api\Inventory\ItemController@downloadDocument');
+        // Update default prices
+        Route::put('/{itemId}/default-prices', 'App\Http\Controllers\Api\Inventory\ItemPriceController@updateDefaultPrices');
+    });
+
     // // Item Routes
     // Route::apiResource('items', ItemController::class);
     // Route::get('/items/stock-status', [ItemController::class, 'stockStatus']);
@@ -361,6 +384,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // BOM
     Route::apiResource('boms', BOMController::class);
     Route::apiResource('boms/{bomId}/lines', BOMLineController::class);
+    // Calculate potential yield from a specific material
+    Route::post('/{bomId}/lines/{lineId}/calculate-yield', [BOMLineController::class, 'calculateYield']);
+    
+    // Calculate maximum possible production based on current stock
+    Route::get('/{bomId}/maximum-yield', [BOMLineController::class, 'calculateMaximumYield']);
+    
+    // Create a yield-based BOM
+    Route::post('/yield-based', [BOMController::class, 'createYieldBased']);
 
     // Routing
     Route::apiResource('routings', RoutingController::class);
@@ -387,6 +418,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('quality-inspections/{inspectionId}/parameters', QualityParameterController::class);
     Route::get('quality-inspections/by-reference/{referenceType}/{referenceId}', [QualityInspectionController::class, 'byReference']);
 
+    Route::prefix('material-planning')->group(function () {
+        // Existing routes
+        Route::post('/generate', [MaterialPlanningController::class, 'generateMaterialPlans']);
+        Route::post('/purchase-requisition', [MaterialPlanningController::class, 'generatePurchaseRequisitions']);
+        
+        // New route for maximum production calculation
+        Route::post('/max-production', [MaterialPlanningController::class, 'calculateMaximumProduction']);
+    });
+
+    Route::get('items/{id}/prices-in-currencies', 'App\Http\Controllers\Api\Inventory\ItemController@getPricesInCurrencies');
+    Route::get('customers/{id}/transactions-in-currency', 'App\Http\Controllers\Api\Sales\CustomerController@getTransactionsInCurrency');
+    Route::get('vendors/{vendor}/transactions-in-currency', 'App\Http\Controllers\Api\VendorController@getTransactionsInCurrency');
+    Route::put('vendors/{vendor}/preferred-currency', 'App\Http\Controllers\Api\VendorController@updatePreferredCurrency');
     // Accounting Module Routes
     Route::prefix('accounting')->group(function () {
         // Chart of Accounts

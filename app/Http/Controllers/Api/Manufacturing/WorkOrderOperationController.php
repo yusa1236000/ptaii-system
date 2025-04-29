@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Manufacturing;
 
+use App\Http\Controllers\Controller;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderOperation;
 use Illuminate\Http\Request;

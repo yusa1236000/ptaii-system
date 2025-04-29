@@ -139,6 +139,14 @@ import BudgetDetail from "../views/accounting/BudgetDetail.vue";
 import BudgetVsActual from "../views/accounting/BudgetVsActual.vue";
 import VarianceAnalysis from "../views/accounting/VarianceAnalysis.vue";
 
+// Financial Reports Components
+import FinancialDashboard from "../views/accounting/reports/FinancialDashboard.vue";
+import TrialBalanceReport from "../views/accounting/reports/TrialBalanceReport.vue";
+import IncomeStatementReport from "../views/accounting/reports/IncomeStatementReport.vue";
+import BalanceSheetReport from "../views/accounting/reports/BalanceSheetReport.vue";
+import CashFlowReport from "../views/accounting/reports/CashFlowReport.vue";
+import ReportsConfiguration from "../views/accounting/reports/ReportsConfiguration.vue";
+
 // import SalesForecastFormModal from "../views/sales/SalesForecastFormModal.vue";
 // Import other components as needed
 
@@ -1531,6 +1539,68 @@ const routes = [
                 name: "TaxFilingPreparation",
                 component: () =>
                     import("../views/accounting/TaxFilingPreparation.vue"),
+                meta: { requiresAuth: true },
+            },
+
+            //Financial Report
+            {
+                path: "/accounting/financial-reports",
+                name: "FinancialDashboard",
+                component: FinancialDashboard,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/reports/trial-balance",
+                name: "TrialBalanceReport",
+                component: TrialBalanceReport,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/reports/income-statement",
+                name: "IncomeStatementReport",
+                component: IncomeStatementReport,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/reports/balance-sheet",
+                name: "BalanceSheetReport",
+                component: BalanceSheetReport,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/reports/cash-flow",
+                name: "CashFlowReport",
+                component: CashFlowReport,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/accounting/reports/configuration",
+                name: "ReportsConfiguration",
+                component: ReportsConfiguration,
+                meta: { requiresAuth: true },
+            },
+
+            // Item Price routes
+            {
+                path: "/item-prices",
+                name: "ItemPrices",
+                component: () =>
+                    import("../views/inventory/ItemPricesList.vue"),
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/items/:id/prices",
+                name: "ItemSpecificPrices",
+                component: () =>
+                    import("../views/inventory/ItemPricesList.vue"),
+                props: true,
+                meta: { requiresAuth: true },
+            },
+            {
+                path: "/item-prices/comparison",
+                name: "PriceComparison",
+                component: () =>
+                    import("../views/inventory/PriceComparisonScreen.vue"),
                 meta: { requiresAuth: true },
             },
 

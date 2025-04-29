@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Manufacturing;
 
+use App\Http\Controllers\Controller;
 use App\Models\Manufacturing\WorkCenter;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -30,7 +31,7 @@ class WorkCenterController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:50|unique:WorkCenter,code',
+            'code' => 'required|string|max:50|unique:work_centers,code',
             'capacity' => 'required|numeric',
             'cost_per_hour' => 'required|numeric',
             'is_active' => 'sometimes|boolean',
@@ -88,7 +89,7 @@ class WorkCenterController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:100',
-            'code' => 'sometimes|required|string|max:50|unique:WorkCenter,code,' . $id . ',workcenter_id',
+            'code' => 'sometimes|required|string|max:50|unique:work_centers,code,' . $id . ',workcenter_id',
             'capacity' => 'sometimes|required|numeric',
             'cost_per_hour' => 'sometimes|required|numeric',
             'is_active' => 'sometimes|boolean',

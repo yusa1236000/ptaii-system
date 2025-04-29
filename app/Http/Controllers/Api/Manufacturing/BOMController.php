@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BOMController extends Controller
 {
@@ -20,7 +21,7 @@ class BOMController extends Controller
      */
     public function index(Request $request)
     {
-        $query = BOM::with(['items', 'unit_of_measures']);
+        $query = BOM::with(['item', 'unitOfMeasure']);
 
         // Filtering by status
         if ($request->has('status') && $request->status !== '') {
@@ -32,7 +33,7 @@ class BOMController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('bom_code', 'like', "%{$search}%")
-                  ->orWhereHas('items', function ($q2) use ($search) {
+                  ->orWhereHas('item', function ($q2) use ($search) {
                       $q2->where('name', 'like', "%{$search}%");
                   });
             });
@@ -89,6 +90,9 @@ class BOMController extends Controller
             'bom_lines.*.uom_id' => 'required|integer|exists:unit_of_measures,uom_id',
             'bom_lines.*.is_critical' => 'sometimes|boolean',
             'bom_lines.*.notes' => 'nullable|string',
+            'bom_lines.*.is_yield_based' => 'sometimes|boolean',
+            'bom_lines.*.yield_ratio' => 'required_if:bom_lines.*.is_yield_based,true|nullable|numeric|min:0',
+            'bom_lines.*.shrinkage_factor' => 'nullable|numeric|min:0|max:1',
         ]);
 
         if ($validator->fails()) {
@@ -109,14 +113,23 @@ class BOMController extends Controller
 
             if ($request->has('bom_lines')) {
                 foreach ($request->bom_lines as $line) {
-                    BOMLine::create([
+                    $bomLine = [
                         'bom_id' => $bom->bom_id,
                         'item_id' => $line['item_id'],
                         'quantity' => $line['quantity'],
                         'uom_id' => $line['uom_id'],
                         'is_critical' => $line['is_critical'] ?? false,
                         'notes' => $line['notes'] ?? null,
-                    ]);
+                    ];
+                    
+                    // Add yield-based fields if present
+                    if (isset($line['is_yield_based']) && $line['is_yield_based']) {
+                        $bomLine['is_yield_based'] = true;
+                        $bomLine['yield_ratio'] = $line['yield_ratio'];
+                        $bomLine['shrinkage_factor'] = $line['shrinkage_factor'] ?? 0;
+                    }
+                    
+                    BOMLine::create($bomLine);
                 }
             }
 
@@ -142,14 +155,14 @@ class BOMController extends Controller
     {
         try {
             // Try loading only main relationships first
-            $bom = BOM::with(['items', 'unit_of_measures'])->find($id);
+            $bom = BOM::with(['item', 'unitOfMeasure'])->find($id);
             
             if (!$bom) {
                 return response()->json(['message' => 'BOM not found'], 404);
             }
             
             // Load bomLines and their relations separately to isolate errors
-            $bom->load(['bomLines.items', 'bomLines.unit_of_measures']);
+            $bom->load(['bomLines.item', 'bomLines.unitOfMeasure']);
             
             return response()->json(['data' => $bom]);
         } catch (\Exception $e) {
@@ -224,6 +237,97 @@ class BOMController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Failed to delete BOM', 'error' => $e->getMessage()], 500);
+        }
+    }
+    /**
+     * Create a new BOM based on material yield.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function createYieldBased(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'item_id' => 'required|integer|exists:items,item_id',
+            'bom_code' => 'required|string|max:50',
+            'revision' => 'required|string|max:10',
+            'effective_date' => 'required|date',
+            'status' => 'required|string|max:50',
+            'standard_quantity' => 'required|numeric',
+            'uom_id' => 'required|integer|exists:unit_of_measures,uom_id',
+            'yield_materials' => 'required|array|min:1',
+            'yield_materials.*.item_id' => 'required|integer|exists:items,item_id',
+            'yield_materials.*.quantity' => 'required|numeric|min:0',
+            'yield_materials.*.uom_id' => 'required|integer|exists:unit_of_measures,uom_id',
+            'yield_materials.*.yield_ratio' => 'required|numeric|min:0',
+            'yield_materials.*.shrinkage_factor' => 'nullable|numeric|min:0|max:1',
+            'yield_materials.*.is_critical' => 'sometimes|boolean',
+            'yield_materials.*.notes' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $bom = BOM::create([
+                'item_id' => $request->item_id,
+                'bom_code' => $request->bom_code,
+                'revision' => $request->revision,
+                'effective_date' => $request->effective_date,
+                'status' => $request->status,
+                'standard_quantity' => $request->standard_quantity,
+                'uom_id' => $request->uom_id,
+            ]);
+
+            // Create BOM lines based on yield materials
+            foreach ($request->yield_materials as $material) {
+                BOMLine::create([
+                    'bom_id' => $bom->bom_id,
+                    'item_id' => $material['item_id'],
+                    'quantity' => $material['quantity'],
+                    'uom_id' => $material['uom_id'],
+                    'is_critical' => $material['is_critical'] ?? false,
+                    'notes' => $material['notes'] ?? null,
+                    'is_yield_based' => true,
+                    'yield_ratio' => $material['yield_ratio'],
+                    'shrinkage_factor' => $material['shrinkage_factor'] ?? 0,
+                ]);
+            }
+
+            DB::commit();
+            
+            // Calculate potential yield based on the added materials
+            $bomWithLines = BOM::with(['item', 'unitOfMeasure', 'bomLines.item', 'bomLines.unitOfMeasure'])
+                ->find($bom->bom_id);
+            
+            $materials = [];
+            foreach ($bomWithLines->bomLines as $line) {
+                $potentialYield = $line->calculateYield();
+                
+                $materials[] = [
+                    'item_id' => $line->item->item_id,
+                    'item_code' => $line->item->item_code,
+                    'item_name' => $line->item->name,
+                    'quantity' => $line->quantity,
+                    'uom' => $line->unitOfMeasure->symbol,
+                    'yield_ratio' => $line->yield_ratio,
+                    'shrinkage_factor' => $line->shrinkage_factor,
+                    'potential_yield' => $potentialYield,
+                ];
+            }
+            
+            return response()->json([
+                'data' => [
+                    'bom' => $bomWithLines,
+                    'materials' => $materials
+                ],
+                'message' => 'Yield-based BOM created successfully'
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to create yield-based BOM', 'error' => $e->getMessage()], 500);
         }
     }
 }

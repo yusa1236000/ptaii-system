@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Manufacturing;
 
+use App\Http\Controllers\Controller;
 use App\Models\Manufacturing\QualityInspection;
 use App\Models\Manufacturing\QualityParameter;
 use Illuminate\Http\Request;

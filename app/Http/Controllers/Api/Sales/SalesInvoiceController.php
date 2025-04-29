@@ -8,6 +8,7 @@ use App\Models\Sales\SalesInvoiceLine;
 use App\Models\Sales\SalesOrder;
 use App\Models\Sales\SOLine;
 use App\Models\Accounting\CustomerReceivable;
+use App\Models\CurrencyRate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ class SalesInvoiceController extends Controller
             'so_id' => 'required|exists:SalesOrder,so_id',
             'due_date' => 'required|date|after_or_equal:invoice_date',
             'status' => 'required|string|max:50',
+            'currency_code' => 'nullable|string|size:3', // New field for currency
             'lines' => 'required|array',
             'lines.*.so_line_id' => 'required|exists:SOLine,line_id',
             'lines.*.quantity' => 'required|numeric|min:0'
@@ -53,7 +55,52 @@ class SalesInvoiceController extends Controller
 
             // Get the sales order
             $salesOrder = SalesOrder::find($request->so_id);
-
+            
+            // Determine currency (from request, sales order, or default)
+            $currencyCode = $request->currency_code ?? $salesOrder->currency_code ?? config('app.base_currency', 'USD');
+            $baseCurrency = config('app.base_currency', 'USD');
+            
+            // Get exchange rate if invoice currency is different from base currency
+            $exchangeRate = 1.0; // Default for base currency
+            
+            if ($currencyCode !== $baseCurrency) {
+                $rate = CurrencyRate::where('from_currency', $currencyCode)
+                    ->where('to_currency', $baseCurrency)
+                    ->where('is_active', true)
+                    ->where('effective_date', '<=', $request->invoice_date)
+                    ->where(function($query) use ($request) {
+                        $query->where('end_date', '>=', $request->invoice_date)
+                              ->orWhereNull('end_date');
+                    })
+                    ->orderBy('effective_date', 'desc')
+                    ->first();
+                    
+                if (!$rate) {
+                    // Try to find a reverse rate
+                    $reverseRate = CurrencyRate::where('from_currency', $baseCurrency)
+                        ->where('to_currency', $currencyCode)
+                        ->where('is_active', true)
+                        ->where('effective_date', '<=', $request->invoice_date)
+                        ->where(function($query) use ($request) {
+                            $query->where('end_date', '>=', $request->invoice_date)
+                                  ->orWhereNull('end_date');
+                        })
+                        ->orderBy('effective_date', 'desc')
+                        ->first();
+                        
+                    if ($reverseRate) {
+                        $exchangeRate = 1 / $reverseRate->rate;
+                    } else {
+                        DB::rollBack();
+                        return response()->json([
+                            'message' => 'No exchange rate found for the specified currency on the invoice date'
+                        ], 422);
+                    }
+                } else {
+                    $exchangeRate = $rate->rate;
+                }
+            }
+            
             $totalAmount = 0;
             $taxAmount = 0;
 
@@ -66,13 +113,18 @@ class SalesInvoiceController extends Controller
                 'due_date' => $request->due_date,
                 'status' => $request->status,
                 'total_amount' => 0, // Will be updated later
-                'tax_amount' => 0    // Will be updated later
+                'tax_amount' => 0,   // Will be updated later
+                'currency_code' => $currencyCode,
+                'exchange_rate' => $exchangeRate,
+                'base_currency' => $baseCurrency,
+                'base_currency_total' => 0, // Will be updated later
+                'base_currency_tax' => 0    // Will be updated later
             ]);
 
             // Create invoice lines
             foreach ($request->lines as $line) {
                 $soLine = SOLine::find($line['so_line_id']);
-
+                
                 // Validate if the invoiced quantity is valid
                 if ($line['quantity'] > $soLine->quantity) {
                     DB::rollBack();
@@ -80,33 +132,67 @@ class SalesInvoiceController extends Controller
                         'message' => 'Invoiced quantity exceeds ordered quantity for item ' . $soLine->item_id
                     ], 400);
                 }
-
+                
+                // Handle currency conversion for line items if needed
+                $unitPrice = $soLine->unit_price;
+                
+                // If invoice currency differs from sales order currency
+                if ($currencyCode !== $salesOrder->currency_code) {
+                    // Convert from sales order currency to invoice currency via base currency
+                    // First get price in base currency
+                    $baseUnitPrice = $soLine->base_currency_unit_price;
+                    
+                    // Then convert to invoice currency
+                    if ($currencyCode !== $baseCurrency) {
+                        $unitPrice = $baseUnitPrice / $exchangeRate;
+                    } else {
+                        $unitPrice = $baseUnitPrice; // Already in base currency
+                    }
+                }
+                
                 // Calculate amounts
-                $subtotal = $soLine->unit_price * $line['quantity'];
+                $subtotal = $unitPrice * $line['quantity'];
                 $discount = ($soLine->discount / $soLine->quantity) * $line['quantity'];
                 $tax = ($soLine->tax / $soLine->quantity) * $line['quantity'];
                 $total = $subtotal - $discount + $tax;
-
+                
+                // Calculate base currency amounts
+                $baseUnitPrice = $unitPrice * $exchangeRate;
+                $baseSubtotal = $subtotal * $exchangeRate;
+                $baseDiscount = $discount * $exchangeRate;
+                $baseTax = $tax * $exchangeRate;
+                $baseTotal = $total * $exchangeRate;
+                
                 SalesInvoiceLine::create([
                     'invoice_id' => $invoice->invoice_id,
                     'so_line_id' => $line['so_line_id'],
                     'item_id' => $soLine->item_id,
                     'quantity' => $line['quantity'],
-                    'unit_price' => $soLine->unit_price,
+                    'unit_price' => $unitPrice,
                     'discount' => $discount,
                     'subtotal' => $subtotal,
                     'tax' => $tax,
-                    'total' => $total
+                    'total' => $total,
+                    'base_currency_unit_price' => $baseUnitPrice,
+                    'base_currency_subtotal' => $baseSubtotal,
+                    'base_currency_discount' => $baseDiscount,
+                    'base_currency_tax' => $baseTax,
+                    'base_currency_total' => $baseTotal
                 ]);
-
+                
                 $totalAmount += $total;
                 $taxAmount += $tax;
             }
 
             // Update invoice totals
+            $baseCurrencyTotal = $totalAmount * $exchangeRate;
+            $baseCurrencyTax = $taxAmount * $exchangeRate;
+            
             $invoice->update([
                 'total_amount' => $totalAmount,
-                'tax_amount' => $taxAmount
+                'tax_amount' => $taxAmount,
+                'base_currency_total' => $baseCurrencyTotal,
+                'base_currency_tax' => $baseCurrencyTax
             ]);
 
             // Create customer receivable record
@@ -117,16 +203,21 @@ class SalesInvoiceController extends Controller
                 'due_date' => $request->due_date,
                 'paid_amount' => 0,
                 'balance' => $totalAmount,
-                'status' => 'Open'
+                'status' => 'Open',
+                'currency_code' => $currencyCode,
+                'exchange_rate' => $exchangeRate,
+                'base_currency' => $baseCurrency,
+                'base_currency_amount' => $baseCurrencyTotal,
+                'base_currency_balance' => $baseCurrencyTotal
             ]);
 
             // Update sales order status
             $salesOrder->update(['status' => 'Invoiced']);
 
             DB::commit();
-
+            
             return response()->json([
-                'data' => $invoice->load('salesInvoiceLines'),
+                'data' => $invoice->load('salesInvoiceLines'), 
                 'message' => 'Sales invoice created successfully'
             ], 201);
         } catch (\Exception $e) {

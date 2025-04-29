@@ -72,7 +72,7 @@ class CycleCountingController extends Controller
         $validator = Validator::make($request->all(), [
             'item_id' => 'required|exists:items,item_id',
             'warehouse_id' => 'required|exists:warehouses,warehouse_id',
-            'location_id' => 'nullable|exists:warehouse_locations,location_id',
+            //'location_id' => 'nullable|exists:warehouse_locations,location_id',
             'book_quantity' => 'required|numeric',
             'actual_quantity' => 'required|numeric',
             'count_date' => 'required|date'
@@ -86,15 +86,15 @@ class CycleCountingController extends Controller
         }
 
         // Validate location belongs to warehouse
-        if ($request->location_id) {
-            $location = WarehouseLocation::find($request->location_id);
-            if (!$location || $location->zone->warehouse_id != $request->warehouse_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Location does not belong to the specified warehouse'
-                ], 422);
-            }
-        }
+        // if ($request->location_id) {
+        //     $location = WarehouseLocation::find($request->location_id);
+        //     if (!$location || $location->zone->warehouse_id != $request->warehouse_id) {
+        //         return response()->json([
+        //             'success' => false,
+        //             'message' => 'Location does not belong to the specified warehouse'
+        //         ], 422);
+        //     }
+        // }
 
         // Calculate variance
         $variance = $request->actual_quantity - $request->book_quantity;
@@ -106,7 +106,7 @@ class CycleCountingController extends Controller
             $count = CycleCounting::create([
                 'item_id' => $request->item_id,
                 'warehouse_id' => $request->warehouse_id,
-                'location_id' => $request->location_id,
+                //'location_id' => $request->location_id,
                 'book_quantity' => $request->book_quantity,
                 'actual_quantity' => $request->actual_quantity,
                 'variance' => $variance,
@@ -356,7 +356,7 @@ class CycleCountingController extends Controller
                     'adjustment_id' => $adjustment->adjustment_id,
                     'item_id' => $count->item_id,
                     'warehouse_id' => $count->warehouse_id,
-                    'location_id' => $count->location_id,
+                    //'location_id' => $count->location_id,
                     'book_quantity' => $count->book_quantity,
                     'adjusted_quantity' => $count->actual_quantity,
                     'variance' => $count->variance
